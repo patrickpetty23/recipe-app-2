@@ -7,6 +7,15 @@
 
 ---
 
+## Day 4–5 — Shopping List (Phase 6)
+- Added `in_list` column to ingredients table with migration for existing databases — tracks which ingredients are on the shopping list
+- Added 5 new query functions: `getShoppingListIngredients`, `addRecipeToList`, `removeRecipeFromList`, `clearCheckedItems`, `clearShoppingList` — all with structured logging
+- Wired up "Add to Shopping List" / "Remove from Shopping List" toggle on Recipe Detail screen — persists `in_list` state, button label reflects current state
+- Built Shopping List tab (`app/(tabs)/list.jsx`) — `SectionList` grouped by recipe title, tap-to-check with strikethrough + gray styling, "Clear Checked" and "Clear List" buttons, empty state when no recipes added
+- Added `scripts/test-shopping-list.js` CLI test — 13 assertions covering add to list, check toggle, clear checked, clear list (all pass)
+
+---
+
 ## Day 4 — Ingredient Editor + Recipe Save (Phase 5)
 - Wired up "Save Recipe" in `app/recipe/editor.jsx` — generates UUID, calls `saveRecipe()` + `saveIngredients()`, shows loading state on save button, navigates to Library on success with Alert
 - Built Library tab (`app/(tabs)/library.jsx`) — loads all recipes via `getAllRecipes()` on focus, displays FlatList with title/source/date, tapping navigates to detail screen, shows empty state when no recipes exist

@@ -85,7 +85,7 @@ export default function LibraryScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Library</Text>
+        <Text style={styles.headerTitle}>Recipes</Text>
         <Text style={styles.headerCount}>
           {recipes.length} recipe{recipes.length !== 1 ? 's' : ''}
         </Text>

@@ -53,7 +53,7 @@ export function getRecipeById(id) {
     }
     const recipe = mapRecipeRow(row);
     const ingredientRows = db.getAllSync(
-      'SELECT id, recipe_id, name, quantity, unit, notes, checked, sort_order FROM ingredients WHERE recipe_id = ? ORDER BY sort_order',
+      'SELECT id, recipe_id, name, quantity, unit, notes, checked, in_list, sort_order FROM ingredients WHERE recipe_id = ? ORDER BY sort_order',
       id
     );
     recipe.ingredients = ingredientRows.map(mapIngredientRow);
@@ -194,6 +194,77 @@ export function toggleIngredientChecked(id) {
   }
 }
 
+export function getShoppingListIngredients() {
+  logger.info('queries.getShoppingListIngredients', {});
+  try {
+    const db = getDatabase();
+    const rows = db.getAllSync(
+      `SELECT i.id, i.recipe_id, i.name, i.quantity, i.unit, i.notes, i.checked, i.in_list, i.sort_order, r.title AS recipe_title
+       FROM ingredients i
+       JOIN recipes r ON r.id = i.recipe_id
+       WHERE i.in_list = 1
+       ORDER BY r.title, i.sort_order`
+    );
+    const items = rows.map((row) => ({
+      ...mapIngredientRow(row),
+      recipeTitle: row.recipe_title,
+    }));
+    logger.info('queries.getShoppingListIngredients.success', { count: items.length });
+    return items;
+  } catch (err) {
+    logger.error('queries.getShoppingListIngredients.error', { error: err.message });
+    throw err;
+  }
+}
+
+export function addRecipeToList(recipeId) {
+  logger.info('queries.addRecipeToList', { recipeId });
+  try {
+    const db = getDatabase();
+    db.runSync('UPDATE ingredients SET in_list = 1 WHERE recipe_id = ?', recipeId);
+    logger.info('queries.addRecipeToList.success', { recipeId });
+  } catch (err) {
+    logger.error('queries.addRecipeToList.error', { recipeId, error: err.message });
+    throw err;
+  }
+}
+
+export function removeRecipeFromList(recipeId) {
+  logger.info('queries.removeRecipeFromList', { recipeId });
+  try {
+    const db = getDatabase();
+    db.runSync('UPDATE ingredients SET in_list = 0, checked = 0 WHERE recipe_id = ?', recipeId);
+    logger.info('queries.removeRecipeFromList.success', { recipeId });
+  } catch (err) {
+    logger.error('queries.removeRecipeFromList.error', { recipeId, error: err.message });
+    throw err;
+  }
+}
+
+export function clearCheckedItems() {
+  logger.info('queries.clearCheckedItems', {});
+  try {
+    const db = getDatabase();
+    db.runSync('UPDATE ingredients SET checked = 0 WHERE in_list = 1');
+    logger.info('queries.clearCheckedItems.success', {});
+  } catch (err) {
+    logger.error('queries.clearCheckedItems.error', { error: err.message });
+    throw err;
+  }
+}
+
+export function clearShoppingList() {
+  logger.info('queries.clearShoppingList', {});
+  try {
+    const db = getDatabase();
+    db.runSync('UPDATE ingredients SET in_list = 0, checked = 0');
+    logger.info('queries.clearShoppingList.success', {});
+  } catch (err) {
+    logger.error('queries.clearShoppingList.error', { error: err.message });
+    throw err;
+  }
+}
+
 function mapRecipeRow(row) {
   return {
     id: row.id,
@@ -215,6 +286,7 @@ function mapIngredientRow(row) {
     unit: row.unit,
     notes: row.notes,
     checked: row.checked === 1,
+    inList: row.in_list === 1,
     sortOrder: row.sort_order,
   };
 }

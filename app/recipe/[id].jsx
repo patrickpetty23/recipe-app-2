@@ -14,7 +14,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 
-import { getRecipeById, updateRecipe, updateIngredient, deleteRecipe } from '../../src/db/queries';
+import { getRecipeById, updateRecipe, updateIngredient, deleteRecipe, addRecipeToList, removeRecipeFromList } from '../../src/db/queries';
 import { scaleIngredients } from '../../src/utils/scaler';
 import { logger } from '../../src/utils/logger';
 
@@ -51,7 +51,9 @@ export default function RecipeDetailScreen() {
       setIngredients(data.ingredients || []);
       setLastServings(data.servings || 1);
       setCurrentServings(String(data.servings || 1));
-      logger.info('recipeDetail.load', { id, ingredientCount: (data.ingredients || []).length });
+      const onList = (data.ingredients || []).some((ing) => ing.inList);
+      setAddedToList(onList);
+      logger.info('recipeDetail.load', { id, ingredientCount: (data.ingredients || []).length, onList });
     } catch (err) {
       logger.error('recipeDetail.load.error', { id, error: err.message });
       Alert.alert('Error', err.message);
@@ -117,9 +119,23 @@ export default function RecipeDetailScreen() {
     );
   }
 
-  function handleAddToShoppingList() {
-    setAddedToList(true);
-    Alert.alert('Added!', 'Ingredients marked for the shopping list. (Phase 6 will build the full list.)');
+  function handleToggleShoppingList() {
+    try {
+      if (addedToList) {
+        removeRecipeFromList(id);
+        setAddedToList(false);
+        logger.info('recipeDetail.removeFromList', { id });
+        Alert.alert('Removed', 'Recipe removed from your shopping list.');
+      } else {
+        addRecipeToList(id);
+        setAddedToList(true);
+        logger.info('recipeDetail.addToList', { id });
+        Alert.alert('Added!', 'Recipe added to your shopping list.');
+      }
+    } catch (err) {
+      logger.error('recipeDetail.toggleShoppingList.error', { id, error: err.message });
+      Alert.alert('Error', err.message);
+    }
   }
 
   function renderIngredient({ item, index }) {
@@ -222,10 +238,10 @@ export default function RecipeDetailScreen() {
           <View style={styles.footer}>
             <TouchableOpacity
               style={[styles.actionButton, addedToList && styles.actionButtonDone]}
-              onPress={handleAddToShoppingList}
+              onPress={handleToggleShoppingList}
             >
               <Text style={[styles.actionButtonText, addedToList && styles.actionButtonTextDone]}>
-                {addedToList ? 'Added to Shopping List' : 'Add to Shopping List'}
+                {addedToList ? 'Remove from Shopping List' : 'Add to Shopping List'}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
