@@ -7,6 +7,13 @@
 
 ---
 
+## Day 2–3 — GPT-4o Integration (Phase 3)
+- Implemented `src/services/openai.js` with `parseImageIngredients` (Vision API) and `parseTextIngredients` — both use the system prompt from architecture.md and return parsed `Ingredient[]`
+- Handles timeout (AbortController at 30s), auth errors (401), malformed JSON (fence-stripping + validation), and generic API failures — all logged before re-throwing
+- Added `scripts/test-openai.js` CLI test — sends a 7-ingredient sample recipe to GPT-4o, validates non-empty array response; confirmed working with live API
+
+---
+
 ## Day 2 — Database + Data Layer (Phase 2)
 - Implemented `src/db/schema.js` — initializes SQLite via expo-sqlite with `recipes` and `ingredients` tables (WAL mode, foreign keys enabled)
 - Implemented `src/db/queries.js` — 8 CRUD functions (saveRecipe, getAllRecipes, getRecipeById, deleteRecipe, saveIngredients, updateIngredient, deleteIngredient, toggleIngredientChecked) all with structured logging on entry/exit/error
