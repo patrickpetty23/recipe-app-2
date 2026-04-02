@@ -7,6 +7,15 @@
 
 ---
 
+## Day 5 — Walmart Integration (Phase 7)
+- Implemented `src/services/walmart.js` — `searchProduct` hits Walmart Affiliate API v2 with RSA-signed auth headers, returns top `WalmartProduct` match; `buildCartLink` constructs Walmart cart URL from item IDs; in-memory cache prevents duplicate API calls per session
+- Updated Shopping List tab with per-ingredient "Find on Walmart" button — shows matched product name and price inline, loading indicator during search, "No match found" for empty results
+- Added "Send to Walmart" button at bottom of Shopping List — collects matched item IDs, calls `buildCartLink`, opens URL via `Linking.openURL()`
+- Uses `node-forge` (already bundled with Expo) for RSA signing in React Native; Node.js `crypto` module for CLI test
+- Added `scripts/test-walmart.js` CLI test — searches "all-purpose flour" and "large eggs", prints matched products, builds cart URL (requires Walmart API credentials in `.testEnvVars`)
+
+---
+
 ## Day 4–5 — Shopping List (Phase 6)
 - Added `in_list` column to ingredients table with migration for existing databases — tracks which ingredients are on the shopping list
 - Added 5 new query functions: `getShoppingListIngredients`, `addRecipeToList`, `removeRecipeFromList`, `clearCheckedItems`, `clearShoppingList` — all with structured logging

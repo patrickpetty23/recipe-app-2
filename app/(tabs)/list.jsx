@@ -6,6 +6,8 @@ import {
   Alert,
   StyleSheet,
   SectionList,
+  ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -15,10 +17,13 @@ import {
   clearCheckedItems,
   clearShoppingList,
 } from '../../src/db/queries';
+import { searchProduct, buildCartLink } from '../../src/services/walmart';
 import { logger } from '../../src/utils/logger';
 
 export default function ShoppingListScreen() {
   const [items, setItems] = useState([]);
+  const [walmartResults, setWalmartResults] = useState({});
+  const [searchingIds, setSearchingIds] = useState({});
 
   useFocusEffect(
     useCallback(() => {
@@ -57,6 +62,42 @@ export default function ShoppingListScreen() {
     }
   }
 
+  async function handleWalmartSearch(item) {
+    if (searchingIds[item.id]) return;
+    setSearchingIds((prev) => ({ ...prev, [item.id]: true }));
+    try {
+      const product = await searchProduct(item.name);
+      setWalmartResults((prev) => ({
+        ...prev,
+        [item.id]: product || { noMatch: true },
+      }));
+    } catch (err) {
+      logger.error('shoppingList.walmartSearch.error', { id: item.id, error: err.message });
+      Alert.alert('Walmart Search Failed', err.message);
+    } finally {
+      setSearchingIds((prev) => ({ ...prev, [item.id]: false }));
+    }
+  }
+
+  function handleSendToWalmart() {
+    const matchedIds = Object.values(walmartResults)
+      .filter((r) => r && r.itemId)
+      .map((r) => r.itemId);
+
+    if (matchedIds.length === 0) {
+      Alert.alert('No Matches Yet', 'Search for items on Walmart first.');
+      return;
+    }
+
+    try {
+      const url = buildCartLink(matchedIds);
+      Linking.openURL(url);
+    } catch (err) {
+      logger.error('shoppingList.sendToWalmart.error', { error: err.message });
+      Alert.alert('Error', err.message);
+    }
+  }
+
   function handleClearChecked() {
     try {
       clearCheckedItems();
@@ -80,6 +121,7 @@ export default function ShoppingListScreen() {
             try {
               clearShoppingList();
               setItems([]);
+              setWalmartResults({});
               logger.info('shoppingList.clearList', {});
             } catch (err) {
               logger.error('shoppingList.clearList.error', { error: err.message });
@@ -97,26 +139,56 @@ export default function ShoppingListScreen() {
 
   function renderItem({ item }) {
     const qtyUnit = [formatQuantity(item.quantity), item.unit].filter(Boolean).join(' ');
+    const wResult = walmartResults[item.id];
+    const isSearching = searchingIds[item.id];
+
     return (
-      <TouchableOpacity
-        style={styles.itemRow}
-        onPress={() => handleToggleChecked(item)}
-        activeOpacity={0.6}
-      >
-        <View style={[styles.checkbox, item.checked && styles.checkboxChecked]}>
-          {item.checked && <Text style={styles.checkmark}>✓</Text>}
-        </View>
-        <View style={styles.itemContent}>
-          <Text style={[styles.itemName, item.checked && styles.itemChecked]} numberOfLines={1}>
-            {item.name}
-          </Text>
-          {qtyUnit ? (
-            <Text style={[styles.itemQty, item.checked && styles.itemChecked]}>
-              {qtyUnit}
+      <View style={styles.itemContainer}>
+        <TouchableOpacity
+          style={styles.itemRow}
+          onPress={() => handleToggleChecked(item)}
+          activeOpacity={0.6}
+        >
+          <View style={[styles.checkbox, item.checked && styles.checkboxChecked]}>
+            {item.checked && <Text style={styles.checkmark}>✓</Text>}
+          </View>
+          <View style={styles.itemContent}>
+            <Text style={[styles.itemName, item.checked && styles.itemChecked]} numberOfLines={1}>
+              {item.name}
             </Text>
-          ) : null}
-        </View>
-      </TouchableOpacity>
+            {qtyUnit ? (
+              <Text style={[styles.itemQty, item.checked && styles.itemChecked]}>
+                {qtyUnit}
+              </Text>
+            ) : null}
+          </View>
+        </TouchableOpacity>
+
+        {wResult && !wResult.noMatch ? (
+          <View style={styles.walmartResult}>
+            <Text style={styles.walmartName} numberOfLines={1}>{wResult.name}</Text>
+            {wResult.price != null && (
+              <Text style={styles.walmartPrice}>${wResult.price.toFixed(2)}</Text>
+            )}
+          </View>
+        ) : wResult && wResult.noMatch ? (
+          <View style={styles.walmartResult}>
+            <Text style={styles.walmartNoMatch}>No match found</Text>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.walmartSearchButton}
+            onPress={() => handleWalmartSearch(item)}
+            disabled={isSearching}
+          >
+            {isSearching ? (
+              <ActivityIndicator size="small" color="#0071DC" />
+            ) : (
+              <Text style={styles.walmartSearchText}>Find on Walmart</Text>
+            )}
+          </TouchableOpacity>
+        )}
+      </View>
     );
   }
 
@@ -140,6 +212,7 @@ export default function ShoppingListScreen() {
   }
 
   const checkedCount = items.filter((i) => i.checked).length;
+  const matchedCount = Object.values(walmartResults).filter((r) => r && r.itemId).length;
 
   return (
     <View style={styles.container}>
@@ -170,6 +243,14 @@ export default function ShoppingListScreen() {
           <Text style={styles.toolbarButtonTextDanger}>Clear List</Text>
         </TouchableOpacity>
       </View>
+
+      <View style={styles.walmartBar}>
+        <TouchableOpacity style={styles.walmartCartButton} onPress={handleSendToWalmart}>
+          <Text style={styles.walmartCartText}>
+            Send to Walmart{matchedCount > 0 ? ` (${matchedCount})` : ''}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -197,7 +278,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   listContent: {
-    paddingBottom: 100,
+    paddingBottom: 160,
   },
   sectionHeader: {
     backgroundColor: '#F5F5F5',
@@ -213,13 +294,16 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  itemContainer: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E8E8E8',
+  },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E8E8E8',
+    paddingTop: 12,
+    paddingBottom: 4,
   },
   checkbox: {
     width: 24,
@@ -260,16 +344,56 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
     color: '#BBB',
   },
+  walmartSearchButton: {
+    marginLeft: 52,
+    marginRight: 16,
+    marginBottom: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 4,
+    backgroundColor: '#EBF4FF',
+    alignSelf: 'flex-start',
+    minWidth: 110,
+    alignItems: 'center',
+  },
+  walmartSearchText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0071DC',
+  },
+  walmartResult: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 52,
+    marginRight: 16,
+    marginBottom: 8,
+    gap: 8,
+  },
+  walmartName: {
+    fontSize: 12,
+    color: '#0071DC',
+    flex: 1,
+  },
+  walmartPrice: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0071DC',
+  },
+  walmartNoMatch: {
+    fontSize: 12,
+    color: '#999',
+    fontStyle: 'italic',
+  },
   toolbar: {
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
     backgroundColor: '#FAFAFA',
     position: 'absolute',
-    bottom: 80,
+    bottom: 130,
     left: 0,
     right: 0,
   },
@@ -277,11 +401,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F0F0F0',
     borderRadius: 8,
-    paddingVertical: 12,
+    paddingVertical: 10,
     alignItems: 'center',
   },
   toolbarButtonText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: '#333',
   },
@@ -289,9 +413,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF0F0',
   },
   toolbarButtonTextDanger: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: '#FF3B30',
+  },
+  walmartBar: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#0071DC',
+    position: 'absolute',
+    bottom: 80,
+    left: 0,
+    right: 0,
+  },
+  walmartCartButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  walmartCartText: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#fff',
   },
   emptyContainer: {
     flex: 1,
