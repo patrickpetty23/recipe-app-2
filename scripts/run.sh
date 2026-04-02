@@ -3,6 +3,12 @@
 # Usage: ./scripts/run.sh [--ios | --android | --web]
 # Exit: 0 = clean exit, 1 = error
 
+if [ -f .testEnvVars ]; then
+  source .testEnvVars
+fi
+
+export EXPO_PUBLIC_OPENAI_API_KEY="${OPENAI_API_KEY}"
+
 PLATFORM=${1:---ios}
 
 echo "Starting Expo dev server ($PLATFORM)..."
