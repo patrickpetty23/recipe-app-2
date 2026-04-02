@@ -1,0 +1,25 @@
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Native build artifacts
+ios/
+android/
+
+# Env / secrets
+.testEnvVars
+
+# Test artifacts
+.test-recipe-scanner.db*
+
+# AI tool instructions (local only)
+ai/
+CLAUDE.md
+.cursorrules
+
+# OS
+.DS_Store
+*.log

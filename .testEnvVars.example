@@ -1,0 +1,4 @@
+export OPENAI_API_KEY="sk-your-openai-api-key-here"
+export WALMART_CLIENT_ID="your-walmart-client-id-here"
+export WALMART_CLIENT_SECRET="your-walmart-client-secret-here"
+export LOG_LEVEL="debug"
