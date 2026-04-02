@@ -7,6 +7,14 @@
 
 ---
 
+## Day 4 — Ingredient Editor + Recipe Save (Phase 5)
+- Wired up "Save Recipe" in `app/recipe/editor.jsx` — generates UUID, calls `saveRecipe()` + `saveIngredients()`, shows loading state on save button, navigates to Library on success with Alert
+- Built Library tab (`app/(tabs)/library.jsx`) — loads all recipes via `getAllRecipes()` on focus, displays FlatList with title/source/date, tapping navigates to detail screen, shows empty state when no recipes exist
+- Built Recipe Detail screen (`app/recipe/[id].jsx`) — loads recipe by ID, editable ingredient rows that persist changes via `updateIngredient()`, serving size scaler, "Add to Shopping List" stub, and "Delete Recipe" with confirmation
+- Added `scripts/test-save-flow.js` CLI test — creates recipe with 3 ingredients, reads back and verifies all fields, updates ingredient name, deletes recipe and confirms removal (15 assertions, all pass)
+
+---
+
 ## Day 3 — Import Methods (Phase 4)
 - Rebuilt Scan tab (`app/(tabs)/index.jsx`) with four import methods: camera capture, photo library, URL paste, and PDF/DOCX file picker — all with loading spinners and error alerts
 - Implemented `src/services/scraper.js` — fetches URL, strips script/style/nav/header/footer tags via regex, returns cleaned text for GPT-4o

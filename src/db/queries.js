@@ -65,6 +65,35 @@ export function getRecipeById(id) {
   }
 }
 
+export function updateRecipe(id, fields) {
+  logger.info('queries.updateRecipe', { id, fields: Object.keys(fields) });
+  try {
+    const db = getDatabase();
+    const allowed = ['title', 'servings'];
+    const columnMap = { title: 'title', servings: 'servings' };
+    const setClauses = [];
+    const values = [];
+    for (const key of allowed) {
+      if (key in fields) {
+        setClauses.push(`${columnMap[key]} = ?`);
+        values.push(fields[key]);
+      }
+    }
+    if (setClauses.length === 0) return;
+    setClauses.push('updated_at = ?');
+    values.push(new Date().toISOString());
+    values.push(id);
+    db.runSync(
+      `UPDATE recipes SET ${setClauses.join(', ')} WHERE id = ?`,
+      ...values
+    );
+    logger.info('queries.updateRecipe.success', { id });
+  } catch (err) {
+    logger.error('queries.updateRecipe.error', { id, error: err.message });
+    throw err;
+  }
+}
+
 export function deleteRecipe(id) {
   logger.info('queries.deleteRecipe', { id });
   try {

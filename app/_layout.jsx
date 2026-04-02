@@ -8,6 +8,10 @@ export default function RootLayout() {
         name="recipe/editor"
         options={{ headerShown: false, presentation: 'modal' }}
       />
+      <Stack.Screen
+        name="recipe/[id]"
+        options={{ headerShown: false }}
+      />
     </Stack>
   );
 }

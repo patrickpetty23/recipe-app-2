@@ -9,10 +9,14 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as Crypto from 'expo-crypto';
 
 import { scaleIngredients } from '../../src/utils/scaler';
+import { saveRecipe, saveIngredients } from '../../src/db/queries';
+import { logger } from '../../src/utils/logger';
 
 export default function EditorScreen() {
   const router = useRouter();
@@ -29,6 +33,7 @@ export default function EditorScreen() {
   const [lastServings, setLastServings] = useState(1);
   const [currentServings, setCurrentServings] = useState('1');
   const [ingredients, setIngredients] = useState(parsed);
+  const [saving, setSaving] = useState(false);
 
   function handleServingsChange(text) {
     setCurrentServings(text);
@@ -47,8 +52,52 @@ export default function EditorScreen() {
     });
   }
 
-  function handleSave() {
-    Alert.alert('Saved!', 'Recipe save will be wired in Phase 5.');
+  async function handleSave() {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const recipeId = Crypto.randomUUID();
+      const now = new Date().toISOString();
+      const servings = parseFloat(currentServings) || 1;
+
+      const recipe = {
+        id: recipeId,
+        title: title.trim() || 'New Recipe',
+        sourceType: sourceType || 'camera',
+        sourceUri: null,
+        servings,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      const ingredientsToSave = ingredients.map((ing, i) => ({
+        id: Crypto.randomUUID(),
+        recipeId,
+        name: ing.name,
+        quantity: ing.quantity,
+        unit: ing.unit || null,
+        notes: ing.notes || null,
+        checked: false,
+        sortOrder: i,
+      }));
+
+      saveRecipe(recipe);
+      saveIngredients(recipeId, ingredientsToSave);
+
+      logger.info('editor.saveRecipe.success', { recipeId, ingredientCount: ingredientsToSave.length });
+
+      Alert.alert('Saved!', `"${recipe.title}" has been saved to your library.`, [
+        {
+          text: 'OK',
+          onPress: () => router.replace('/(tabs)/library'),
+        },
+      ]);
+    } catch (err) {
+      logger.error('editor.saveRecipe.error', { error: err.message });
+      Alert.alert('Save Failed', err.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleDiscard() {
@@ -100,8 +149,12 @@ export default function EditorScreen() {
           <Text style={styles.headerButton}>Cancel</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Recipe</Text>
-        <TouchableOpacity onPress={handleSave}>
-          <Text style={styles.headerButtonSave}>Save</Text>
+        <TouchableOpacity onPress={handleSave} disabled={saving}>
+          {saving ? (
+            <ActivityIndicator size="small" color="#007AFF" />
+          ) : (
+            <Text style={styles.headerButtonSave}>Save</Text>
+          )}
         </TouchableOpacity>
       </View>
 
