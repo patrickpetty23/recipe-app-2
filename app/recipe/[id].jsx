@@ -130,7 +130,7 @@ export default function RecipeDetailScreen() {
         addRecipeToList(id);
         setAddedToList(true);
         logger.info('recipeDetail.addToList', { id });
-        Alert.alert('Added!', 'Recipe added to your shopping list.');
+        router.push('/(tabs)/list');
       }
     } catch (err) {
       logger.error('recipeDetail.toggleShoppingList.error', { id, error: err.message });

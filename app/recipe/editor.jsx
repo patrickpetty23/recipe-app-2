@@ -86,12 +86,7 @@ export default function EditorScreen() {
 
       logger.info('editor.saveRecipe.success', { recipeId, ingredientCount: ingredientsToSave.length });
 
-      Alert.alert('Saved!', `"${recipe.title}" has been saved to your library.`, [
-        {
-          text: 'OK',
-          onPress: () => router.replace('/(tabs)/library'),
-        },
-      ]);
+      router.replace(`/recipe/${recipeId}`);
     } catch (err) {
       logger.error('editor.saveRecipe.error', { error: err.message });
       Alert.alert('Save Failed', err.message);
