@@ -17,13 +17,14 @@ import {
   clearCheckedItems,
   clearShoppingList,
 } from '../../src/db/queries';
-import { searchProduct, buildCartLink } from '../../src/services/walmart';
+import { searchProduct, buildCartLink, isWalmartConfigured } from '../../src/services/walmart';
 import { logger } from '../../src/utils/logger';
 
 export default function ShoppingListScreen() {
   const [items, setItems] = useState([]);
   const [walmartResults, setWalmartResults] = useState({});
   const [searchingIds, setSearchingIds] = useState({});
+  const [bulkSearching, setBulkSearching] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -62,6 +63,14 @@ export default function ShoppingListScreen() {
     }
   }
 
+  function showNotConfiguredAlert() {
+    Alert.alert(
+      'Walmart API Not Set Up',
+      'To use Walmart features, add your WALMART_CLIENT_ID and WALMART_PRIVATE_KEY to the .testEnvVars file and restart the app.',
+      [{ text: 'OK' }]
+    );
+  }
+
   async function handleWalmartSearch(item) {
     if (searchingIds[item.id]) return;
     setSearchingIds((prev) => ({ ...prev, [item.id]: true }));
@@ -72,14 +81,56 @@ export default function ShoppingListScreen() {
         [item.id]: product || { noMatch: true },
       }));
     } catch (err) {
-      logger.error('shoppingList.walmartSearch.error', { id: item.id, error: err.message });
-      Alert.alert('Walmart Search Failed', err.message);
+      if (err.code === 'WALMART_NOT_CONFIGURED') {
+        showNotConfiguredAlert();
+      } else {
+        logger.error('shoppingList.walmartSearch.error', { id: item.id, error: err.message });
+        Alert.alert('Walmart Search Failed', err.message);
+      }
     } finally {
       setSearchingIds((prev) => ({ ...prev, [item.id]: false }));
     }
   }
 
+  async function handleBulkWalmartSearch() {
+    if (bulkSearching) return;
+    if (!isWalmartConfigured()) {
+      showNotConfiguredAlert();
+      return;
+    }
+
+    setBulkSearching(true);
+    const unsearched = items.filter((i) => !walmartResults[i.id]);
+    logger.info('shoppingList.bulkSearch', { count: unsearched.length });
+
+    for (const item of unsearched) {
+      setSearchingIds((prev) => ({ ...prev, [item.id]: true }));
+      try {
+        const product = await searchProduct(item.name);
+        setWalmartResults((prev) => ({
+          ...prev,
+          [item.id]: product || { noMatch: true },
+        }));
+      } catch (err) {
+        if (err.code === 'WALMART_NOT_CONFIGURED') {
+          showNotConfiguredAlert();
+          break;
+        }
+        logger.error('shoppingList.bulkSearch.error', { id: item.id, error: err.message });
+        setWalmartResults((prev) => ({ ...prev, [item.id]: { noMatch: true } }));
+      } finally {
+        setSearchingIds((prev) => ({ ...prev, [item.id]: false }));
+      }
+    }
+    setBulkSearching(false);
+  }
+
   function handleSendToWalmart() {
+    if (!isWalmartConfigured()) {
+      showNotConfiguredAlert();
+      return;
+    }
+
     const matchedIds = Object.values(walmartResults)
       .filter((r) => r && r.itemId)
       .map((r) => r.itemId);
@@ -213,6 +264,7 @@ export default function ShoppingListScreen() {
 
   const checkedCount = items.filter((i) => i.checked).length;
   const matchedCount = Object.values(walmartResults).filter((r) => r && r.itemId).length;
+  const unsearchedCount = items.filter((i) => !walmartResults[i.id]).length;
 
   return (
     <View style={styles.container}>
@@ -224,32 +276,54 @@ export default function ShoppingListScreen() {
       </View>
 
       <SectionList
+        style={styles.list}
         sections={sections}
         renderItem={renderItem}
         renderSectionHeader={renderSectionHeader}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
         stickySectionHeadersEnabled={false}
       />
 
-      <View style={styles.toolbar}>
-        <TouchableOpacity style={styles.toolbarButton} onPress={handleClearChecked}>
-          <Text style={styles.toolbarButtonText}>Clear Checked</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.toolbarButton, styles.toolbarButtonDanger]}
-          onPress={handleClearList}
-        >
-          <Text style={styles.toolbarButtonTextDanger}>Clear List</Text>
-        </TouchableOpacity>
-      </View>
+      <View style={styles.bottomBar}>
+        <View style={styles.toolbar}>
+          <TouchableOpacity style={styles.toolbarButton} onPress={handleClearChecked}>
+            <Text style={styles.toolbarButtonText}>Clear Checked</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toolbarButton, styles.toolbarButtonDanger]}
+            onPress={handleClearList}
+          >
+            <Text style={styles.toolbarButtonTextDanger}>Clear List</Text>
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.walmartBar}>
-        <TouchableOpacity style={styles.walmartCartButton} onPress={handleSendToWalmart}>
-          <Text style={styles.walmartCartText}>
-            Send to Walmart{matchedCount > 0 ? ` (${matchedCount})` : ''}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.walmartSection}>
+          <TouchableOpacity
+            style={styles.walmartSearchAllButton}
+            onPress={handleBulkWalmartSearch}
+            disabled={bulkSearching}
+          >
+            {bulkSearching ? (
+              <View style={styles.searchAllRow}>
+                <ActivityIndicator size="small" color="#0071DC" />
+                <Text style={styles.walmartSearchAllText}>Searching...</Text>
+              </View>
+            ) : (
+              <Text style={styles.walmartSearchAllText}>
+                Search All on Walmart ({unsearchedCount})
+              </Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.walmartCartButton, matchedCount === 0 && styles.walmartCartButtonDisabled]}
+            onPress={handleSendToWalmart}
+          >
+            <Text style={[styles.walmartCartText, matchedCount === 0 && styles.walmartCartTextDisabled]}>
+              Send to Walmart Cart{matchedCount > 0 ? ` (${matchedCount})` : ''}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -277,8 +351,8 @@ const styles = StyleSheet.create({
     color: '#888',
     marginTop: 4,
   },
-  listContent: {
-    paddingBottom: 160,
+  list: {
+    flex: 1,
   },
   sectionHeader: {
     backgroundColor: '#F5F5F5',
@@ -384,18 +458,16 @@ const styles = StyleSheet.create({
     color: '#999',
     fontStyle: 'italic',
   },
+  bottomBar: {
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    backgroundColor: '#FAFAFA',
+  },
   toolbar: {
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    backgroundColor: '#FAFAFA',
-    position: 'absolute',
-    bottom: 130,
-    left: 0,
-    right: 0,
   },
   toolbarButton: {
     flex: 1,
@@ -417,23 +489,48 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FF3B30',
   },
-  walmartBar: {
+  walmartSection: {
+    gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#0071DC',
-    position: 'absolute',
-    bottom: 80,
-    left: 0,
-    right: 0,
+    backgroundColor: '#F0F7FF',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#D0E2F5',
+  },
+  walmartSearchAllButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1.5,
+    borderColor: '#0071DC',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  walmartSearchAllText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0071DC',
+  },
+  searchAllRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   walmartCartButton: {
+    backgroundColor: '#0071DC',
+    borderRadius: 8,
     paddingVertical: 12,
     alignItems: 'center',
   },
+  walmartCartButtonDisabled: {
+    backgroundColor: '#B0C4DE',
+  },
   walmartCartText: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
     color: '#fff',
+  },
+  walmartCartTextDisabled: {
+    opacity: 0.7,
   },
   emptyContainer: {
     flex: 1,

@@ -30,6 +30,7 @@ export default function TabLayout() {
         name="list"
         options={{
           title: 'Shopping List',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="cart-outline" size={size} color={color} />
           ),

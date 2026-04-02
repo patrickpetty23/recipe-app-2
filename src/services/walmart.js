@@ -10,31 +10,25 @@ function getCredentials() {
   const privateKeyPem = process.env.EXPO_PUBLIC_WALMART_PRIVATE_KEY || process.env.WALMART_PRIVATE_KEY;
   const keyVersion = process.env.EXPO_PUBLIC_WALMART_KEY_VERSION || process.env.WALMART_KEY_VERSION || '1';
   if (!consumerId || !privateKeyPem) {
-    throw new Error(
-      'Walmart API credentials not configured. Set WALMART_CLIENT_ID and WALMART_PRIVATE_KEY in .testEnvVars'
-    );
+    return null;
   }
   return { consumerId, privateKeyPem, keyVersion };
+}
+
+export function isWalmartConfigured() {
+  return getCredentials() !== null;
 }
 
 async function generateAuthHeaders(consumerId, privateKeyPem, keyVersion) {
   const timestamp = Date.now().toString();
   const sortedHashString = `${consumerId}\n${timestamp}\n${keyVersion}\n`;
 
-  let signature;
-  if (typeof window === 'undefined' && typeof require !== 'undefined') {
-    const crypto = require('crypto');
-    const sign = crypto.createSign('RSA-SHA256');
-    sign.update(sortedHashString);
-    signature = sign.sign(privateKeyPem, 'base64');
-  } else {
-    const forge = require('node-forge');
-    const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
-    const md = forge.md.sha256.create();
-    md.update(sortedHashString, 'utf8');
-    const signatureBytes = privateKey.sign(md);
-    signature = forge.util.encode64(signatureBytes);
-  }
+  const forge = require('node-forge');
+  const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
+  const md = forge.md.sha256.create();
+  md.update(sortedHashString, 'utf8');
+  const signatureBytes = privateKey.sign(md);
+  const signature = forge.util.encode64(signatureBytes);
 
   return {
     'WM_SEC.AUTH_SIGNATURE': signature,
@@ -53,7 +47,15 @@ export async function searchProduct(ingredientName) {
   }
 
   try {
-    const { consumerId, privateKeyPem, keyVersion } = getCredentials();
+    const creds = getCredentials();
+    if (!creds) {
+      const err = new Error(
+        'Walmart API keys not configured. Add WALMART_CLIENT_ID and WALMART_PRIVATE_KEY to your .testEnvVars file, then restart the app.'
+      );
+      err.code = 'WALMART_NOT_CONFIGURED';
+      throw err;
+    }
+    const { consumerId, privateKeyPem, keyVersion } = creds;
     const headers = await generateAuthHeaders(consumerId, privateKeyPem, keyVersion);
     const query = encodeURIComponent(ingredientName);
     const url = `${BASE_URL}/search?query=${query}&numItems=1`;
