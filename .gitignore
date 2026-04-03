@@ -16,7 +16,6 @@ android/
 .test-recipe-scanner.db*
 
 # AI tool instructions (local only)
-ai/
 CLAUDE.md
 .cursorrules
 
