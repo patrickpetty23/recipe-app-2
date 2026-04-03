@@ -7,7 +7,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 
 ---
 
-## Phase 1 — Project Setup (Day 1)
+## Phase 1 — Project Setup
 **Goal:** Runnable Expo app with all dependencies installed and folder structure in place.
 
 - [x] Initialize Expo project with `npx create-expo-app .`
@@ -24,7 +24,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 
 ---
 
-## Phase 2 — Database + Data Layer (Day 2)
+## Phase 2 — Database + Data Layer
 **Goal:** SQLite schema initialized on app start; recipes and ingredients can be saved and retrieved.
 
 - [x] Implement `src/db/schema.js` — create `recipes` and `ingredients` tables on first run
@@ -43,7 +43,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 
 ---
 
-## Phase 3 — GPT-4o Integration (Day 2–3)
+## Phase 3 — GPT-4o Integration
 **Goal:** App can take a base64 image or raw text, send to GPT-4o, and return a clean `Ingredient[]`.
 
 - [x] Implement `src/services/openai.js`:
@@ -58,7 +58,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 
 ---
 
-## Phase 4 — Import Methods (Day 3)
+## Phase 4 — Import Methods
 **Goal:** All four input methods work and produce a structured ingredient list.
 
 - [x] **Camera scan**: Open camera → capture → base64 → `parseImageIngredients` → ingredient list
@@ -71,7 +71,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 
 ---
 
-## Phase 5 — Ingredient Editor + Recipe Save (Day 4)
+## Phase 5 — Ingredient Editor + Recipe Save
 **Goal:** User can review, edit, scale, and save a recipe from any import method.
 
 - [x] Build `IngredientRow` component — shows name, quantity, unit; tap to edit inline
@@ -84,7 +84,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 
 ---
 
-## Phase 6 — Shopping List (Day 4–5)
+## Phase 6 — Shopping List
 **Goal:** Combined shopping list from selected recipes with check-off functionality.
 
 - [x] Shopping List tab shows all ingredients from all recipes marked "in list"
@@ -95,7 +95,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 
 ---
 
-## Phase 7 — Walmart Integration (Day 5)
+## Phase 7 — Walmart Integration
 **Goal:** Each ingredient can be searched on Walmart; results sent to cart.
 
 - [x] Implement `src/services/walmart.js`:
@@ -111,7 +111,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 
 ---
 
-## Phase 8 — Polish + Demo Prep (Day 6)
+## Phase 8 — Polish + Demo Prep
 **Goal:** App is stable, looks presentable, and the demo flow works end-to-end without intervention.
 
 - [x] Redesign Home screen — hero section, "Add Recipe" button, modal for import method selection
@@ -122,11 +122,10 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 - [x] Update `scripts/run.sh` — read private key from file path
 - [x] Write `README.md`: what it does, how to run it, environment variable setup
 - [ ] Run full end-to-end flow on a real iPhone — confirm no crashes
-- [ ] Tag release: `git tag v1.0-demo`
 
 ---
 
-## Phase 9 — Rubric Compliance + Final Submission (Day 7–deadline)
+## Phase 9 — Rubric Compliance + Final Submission
 **Goal:** Every rubric criterion is addressed. Process artifacts are complete, living, and visible to graders. Presentation-ready by April 7.
 
 ### Casey's Technical Domain
