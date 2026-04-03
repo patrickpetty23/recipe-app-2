@@ -7,6 +7,26 @@
 
 ---
 
+## Day 7 — Rubric Audit + Process Artifacts (Phase 9)
+- Ran full rubric audit against Casey's and Jason's grading criteria — identified 5 critical gaps
+- Removed `ai/` from `.gitignore` so graders can see roadmaps, plans, and changelogs
+- Updated changelog to reflect all post-Phase 7 work that was missing
+- Added Phase 9 rubric-crushing checklist to roadmap covering all remaining deliverables
+
+---
+
+## Day 6 — Home Page Redesign + Polish (Phase 8)
+- Redesigned Scan tab into a Home page with hero section, recipe count stat card, and a single "Add Recipe" button — cleaner entry point for new users
+- Added modal popup for import method selection (camera, photos, URL, PDF/DOCX) — replaces the four separate buttons that cluttered the old Scan screen
+- Updated tab bar: renamed "Scan" to "Home", changed icon from camera to home, hidden default header
+- Fixed Shopping List UI layout — replaced fragile absolute positioning with flexbox column layout; removed duplicate header caused by Expo Router default header overlapping custom header
+- Fixed Walmart "Send to Cart" URL — changed from `walmart.com/cart?items=` (which only navigated to cart) to `affil.walmart.com/cart/addToCart?items=ID|1` (which actually adds items)
+- Fixed `Can't resolve 'crypto'` error — removed Node.js `crypto` fallback from `walmart.js`, now uses `node-forge` exclusively in React Native
+- Added graceful Walmart API key handling — app no longer crashes when key is missing; buttons remain visible and show a popup alert if tapped without credentials configured
+- Updated `scripts/run.sh` to read Walmart private key from a file path (`WALMART_PRIVATE_KEY_PATH`) instead of requiring the full PEM inline in `.testEnvVars`
+
+---
+
 ## Day 5 — Walmart Integration (Phase 7)
 - Implemented `src/services/walmart.js` — `searchProduct` hits Walmart Affiliate API v2 with RSA-signed auth headers, returns top `WalmartProduct` match; `buildCartLink` constructs Walmart cart URL from item IDs; in-memory cache prevents duplicate API calls per session
 - Updated Shopping List tab with per-ingredient "Find on Walmart" button — shows matched product name and price inline, loading indicator during search, "No match found" for empty results
