@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,8 @@ import {
   Alert,
   ActivityIndicator,
   StyleSheet,
-  ScrollView,
+  Modal,
+  Pressable,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -15,27 +16,55 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { parseImageIngredients, parseTextIngredients } from '../../src/services/openai';
 import { scrapeRecipeUrl } from '../../src/services/scraper';
 import { parsePdf, parseDocx } from '../../src/services/fileParser';
+import { getAllRecipes } from '../../src/db/queries';
 import { logger } from '../../src/utils/logger';
 
-export default function ScanScreen() {
+export default function HomeScreen() {
   const router = useRouter();
   const cameraRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [showCamera, setShowCamera] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
   const [url, setUrl] = useState('');
+  const [recipeCount, setRecipeCount] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      try {
+        const recipes = getAllRecipes();
+        setRecipeCount(recipes.length);
+      } catch (err) {
+        logger.error('home.loadCount.error', { error: err.message });
+      }
+    }, [])
+  );
 
   function navigateToEditor(ingredients, sourceType) {
     router.push({
       pathname: '/recipe/editor',
       params: { ingredients: JSON.stringify(ingredients), sourceType },
     });
+  }
+
+  function openModal() {
+    setShowUploadModal(true);
+    setShowUrlInput(false);
+    setUrl('');
+  }
+
+  function closeModal() {
+    setShowUploadModal(false);
+    setShowUrlInput(false);
+    setUrl('');
   }
 
   async function handleCapture() {
@@ -58,6 +87,7 @@ export default function ScanScreen() {
   }
 
   async function handleOpenCamera() {
+    closeModal();
     if (!permission?.granted) {
       const result = await requestPermission();
       if (!result.granted) {
@@ -69,6 +99,7 @@ export default function ScanScreen() {
   }
 
   async function handlePickPhoto() {
+    closeModal();
     setLoading(true);
     setLoadingMessage('Opening photo library...');
     try {
@@ -100,13 +131,13 @@ export default function ScanScreen() {
       Alert.alert('Enter a URL', 'Paste a recipe URL to import.');
       return;
     }
+    closeModal();
     setLoading(true);
     setLoadingMessage('Fetching recipe from URL...');
     try {
       const text = await scrapeRecipeUrl(trimmed);
       setLoadingMessage('Extracting ingredients with GPT-4o...');
       const ingredients = await parseTextIngredients(text);
-      setUrl('');
       navigateToEditor(ingredients, 'url');
     } catch (err) {
       logger.error('scan.handleUrlImport.error', { error: err.message });
@@ -118,6 +149,7 @@ export default function ScanScreen() {
   }
 
   async function handleFilePick() {
+    closeModal();
     setLoading(true);
     setLoadingMessage('Selecting file...');
     try {
@@ -174,117 +206,256 @@ export default function ScanScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView style={styles.flex} contentContainerStyle={styles.container}>
-        <Text style={styles.heading}>Import Recipe</Text>
-        <Text style={styles.subheading}>Choose how to add your recipe</Text>
+    <View style={styles.screen}>
+      <View style={styles.hero}>
+        <Text style={styles.greeting}>Recipe Scanner</Text>
+        <Text style={styles.tagline}>
+          Scan a cookbook, snap a photo, or paste a link — we'll handle the rest.
+        </Text>
+      </View>
 
-        <TouchableOpacity style={styles.actionButton} onPress={handleOpenCamera}>
-          <Ionicons name="camera" size={24} color="#fff" />
-          <Text style={styles.actionText}>Scan with Camera</Text>
+      <View style={styles.statsRow}>
+        <TouchableOpacity style={styles.statCard} onPress={() => router.push('/(tabs)/library')}>
+          <Text style={styles.statNumber}>{recipeCount}</Text>
+          <Text style={styles.statLabel}>{recipeCount === 1 ? 'Recipe Saved' : 'Recipes Saved'}</Text>
         </TouchableOpacity>
+      </View>
 
-        <TouchableOpacity style={styles.actionButton} onPress={handlePickPhoto}>
-          <Ionicons name="images" size={24} color="#fff" />
-          <Text style={styles.actionText}>Pick from Photos</Text>
+      <View style={styles.ctaSection}>
+        <TouchableOpacity style={styles.uploadButton} onPress={openModal} activeOpacity={0.85}>
+          <Ionicons name="add-circle" size={28} color="#fff" />
+          <Text style={styles.uploadButtonText}>Add Recipe</Text>
         </TouchableOpacity>
+        <Text style={styles.ctaHint}>Import from camera, photos, URL, or file</Text>
+      </View>
 
-        <View style={styles.divider} />
+      <Modal
+        visible={showUploadModal}
+        animationType="slide"
+        transparent
+        onRequestClose={closeModal}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={closeModal}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalPositioner}
+          >
+            <Pressable style={styles.modalSheet} onPress={() => {}}>
+              <View style={styles.modalHandle} />
+              <Text style={styles.modalTitle}>Add a Recipe</Text>
 
-        <Text style={styles.sectionLabel}>Import from URL</Text>
-        <View style={styles.urlRow}>
-          <TextInput
-            style={styles.urlInput}
-            placeholder="https://example.com/recipe"
-            placeholderTextColor="#999"
-            value={url}
-            onChangeText={setUrl}
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="url"
-          />
-          <TouchableOpacity style={styles.urlButton} onPress={handleUrlImport}>
-            <Ionicons name="arrow-forward" size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
+              <TouchableOpacity style={styles.modalOption} onPress={handleOpenCamera}>
+                <View style={[styles.modalIconWrap, { backgroundColor: '#EBF5FF' }]}>
+                  <Ionicons name="camera" size={22} color="#007AFF" />
+                </View>
+                <View style={styles.modalOptionText}>
+                  <Text style={styles.modalOptionTitle}>Scan with Camera</Text>
+                  <Text style={styles.modalOptionSub}>Point at a cookbook or recipe card</Text>
+                </View>
+              </TouchableOpacity>
 
-        <View style={styles.divider} />
+              <TouchableOpacity style={styles.modalOption} onPress={handlePickPhoto}>
+                <View style={[styles.modalIconWrap, { backgroundColor: '#F0EBFF' }]}>
+                  <Ionicons name="images" size={22} color="#7C3AED" />
+                </View>
+                <View style={styles.modalOptionText}>
+                  <Text style={styles.modalOptionTitle}>Pick from Photos</Text>
+                  <Text style={styles.modalOptionSub}>Choose a recipe image from your library</Text>
+                </View>
+              </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionButtonAlt} onPress={handleFilePick}>
-          <Ionicons name="document-text" size={24} color="#007AFF" />
-          <Text style={styles.actionTextAlt}>Import PDF or DOCX</Text>
-        </TouchableOpacity>
-      </ScrollView>
+              {!showUrlInput ? (
+                <TouchableOpacity style={styles.modalOption} onPress={() => setShowUrlInput(true)}>
+                  <View style={[styles.modalIconWrap, { backgroundColor: '#EBFFF0' }]}>
+                    <Ionicons name="link" size={22} color="#16A34A" />
+                  </View>
+                  <View style={styles.modalOptionText}>
+                    <Text style={styles.modalOptionTitle}>Import from URL</Text>
+                    <Text style={styles.modalOptionSub}>Paste a link to any recipe page</Text>
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.urlInputSection}>
+                  <View style={styles.urlRow}>
+                    <TextInput
+                      style={styles.urlInput}
+                      placeholder="https://example.com/recipe"
+                      placeholderTextColor="#999"
+                      value={url}
+                      onChangeText={setUrl}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="url"
+                      autoFocus
+                    />
+                    <TouchableOpacity style={styles.urlGoButton} onPress={handleUrlImport}>
+                      <Ionicons name="arrow-forward" size={20} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              <TouchableOpacity style={styles.modalOption} onPress={handleFilePick}>
+                <View style={[styles.modalIconWrap, { backgroundColor: '#FFF5EB' }]}>
+                  <Ionicons name="document-text" size={22} color="#EA580C" />
+                </View>
+                <View style={styles.modalOptionText}>
+                  <Text style={styles.modalOptionTitle}>Import PDF or DOCX</Text>
+                  <Text style={styles.modalOptionSub}>Upload a recipe document</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.modalCancelButton} onPress={closeModal}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </Pressable>
+          </KeyboardAvoidingView>
+        </Pressable>
+      </Modal>
 
       {loading && !showCamera && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingTextDark}>{loadingMessage}</Text>
+          <Text style={styles.loadingText}>{loadingMessage}</Text>
         </View>
       )}
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {
+  screen: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  hero: {
+    paddingHorizontal: 24,
+    paddingTop: 80,
+    paddingBottom: 24,
+  },
+  greeting: {
+    fontSize: 34,
+    fontWeight: '800',
+    color: '#111',
+    marginBottom: 8,
+  },
+  tagline: {
+    fontSize: 16,
+    color: '#666',
+    lineHeight: 22,
+  },
+  statsRow: {
+    paddingHorizontal: 24,
+    marginBottom: 32,
+  },
+  statCard: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#EEEFF1',
+  },
+  statNumber: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#007AFF',
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#888',
+    marginTop: 4,
+  },
+  ctaSection: {
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  uploadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#007AFF',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 16,
+    gap: 10,
+    width: '100%',
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  uploadButtonText: {
+    color: '#fff',
+    fontSize: 19,
+    fontWeight: '700',
+  },
+  ctaHint: {
+    fontSize: 13,
+    color: '#999',
+    marginTop: 12,
+  },
+
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalPositioner: {
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 36,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#DDD',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#111',
+    marginBottom: 20,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    gap: 14,
+  },
+  modalIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalOptionText: {
     flex: 1,
   },
-  container: {
-    padding: 24,
-    paddingTop: 16,
-  },
-  heading: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  subheading: {
-    fontSize: 15,
-    color: '#666',
-    marginBottom: 24,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#007AFF',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    gap: 12,
-  },
-  actionText: {
-    color: '#fff',
-    fontSize: 17,
+  modalOptionTitle: {
+    fontSize: 16,
     fontWeight: '600',
+    color: '#222',
   },
-  actionButtonAlt: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F0F0F0',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    gap: 12,
+  modalOptionSub: {
+    fontSize: 13,
+    color: '#888',
+    marginTop: 2,
   },
-  actionTextAlt: {
-    color: '#007AFF',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#E0E0E0',
-    marginVertical: 20,
-  },
-  sectionLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
+  urlInputSection: {
+    paddingVertical: 10,
+    paddingLeft: 58,
   },
   urlRow: {
     flexDirection: 'row',
@@ -298,13 +469,26 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 15,
   },
-  urlButton: {
+  urlGoButton: {
     backgroundColor: '#007AFF',
     borderRadius: 10,
     paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  modalCancelButton: {
+    marginTop: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+  },
+  modalCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+  },
+
   cameraContainer: {
     flex: 1,
   },
@@ -351,11 +535,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loadingText: {
-    color: '#fff',
-    fontSize: 16,
-    marginTop: 12,
-  },
-  loadingTextDark: {
     color: '#fff',
     fontSize: 16,
     marginTop: 12,

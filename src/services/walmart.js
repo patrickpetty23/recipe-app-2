@@ -122,7 +122,8 @@ export function buildCartLink(itemIds) {
   if (!itemIds || itemIds.length === 0) {
     throw new Error('No item IDs provided');
   }
-  const url = `https://www.walmart.com/cart?items=${itemIds.join(',')}`;
+  const itemsParam = itemIds.map((id) => `${id}|1`).join(',');
+  const url = `https://affil.walmart.com/cart/addToCart?items=${itemsParam}`;
   logger.info('walmart.buildCartLink.success', { url });
   return url;
 }

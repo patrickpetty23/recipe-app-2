@@ -11,9 +11,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Scan',
+          title: 'Home',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="camera-outline" size={size} color={color} />
+            <Ionicons name="home-outline" size={size} color={color} />
           ),
         }}
       />

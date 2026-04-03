@@ -1,7 +1,5 @@
 export OPENAI_API_KEY="sk-your-openai-api-key-here"
 export WALMART_CLIENT_ID="your-walmart-consumer-id-here"
-export WALMART_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----
-your-rsa-private-key-here
------END RSA PRIVATE KEY-----"
+export WALMART_PRIVATE_KEY_PATH="/path/to/your/walmart_private.pem"
 export WALMART_KEY_VERSION="1"
 export LOG_LEVEL="debug"
