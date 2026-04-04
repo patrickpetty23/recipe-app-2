@@ -165,16 +165,15 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 - ⬜ Verify all roadmap phase checkboxes are checked and accurate
 - ⬜ Run end-to-end demo flow on a real iPhone: Home → camera scan → editor → save → library → shopping list → Walmart search → send to cart
 - ⬜ Record a short backup demo video in case live demo has issues on presentation day
-- ⬜ Tag release: `git tag v1.0-demo`
 - ⬜ Ensure git history shows incremental phase-by-phase commits (already visible)
 
 #### 9D — Structured Logging & Debugging (25 pts)
 
-- ⬜ Verify logger is imported and used in every `src/services/*.js` and `src/db/*.js` file (already done — 103 calls across 11 files)
-- ⬜ Verify zero `console.log` in production code outside `logger.js` (already clean)
-- ⬜ Verify all CLI test scripts (`scripts/test-*.js`) output JSON to stdout, errors to stderr, and use exit codes 0/1
-- ⬜ Document one test-log-fix loop in changelog or git history — show a bug you found via logs, diagnosed, and fixed (the `crypto` module error and the Walmart cart URL fix are both good examples)
-- ⬜ Run `./scripts/test.sh` and confirm exit 0
+- ✅ Verify logger is imported and used in every `src/services/*.js` and `src/db/*.js` file — confirmed: all 6 service/db files import logger, 5 app files import logger, 0 rogue console.log
+- ✅ Verify zero `console.log` in production code outside `logger.js` — confirmed clean (only console.log/error in logger.js implementation itself)
+- ✅ Verify all CLI test scripts (`scripts/test-*.js`) output JSON to stdout, errors to stderr, and use exit codes 0/1 — confirmed for all 5 scripts
+- ✅ Document test-log-fix loops in changelog — added 3 documented loops: crypto module error, Walmart cart URL, better-sqlite3 version mismatch
+- ✅ Run `./scripts/test.sh` and confirm exit 0
 
 ### Jason's Product Domain
 
