@@ -40,10 +40,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: 'Chat',
           headerShown: false,
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
+            <Ionicons name={focused ? 'chatbubble' : 'chatbubble-outline'} size={24} color={color} />
           ),
         }}
       />

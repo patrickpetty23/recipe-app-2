@@ -4,166 +4,372 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
-  ActivityIndicator,
+  FlatList,
   StyleSheet,
-  Modal,
-  Pressable,
   KeyboardAvoidingView,
   Platform,
+  Animated,
+  Alert,
+  Image,
+  Modal,
+  Pressable,
 } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import * as Crypto from 'expo-crypto';
 
-import { parseRecipeFromImage, parseRecipeFromText } from '../../src/services/openai';
+import { processChat, parseRecipeFromText, parseRecipeFromImage } from '../../src/services/openai';
 import { scrapeRecipeUrl } from '../../src/services/scraper';
 import { parsePdf, parseDocx } from '../../src/services/fileParser';
-import { getAllRecipes } from '../../src/db/queries';
 import { logger } from '../../src/utils/logger';
 
-export default function HomeScreen() {
-  const router = useRouter();
-  const cameraRef = useRef(null);
-  const [permission, requestPermission] = useCameraPermissions();
-  const [loading, setLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('');
-  const [showCamera, setShowCamera] = useState(false);
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [showUrlInput, setShowUrlInput] = useState(false);
-  const [url, setUrl] = useState('');
-  const [recipeCount, setRecipeCount] = useState(0);
+const URL_REGEX = /^https?:\/\//i;
 
-  useFocusEffect(
-    useCallback(() => {
-      try {
-        const recipes = getAllRecipes();
-        setRecipeCount(recipes.length);
-      } catch (err) {
-        logger.error('home.loadCount.error', { error: err.message });
-      }
-    }, [])
-  );
+const WELCOME_ID = 'welcome';
+const TYPING_ID = 'typing';
 
-  function navigateToEditor(recipeData, sourceType, imageUri) {
-    router.push({
-      pathname: '/recipe/editor',
-      params: {
-        recipeData: JSON.stringify(recipeData),
-        sourceType,
-        imageUri: imageUri ?? '',
-      },
-    });
-  }
+const WELCOME_MESSAGE = {
+  id: WELCOME_ID,
+  role: 'assistant',
+  type: 'text',
+  content:
+    "Hi! I'm your recipe assistant. Send me a photo of a recipe, paste a link, or just describe what you want to cook.",
+  imageUri: null,
+  recipeData: null,
+};
 
-  function openModal() {
-    setShowUploadModal(true);
-    setShowUrlInput(false);
-    setUrl('');
-  }
+// ── Typing indicator ──────────────────────────────────────────────────────────
 
-  function closeModal() {
-    setShowUploadModal(false);
-    setShowUrlInput(false);
-    setUrl('');
-  }
+function TypingIndicator() {
+  const anims = useRef([0, 1, 2].map(() => new Animated.Value(0))).current;
 
-  async function handleCapture() {
-    if (!cameraRef.current) return;
-    setLoading(true);
-    setLoadingMessage('Capturing photo…');
-    try {
-      const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.7 });
-      setShowCamera(false);
-      setLoadingMessage('Analyzing recipe with GPT-4o…');
-      const recipeData = await parseRecipeFromImage(photo.base64);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigateToEditor(recipeData, 'camera', photo.uri);
-    } catch (err) {
-      logger.error('scan.handleCapture.error', { error: err.message });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', err.message);
-    } finally {
-      setLoading(false);
-      setLoadingMessage('');
+  // Staggered bounce loop for each dot
+  useRef((() => {
+    function bounceDot(anim, delay) {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(anim, { toValue: 1, duration: 240, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0, duration: 240, useNativeDriver: true }),
+          Animated.delay(480),
+        ])
+      );
     }
+    const loops = anims.map((a, i) => bounceDot(a, i * 160));
+    loops.forEach((l) => l.start());
+    // no cleanup needed — component unmounts with typing indicator removal
+  })()).current;
+
+  return (
+    <View style={styles.assistantBubble}>
+      <View style={styles.typingRow}>
+        {anims.map((anim, i) => (
+          <Animated.View
+            key={i}
+            style={[
+              styles.typingDot,
+              {
+                transform: [
+                  {
+                    translateY: anim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, -5],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// ── Recipe card (rendered inside AI message bubble) ───────────────────────────
+
+function RecipeCard({ item, onSave }) {
+  const rd = item.recipeData;
+  if (!rd) return null;
+
+  const metaParts = [
+    rd.prepTime ? `Prep ${rd.prepTime}` : null,
+    rd.cookTime ? `Cook ${rd.cookTime}` : null,
+  ].filter(Boolean);
+
+  return (
+    <View style={styles.recipeCard}>
+      {item.imageUri ? (
+        <Image
+          source={{ uri: item.imageUri }}
+          style={styles.recipeCardImage}
+          resizeMode="cover"
+        />
+      ) : null}
+
+      <View style={styles.recipeCardBody}>
+        <Text style={styles.recipeCardTitle} numberOfLines={2}>
+          {rd.title || 'Untitled Recipe'}
+        </Text>
+
+        <View style={styles.recipeCardMeta}>
+          {rd.cuisine ? (
+            <View style={styles.cuisineChip}>
+              <Text style={styles.cuisineChipText}>{rd.cuisine}</Text>
+            </View>
+          ) : null}
+          {metaParts.map((m) => (
+            <Text key={m} style={styles.recipeMetaText}>{m}</Text>
+          ))}
+        </View>
+
+        {rd.ingredients?.length > 0 ? (
+          <Text style={styles.recipeCountText}>
+            {rd.ingredients.length} ingredient{rd.ingredients.length !== 1 ? 's' : ''}
+            {rd.steps?.length > 0
+              ? `  ·  ${rd.steps.length} step${rd.steps.length !== 1 ? 's' : ''}`
+              : ''}
+          </Text>
+        ) : null}
+
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={() => onSave(item)}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="bookmark" size={16} color="#fff" />
+          <Text style={styles.saveButtonText}>Save to Recipe Book</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+// ── Main screen ───────────────────────────────────────────────────────────────
+
+export default function ChatScreen() {
+  const router = useRouter();
+  const flatRef = useRef(null);
+  const inputRef = useRef(null);
+  // Stores Animated.Values keyed by message id for entrance animations
+  const animMap = useRef(new Map()).current;
+
+  const [messages, setMessages] = useState([WELCOME_MESSAGE]);
+  const [inputText, setInputText] = useState('');
+  const [attachedImage, setAttachedImage] = useState(null); // { uri, base64 }
+  const [busy, setBusy] = useState(false);
+  const [showAttachSheet, setShowAttachSheet] = useState(false);
+
+  // ── Message helpers ─────────────────────────────────────────────────────────
+
+  function getOrCreateAnim(id, startAt = 1) {
+    if (!animMap.has(id)) animMap.set(id, new Animated.Value(startAt));
+    return animMap.get(id);
   }
 
-  async function handleOpenCamera() {
-    closeModal();
-    if (!permission?.granted) {
-      const result = await requestPermission();
-      if (!result.granted) {
-        Alert.alert('Permission Required', 'Camera access is needed to scan recipes.');
+  function animateIn(id) {
+    const anim = animMap.get(id);
+    if (!anim) return;
+    Animated.spring(anim, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 55,
+      friction: 9,
+    }).start();
+  }
+
+  function addMessage(msg) {
+    animMap.set(msg.id, new Animated.Value(0));
+    setMessages((prev) => [...prev, msg]);
+    setTimeout(() => animateIn(msg.id), 0);
+  }
+
+  function addTypingIndicator() {
+    animMap.set(TYPING_ID, new Animated.Value(1));
+    setMessages((prev) => [...prev, { id: TYPING_ID, role: 'assistant', type: 'typing' }]);
+  }
+
+  function removeTypingAndAdd(msg) {
+    animMap.set(msg.id, new Animated.Value(0));
+    setMessages((prev) => [...prev.filter((m) => m.id !== TYPING_ID), msg]);
+    setTimeout(() => animateIn(msg.id), 0);
+  }
+
+  function removeTypingIndicator() {
+    setMessages((prev) => prev.filter((m) => m.id !== TYPING_ID));
+  }
+
+  // Builds the conversation history sent to processChat (strips UI-only entries)
+  function buildHistory(msgs) {
+    return msgs
+      .filter((m) => m.id !== WELCOME_ID && m.type !== 'typing')
+      .map((m) => ({
+        role: m.role,
+        content:
+          m.type === 'recipe'
+            ? `[Recipe found: ${m.recipeData?.title ?? 'Unknown'}]`
+            : m.content || '',
+      }));
+  }
+
+  // ── Send logic ──────────────────────────────────────────────────────────────
+
+  async function handleSend() {
+    const text = inputText.trim();
+    if (!text && !attachedImage) return;
+    if (busy) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    const userMsg = {
+      id: Crypto.randomUUID(),
+      role: 'user',
+      type: 'text',
+      content: text,
+      imageUri: attachedImage?.uri ?? null,
+      recipeData: null,
+    };
+
+    addMessage(userMsg);
+    setInputText('');
+    const pendingBase64 = attachedImage?.base64 ?? null;
+    setAttachedImage(null);
+    setBusy(true);
+    addTypingIndicator();
+
+    try {
+      // ── URL detected → scrape + full recipe parse ──────────────────────────
+      if (!pendingBase64 && URL_REGEX.test(text)) {
+        logger.info('chat.handleSend.url', { url: text.slice(0, 80) });
+        const scraped = await scrapeRecipeUrl(text);
+        const recipeData = await parseRecipeFromText(scraped);
+        removeTypingAndAdd({
+          id: Crypto.randomUUID(),
+          role: 'assistant',
+          type: 'recipe',
+          content: recipeData.title ? `Here's the recipe I found!` : 'Found a recipe for you.',
+          imageUri: null,
+          recipeData,
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         return;
       }
+
+      // ── Image attached → processChat with vision ───────────────────────────
+      if (pendingBase64) {
+        logger.info('chat.handleSend.image', {});
+        const history = buildHistory(messages);
+        const result = await processChat(
+          [...history, { role: 'user', content: text || 'What is this recipe?' }],
+          pendingBase64
+        );
+        if (result.type === 'recipe' && result.recipe) {
+          removeTypingAndAdd({
+            id: Crypto.randomUUID(),
+            role: 'assistant',
+            type: 'recipe',
+            content: result.message || 'Found a recipe!',
+            imageUri: userMsg.imageUri,
+            recipeData: result.recipe,
+          });
+        } else {
+          removeTypingAndAdd({
+            id: Crypto.randomUUID(),
+            role: 'assistant',
+            type: 'text',
+            content: result.message || "I couldn't identify a recipe from that image.",
+            imageUri: null,
+            recipeData: null,
+          });
+        }
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        return;
+      }
+
+      // ── Plain text → processChat ───────────────────────────────────────────
+      logger.info('chat.handleSend.text', { length: text.length });
+      const history = buildHistory(messages);
+      const result = await processChat([...history, { role: 'user', content: text }]);
+      if (result.type === 'recipe' && result.recipe) {
+        removeTypingAndAdd({
+          id: Crypto.randomUUID(),
+          role: 'assistant',
+          type: 'recipe',
+          content: result.message || 'Here you go!',
+          imageUri: null,
+          recipeData: result.recipe,
+        });
+      } else {
+        removeTypingAndAdd({
+          id: Crypto.randomUUID(),
+          role: 'assistant',
+          type: 'text',
+          content: result.message || 'I had trouble with that. Can you rephrase?',
+          imageUri: null,
+          recipeData: null,
+        });
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err) {
+      logger.error('chat.handleSend.error', { error: err.message });
+      removeTypingIndicator();
+      addMessage({
+        id: Crypto.randomUUID(),
+        role: 'assistant',
+        type: 'text',
+        content: 'Sorry, something went wrong. Please try again.',
+        imageUri: null,
+        recipeData: null,
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setBusy(false);
     }
-    setShowCamera(true);
   }
 
-  async function handlePickPhoto() {
-    closeModal();
-    setLoading(true);
-    setLoadingMessage('Opening photo library…');
+  // ── Attachment handlers ─────────────────────────────────────────────────────
+
+  async function handleCameraAttach() {
+    setShowAttachSheet(false);
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Camera access is needed to attach photos.');
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.7 });
+      if (!result.canceled) {
+        setAttachedImage({ uri: result.assets[0].uri, base64: result.assets[0].base64 });
+      }
+    } catch (err) {
+      logger.error('chat.cameraAttach.error', { error: err.message });
+    }
+  }
+
+  async function handlePhotoAttach() {
+    setShowAttachSheet(false);
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         base64: true,
         quality: 0.7,
       });
-      if (result.canceled) {
-        setLoading(false);
-        setLoadingMessage('');
-        return;
+      if (!result.canceled) {
+        setAttachedImage({ uri: result.assets[0].uri, base64: result.assets[0].base64 });
       }
-      setLoadingMessage('Analyzing recipe with GPT-4o…');
-      const asset = result.assets[0];
-      const recipeData = await parseRecipeFromImage(asset.base64);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigateToEditor(recipeData, 'photo', asset.uri);
     } catch (err) {
-      logger.error('scan.handlePickPhoto.error', { error: err.message });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', err.message);
-    } finally {
-      setLoading(false);
-      setLoadingMessage('');
+      logger.error('chat.photoAttach.error', { error: err.message });
     }
   }
 
-  async function handleUrlImport() {
-    const trimmed = url.trim();
-    if (!trimmed) {
-      Alert.alert('Enter a URL', 'Paste a recipe URL to import.');
-      return;
-    }
-    closeModal();
-    setLoading(true);
-    setLoadingMessage('Fetching recipe from URL…');
-    try {
-      const text = await scrapeRecipeUrl(trimmed);
-      setLoadingMessage('Extracting ingredients with GPT-4o…');
-      const recipeData = await parseRecipeFromText(text);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigateToEditor(recipeData, 'url', null);
-    } catch (err) {
-      logger.error('scan.handleUrlImport.error', { error: err.message });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', err.message);
-    } finally {
-      setLoading(false);
-      setLoadingMessage('');
-    }
-  }
+  async function handleFileAttach() {
+    setShowAttachSheet(false);
+    setBusy(true);
 
-  async function handleFilePick() {
-    closeModal();
-    setLoading(true);
-    setLoadingMessage('Selecting file…');
+    let fileName = 'Document';
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: [
@@ -172,259 +378,498 @@ export default function HomeScreen() {
         ],
         copyToCacheDirectory: true,
       });
+
       if (result.canceled) {
-        setLoading(false);
-        setLoadingMessage('');
+        setBusy(false);
         return;
       }
+
       const file = result.assets[0];
+      fileName = file.name ?? fileName;
       const isPdf = file.mimeType === 'application/pdf' || file.name?.endsWith('.pdf');
-      setLoadingMessage('Extracting text from file…');
+
+      // Show user's file message first
+      const userMsg = {
+        id: Crypto.randomUUID(),
+        role: 'user',
+        type: 'text',
+        content: `📄 ${fileName}`,
+        imageUri: null,
+        recipeData: null,
+      };
+      addMessage(userMsg);
+      addTypingIndicator();
+
       const text = isPdf ? await parsePdf(file.uri) : await parseDocx(file.uri);
-      setLoadingMessage('Extracting ingredients with GPT-4o…');
       const recipeData = await parseRecipeFromText(text);
+
+      removeTypingAndAdd({
+        id: Crypto.randomUUID(),
+        role: 'assistant',
+        type: 'recipe',
+        content: 'Found a recipe in your document!',
+        imageUri: null,
+        recipeData,
+      });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigateToEditor(recipeData, 'file', null);
     } catch (err) {
-      logger.error('scan.handleFilePick.error', { error: err.message });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', err.message);
+      logger.error('chat.fileAttach.error', { error: err.message });
+      removeTypingIndicator();
+      addMessage({
+        id: Crypto.randomUUID(),
+        role: 'assistant',
+        type: 'text',
+        content: "Couldn't read that file. Try a different format or paste the text.",
+        imageUri: null,
+        recipeData: null,
+      });
     } finally {
-      setLoading(false);
-      setLoadingMessage('');
+      setBusy(false);
     }
   }
 
-  if (showCamera) {
+  // ── Save recipe → editor ────────────────────────────────────────────────────
+
+  function handleSaveRecipe(item) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push({
+      pathname: '/recipe/editor',
+      params: {
+        recipeData: JSON.stringify(item.recipeData),
+        sourceType: 'chat',
+        imageUri: item.imageUri ?? '',
+      },
+    });
+  }
+
+  // ── Render helpers ──────────────────────────────────────────────────────────
+
+  function renderMessage({ item }) {
+    const anim = getOrCreateAnim(item.id, item.id === WELCOME_ID ? 1 : 0);
+    const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [14, 0] });
+
     return (
-      <View style={styles.cameraContainer}>
-        <CameraView ref={cameraRef} style={styles.camera} facing="back" />
-        {loading ? (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color="#fff" />
-            <Text style={styles.loadingText}>{loadingMessage}</Text>
-          </View>
-        ) : (
-          <View style={styles.cameraControls}>
-            <TouchableOpacity style={styles.cancelButton} onPress={() => setShowCamera(false)}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.captureButton} onPress={handleCapture}>
-              <View style={styles.captureInner} />
-            </TouchableOpacity>
-            <View style={styles.cancelButton} />
+      <Animated.View style={{ opacity: anim, transform: [{ translateY }] }}>
+        {item.type === 'typing' && (
+          <View style={styles.assistantRow}>
+            <TypingIndicator />
           </View>
         )}
-      </View>
+
+        {item.type === 'text' && item.role === 'user' && (
+          <View style={styles.userRow}>
+            {item.imageUri ? (
+              <Image source={{ uri: item.imageUri }} style={styles.userImage} resizeMode="cover" />
+            ) : null}
+            {item.content ? (
+              <View style={styles.userBubble}>
+                <Text style={styles.userBubbleText}>{item.content}</Text>
+              </View>
+            ) : null}
+          </View>
+        )}
+
+        {item.type === 'text' && item.role === 'assistant' && (
+          <View style={styles.assistantRow}>
+            <View style={styles.assistantBubble}>
+              <Text style={styles.assistantBubbleText}>{item.content}</Text>
+            </View>
+          </View>
+        )}
+
+        {item.type === 'recipe' && (
+          <View style={styles.assistantRow}>
+            <View style={styles.recipeWrapper}>
+              {item.content ? (
+                <Text style={styles.recipeIntroText}>{item.content}</Text>
+              ) : null}
+              <RecipeCard item={item} onSave={handleSaveRecipe} />
+            </View>
+          </View>
+        )}
+      </Animated.View>
     );
   }
 
+  // ── Render ──────────────────────────────────────────────────────────────────
+
   return (
-    <View style={styles.screen}>
-      <View style={styles.hero}>
-        <Text style={styles.greeting}>Recipe Scanner</Text>
-        <Text style={styles.tagline}>
-          Scan a cookbook, snap a photo, or paste a link — we'll handle the rest.
-        </Text>
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Recipe Assistant</Text>
+        <Text style={styles.headerSub}>GPT-4o powered</Text>
       </View>
 
-      <View style={styles.statsRow}>
-        <TouchableOpacity style={styles.statCard} onPress={() => router.push('/(tabs)/library')}>
-          <Text style={styles.statNumber}>{recipeCount}</Text>
-          <Text style={styles.statLabel}>{recipeCount === 1 ? 'Recipe Saved' : 'Recipes Saved'}</Text>
-          <Text style={styles.statCta}>View Library →</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Message list */}
+      <FlatList
+        ref={flatRef}
+        data={messages}
+        renderItem={renderMessage}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.messageList}
+        onContentSizeChange={() => flatRef.current?.scrollToEnd({ animated: true })}
+        onLayout={() => flatRef.current?.scrollToEnd({ animated: false })}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      />
 
-      <View style={styles.ctaSection}>
-        <TouchableOpacity style={styles.uploadButton} onPress={openModal} activeOpacity={0.85}>
-          <Ionicons name="add-circle" size={28} color="#fff" />
-          <Text style={styles.uploadButtonText}>Add Recipe</Text>
-        </TouchableOpacity>
-        <Text style={styles.ctaHint}>Import from camera, photos, URL, or file</Text>
-      </View>
+      {/* Input area */}
+      <View style={styles.inputArea}>
+        {attachedImage ? (
+          <View style={styles.attachPreviewRow}>
+            <Image source={{ uri: attachedImage.uri }} style={styles.attachThumb} resizeMode="cover" />
+            <TouchableOpacity
+              style={styles.attachClearBtn}
+              onPress={() => setAttachedImage(null)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="close-circle" size={22} color="#8E8E93" />
+            </TouchableOpacity>
+            <Text style={styles.attachLabel}>Photo attached</Text>
+          </View>
+        ) : null}
 
-      <Modal
-        visible={showUploadModal}
-        animationType="slide"
-        transparent
-        onRequestClose={closeModal}
-      >
-        <Pressable style={styles.modalBackdrop} onPress={closeModal}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.modalPositioner}
+        <View style={styles.inputRow}>
+          <TouchableOpacity
+            onPress={() => setShowAttachSheet(true)}
+            disabled={busy}
+            style={styles.attachIconBtn}
+            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
           >
-            <Pressable style={styles.modalSheet} onPress={() => {}}>
-              <View style={styles.modalHandle} />
-              <Text style={styles.modalTitle}>Add a Recipe</Text>
+            <Ionicons name="add-circle" size={32} color={busy ? '#C7C7CC' : '#007AFF'} />
+          </TouchableOpacity>
 
-              <TouchableOpacity style={styles.modalOption} onPress={handleOpenCamera}>
-                <View style={[styles.modalIconWrap, { backgroundColor: '#EBF5FF' }]}>
-                  <Ionicons name="camera" size={22} color="#007AFF" />
-                </View>
-                <View style={styles.modalOptionText}>
-                  <Text style={styles.modalOptionTitle}>Scan with Camera</Text>
-                  <Text style={styles.modalOptionSub}>Point at a cookbook or recipe card</Text>
-                </View>
-              </TouchableOpacity>
+          <TextInput
+            ref={inputRef}
+            style={styles.textInput}
+            placeholder="Paste a link, drop a photo, or describe a recipe…"
+            placeholderTextColor="#8E8E93"
+            value={inputText}
+            onChangeText={setInputText}
+            multiline
+            maxLength={2000}
+            editable={!busy}
+            returnKeyType="default"
+          />
 
-              <TouchableOpacity style={styles.modalOption} onPress={handlePickPhoto}>
-                <View style={[styles.modalIconWrap, { backgroundColor: '#F0EBFF' }]}>
-                  <Ionicons name="images" size={22} color="#7C3AED" />
-                </View>
-                <View style={styles.modalOptionText}>
-                  <Text style={styles.modalOptionTitle}>Pick from Photos</Text>
-                  <Text style={styles.modalOptionSub}>Choose a recipe image from your library</Text>
-                </View>
-              </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.sendBtn,
+              (busy || (!inputText.trim() && !attachedImage)) && styles.sendBtnDisabled,
+            ]}
+            onPress={handleSend}
+            disabled={busy || (!inputText.trim() && !attachedImage)}
+          >
+            <Ionicons
+              name="arrow-up"
+              size={18}
+              color={busy || (!inputText.trim() && !attachedImage) ? '#C7C7CC' : '#fff'}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-              {!showUrlInput ? (
-                <TouchableOpacity style={styles.modalOption} onPress={() => setShowUrlInput(true)}>
-                  <View style={[styles.modalIconWrap, { backgroundColor: '#EBFFF0' }]}>
-                    <Ionicons name="link" size={22} color="#16A34A" />
-                  </View>
-                  <View style={styles.modalOptionText}>
-                    <Text style={styles.modalOptionTitle}>Import from URL</Text>
-                    <Text style={styles.modalOptionSub}>Paste a link to any recipe page</Text>
-                  </View>
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.urlInputSection}>
-                  <View style={styles.urlRow}>
-                    <TextInput
-                      style={styles.urlInput}
-                      placeholder="https://example.com/recipe"
-                      placeholderTextColor="#999"
-                      value={url}
-                      onChangeText={setUrl}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      keyboardType="url"
-                      autoFocus
-                    />
-                    <TouchableOpacity style={styles.urlGoButton} onPress={handleUrlImport}>
-                      <Ionicons name="arrow-forward" size={20} color="#fff" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
+      {/* Attachment sheet */}
+      <Modal
+        visible={showAttachSheet}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAttachSheet(false)}
+      >
+        <Pressable style={styles.sheetBackdrop} onPress={() => setShowAttachSheet(false)}>
+          <View style={styles.sheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Add to Message</Text>
 
-              <TouchableOpacity style={styles.modalOption} onPress={handleFilePick}>
-                <View style={[styles.modalIconWrap, { backgroundColor: '#FFF5EB' }]}>
-                  <Ionicons name="document-text" size={22} color="#EA580C" />
-                </View>
-                <View style={styles.modalOptionText}>
-                  <Text style={styles.modalOptionTitle}>Import PDF or DOCX</Text>
-                  <Text style={styles.modalOptionSub}>Upload a recipe document</Text>
-                </View>
-              </TouchableOpacity>
+            <TouchableOpacity style={styles.sheetRow} onPress={handleCameraAttach}>
+              <View style={[styles.sheetIconBox, { backgroundColor: '#EBF3FF' }]}>
+                <Ionicons name="camera" size={22} color="#007AFF" />
+              </View>
+              <View>
+                <Text style={styles.sheetRowTitle}>Camera</Text>
+                <Text style={styles.sheetRowSub}>Take a photo of a recipe</Text>
+              </View>
+            </TouchableOpacity>
 
-              <TouchableOpacity style={styles.modalCancelButton} onPress={closeModal}>
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-            </Pressable>
-          </KeyboardAvoidingView>
+            <TouchableOpacity style={styles.sheetRow} onPress={handlePhotoAttach}>
+              <View style={[styles.sheetIconBox, { backgroundColor: '#F0EBFF' }]}>
+                <Ionicons name="images" size={22} color="#7C3AED" />
+              </View>
+              <View>
+                <Text style={styles.sheetRowTitle}>Photo Library</Text>
+                <Text style={styles.sheetRowSub}>Choose a recipe photo</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.sheetRow} onPress={handleFileAttach}>
+              <View style={[styles.sheetIconBox, { backgroundColor: '#FFF5EB' }]}>
+                <Ionicons name="document-text" size={22} color="#EA580C" />
+              </View>
+              <View>
+                <Text style={styles.sheetRowTitle}>PDF or DOCX</Text>
+                <Text style={styles.sheetRowSub}>Import a recipe document</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.sheetCancel}
+              onPress={() => setShowAttachSheet(false)}
+            >
+              <Text style={styles.sheetCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
         </Pressable>
       </Modal>
-
-      {loading && !showCamera && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>{loadingMessage}</Text>
-        </View>
-      )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
+
+// ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    backgroundColor: '#F2F2F7',
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'android' ? 48 : 60,
+    paddingBottom: 12,
     backgroundColor: '#fff',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E5E5EA',
   },
-  hero: {
-    paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'android' ? 64 : 80,
-    paddingBottom: 24,
-  },
-  greeting: {
-    fontSize: 34,
-    fontWeight: '800',
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
     color: '#1C1C1E',
-    marginBottom: 8,
   },
-  tagline: {
+  headerSub: {
+    fontSize: 12,
+    color: '#8E8E93',
+    marginTop: 1,
+  },
+
+  // ── Message list ─────────────────────────────────────────────────────────────
+  messageList: {
+    paddingHorizontal: 12,
+    paddingTop: 16,
+    paddingBottom: 8,
+    gap: 8,
+  },
+  userRow: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  userImage: {
+    width: 220,
+    height: 160,
+    borderRadius: 18,
+    borderBottomRightRadius: 4,
+  },
+  userBubble: {
+    backgroundColor: '#007AFF',
+    borderRadius: 18,
+    borderBottomRightRadius: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    maxWidth: '80%',
+  },
+  userBubbleText: {
+    color: '#fff',
     fontSize: 16,
-    color: '#636366',
     lineHeight: 22,
   },
-  statsRow: {
-    paddingHorizontal: 24,
-    marginBottom: 32,
+  assistantRow: {
+    alignItems: 'flex-start',
   },
-  statCard: {
-    backgroundColor: '#F2F2F7',
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
+  assistantBubble: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    borderBottomLeftRadius: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    maxWidth: '80%',
+    // Material Design elevation
     elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
   },
-  statNumber: {
-    fontSize: 40,
-    fontWeight: '800',
-    color: '#007AFF',
+  assistantBubbleText: {
+    color: '#1C1C1E',
+    fontSize: 16,
+    lineHeight: 22,
   },
-  statLabel: {
+
+  // ── Typing dots ───────────────────────────────────────────────────────────────
+  typingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 2,
+    paddingVertical: 4,
+  },
+  typingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#8E8E93',
+  },
+
+  // ── Recipe card ───────────────────────────────────────────────────────────────
+  recipeWrapper: {
+    maxWidth: '88%',
+    gap: 6,
+  },
+  recipeIntroText: {
     fontSize: 14,
     color: '#636366',
-    marginTop: 4,
+    paddingLeft: 4,
   },
-  statCta: {
-    fontSize: 13,
-    color: '#007AFF',
-    fontWeight: '600',
-    marginTop: 8,
+  recipeCard: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
-  ctaSection: {
-    paddingHorizontal: 24,
+  recipeCardImage: {
+    width: '100%',
+    height: 180,
+  },
+  recipeCardBody: {
+    padding: 16,
+    gap: 8,
+  },
+  recipeCardTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1C1C1E',
+    lineHeight: 26,
+  },
+  recipeCardMeta: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
+    gap: 8,
   },
-  uploadButton: {
+  cuisineChip: {
+    backgroundColor: '#EBF3FF',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 20,
+  },
+  cuisineChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#007AFF',
+  },
+  recipeMetaText: {
+    fontSize: 13,
+    color: '#636366',
+  },
+  recipeCountText: {
+    fontSize: 13,
+    color: '#8E8E93',
+  },
+  saveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#007AFF',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 16,
-    gap: 10,
-    width: '100%',
-    elevation: 6,
+    borderRadius: 12,
+    paddingVertical: 12,
+    gap: 8,
+    marginTop: 4,
+    elevation: 2,
     shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
-    shadowRadius: 12,
+    shadowRadius: 6,
   },
-  uploadButtonText: {
+  saveButtonText: {
     color: '#fff',
-    fontSize: 19,
+    fontSize: 15,
     fontWeight: '700',
   },
-  ctaHint: {
+
+  // ── Input area ────────────────────────────────────────────────────────────────
+  inputArea: {
+    backgroundColor: '#fff',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E5E5EA',
+    paddingBottom: Platform.OS === 'android' ? 8 : 0,
+  },
+  attachPreviewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    gap: 8,
+  },
+  attachThumb: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+  },
+  attachClearBtn: {
+    padding: 2,
+  },
+  attachLabel: {
     fontSize: 13,
-    color: '#8E8E93',
-    marginTop: 12,
+    color: '#636366',
   },
-  modalBackdrop: {
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  attachIconBtn: {
+    paddingBottom: 2,
+  },
+  textInput: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: '#F2F2F7',
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 10,
+    fontSize: 16,
+    color: '#1C1C1E',
+    maxHeight: 120,
+    lineHeight: 20,
+  },
+  sendBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#007AFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+  sendBtnDisabled: {
+    backgroundColor: '#E5E5EA',
+  },
+
+  // ── Attachment sheet ──────────────────────────────────────────────────────────
+  sheetBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'flex-end',
   },
-  modalPositioner: {
-    justifyContent: 'flex-end',
-  },
-  modalSheet: {
+  sheet: {
     backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -432,130 +877,53 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 36,
   },
-  modalHandle: {
+  sheetHandle: {
     width: 40,
     height: 4,
     borderRadius: 2,
     backgroundColor: '#DDD',
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: 18,
   },
-  modalTitle: {
-    fontSize: 22,
+  sheetTitle: {
+    fontSize: 18,
     fontWeight: '700',
     color: '#1C1C1E',
-    marginBottom: 20,
+    marginBottom: 16,
   },
-  modalOption: {
+  sheetRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 12,
     gap: 14,
   },
-  modalIconWrap: {
+  sheetIconBox: {
     width: 44,
     height: 44,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  modalOptionText: {
-    flex: 1,
-  },
-  modalOptionTitle: {
+  sheetRowTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1C1C1E',
   },
-  modalOptionSub: {
+  sheetRowSub: {
     fontSize: 13,
     color: '#8E8E93',
-    marginTop: 2,
+    marginTop: 1,
   },
-  urlInputSection: {
-    paddingVertical: 10,
-    paddingLeft: 58,
-  },
-  urlRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  urlInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#CCC',
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 15,
-  },
-  urlGoButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalCancelButton: {
+  sheetCancel: {
     marginTop: 12,
     paddingVertical: 14,
     alignItems: 'center',
     backgroundColor: '#F2F2F7',
     borderRadius: 12,
   },
-  modalCancelText: {
+  sheetCancelText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#636366',
-  },
-  cameraContainer: {
-    flex: 1,
-  },
-  camera: {
-    flex: 1,
-  },
-  cameraControls: {
-    position: 'absolute',
-    bottom: 40,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 30,
-  },
-  captureButton: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  captureInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#fff',
-  },
-  cancelButton: {
-    width: 70,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    color: '#fff',
-    fontSize: 16,
-    marginTop: 12,
-    fontWeight: '500',
   },
 });
