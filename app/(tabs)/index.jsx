@@ -88,6 +88,7 @@ export default function HomeScreen() {
 
   async function handleOpenCamera() {
     closeModal();
+    await new Promise((r) => setTimeout(r, 500));
     if (!permission?.granted) {
       const result = await requestPermission();
       if (!result.granted) {
@@ -99,25 +100,30 @@ export default function HomeScreen() {
   }
 
   async function handlePickPhoto() {
+    logger.info('scan.handlePickPhoto', { step: 'start' });
     closeModal();
-    setLoading(true);
-    setLoadingMessage('Opening photo library...');
+    await new Promise((r) => setTimeout(r, 600));
+    logger.info('scan.handlePickPhoto', { step: 'modal-closed-launching-picker' });
     try {
+      const perms = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      logger.info('scan.handlePickPhoto', { step: 'permissions', granted: perms.granted, status: perms.status });
+      if (!perms.granted) {
+        Alert.alert('Permission Required', 'Photo library access is needed to pick recipe images.');
+        return;
+      }
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         base64: true,
         quality: 0.7,
       });
-      if (result.canceled) {
-        setLoading(false);
-        setLoadingMessage('');
-        return;
-      }
+      logger.info('scan.handlePickPhoto', { step: 'picker-returned', canceled: result.canceled });
+      if (result.canceled) return;
+      setLoading(true);
       setLoadingMessage('Analyzing recipe with GPT-4o...');
       const parsed = await parseImageIngredients(result.assets[0].base64);
       navigateToEditor(parsed.ingredients, 'photo', parsed.title);
     } catch (err) {
-      logger.error('scan.handlePickPhoto.error', { error: err.message });
+      logger.error('scan.handlePickPhoto.error', { error: err.message, stack: err.stack });
       Alert.alert('Error', err.message);
     } finally {
       setLoading(false);
@@ -132,6 +138,7 @@ export default function HomeScreen() {
       return;
     }
     closeModal();
+    await new Promise((r) => setTimeout(r, 500));
     setLoading(true);
     setLoadingMessage('Fetching recipe from URL...');
     try {
@@ -149,9 +156,10 @@ export default function HomeScreen() {
   }
 
   async function handleFilePick() {
+    logger.info('scan.handleFilePick', { step: 'start' });
     closeModal();
-    setLoading(true);
-    setLoadingMessage('Selecting file...');
+    await new Promise((r) => setTimeout(r, 600));
+    logger.info('scan.handleFilePick', { step: 'modal-closed-launching-picker' });
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: [
@@ -160,11 +168,8 @@ export default function HomeScreen() {
         ],
         copyToCacheDirectory: true,
       });
-      if (result.canceled) {
-        setLoading(false);
-        setLoadingMessage('');
-        return;
-      }
+      if (result.canceled) return;
+      setLoading(true);
       const file = result.assets[0];
       const isPdf = file.mimeType === 'application/pdf' || file.name?.endsWith('.pdf');
       setLoadingMessage('Extracting text from file...');

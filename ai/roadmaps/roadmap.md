@@ -227,7 +227,6 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 
 ### Final Submission Checklist
 
-- ⬜ All code committed and pushed by April 7 at 23:59
 - ⬜ All aiDocs current and reflecting actual project state
 - ⬜ `ai/` folder committed with roadmaps, plans, changelogs visible
 - ⬜ No secrets in repo (`git log -p` clean)
