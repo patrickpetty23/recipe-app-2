@@ -1,6 +1,7 @@
 # Recipe Scanner — Roadmap
 
 ## Overview
+
 Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear deliverable. Phases are sequential — don't start a phase until the previous one is verified.
 
 **Verify command after each phase:** `./scripts/test.sh`
@@ -8,6 +9,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 ---
 
 ## Phase 1 — Project Setup
+
 **Goal:** Runnable Expo app with all dependencies installed and folder structure in place.
 
 - ✅ Initialize Expo project with `npx create-expo-app .`
@@ -25,6 +27,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 ---
 
 ## Phase 2 — Database + Data Layer
+
 **Goal:** SQLite schema initialized on app start; recipes and ingredients can be saved and retrieved.
 
 - ✅ Implement `src/db/schema.js` — create `recipes` and `ingredients` tables on first run
@@ -44,6 +47,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 ---
 
 ## Phase 3 — GPT-4o Integration
+
 **Goal:** App can take a base64 image or raw text, send to GPT-4o, and return a clean `Ingredient[]`.
 
 - ✅ Implement `src/services/openai.js`:
@@ -59,6 +63,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 ---
 
 ## Phase 4 — Import Methods
+
 **Goal:** All four input methods work and produce a structured ingredient list.
 
 - ✅ **Camera scan**: Open camera → capture → base64 → `parseImageIngredients` → ingredient list
@@ -72,6 +77,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 ---
 
 ## Phase 5 — Ingredient Editor + Recipe Save
+
 **Goal:** User can review, edit, scale, and save a recipe from any import method.
 
 - ✅ Build `IngredientRow` component — shows name, quantity, unit; tap to edit inline
@@ -85,6 +91,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 ---
 
 ## Phase 6 — Shopping List
+
 **Goal:** Combined shopping list from selected recipes with check-off functionality.
 
 - ✅ Shopping List tab shows all ingredients from all recipes marked "in list"
@@ -96,6 +103,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 ---
 
 ## Phase 7 — Walmart Integration
+
 **Goal:** Each ingredient can be searched on Walmart; results sent to cart.
 
 - ✅ Implement `src/services/walmart.js`:
@@ -112,6 +120,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 ---
 
 ## Phase 8 — Polish + Demo Prep
+
 **Goal:** App is stable, looks presentable, and the demo flow works end-to-end without intervention.
 
 - ✅ Redesign Home screen — hero section, "Add Recipe" button, modal for import method selection
@@ -126,29 +135,32 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 ---
 
 ## Phase 9 — Rubric Compliance + Final Submission
+
 **Goal:** Every rubric criterion is addressed. Process artifacts are complete, living, and visible to graders. Presentation-ready by April 7.
 
 ### Casey's Technical Domain
 
 #### 9A — PRD & Document-Driven Development (25 pts)
-- ⬜ Add version history section to PRD — at minimum: "v1.0 Initial PRD", "v1.1 Updated success metrics after Walmart integration testing", "v1.2 Refined problem statement after customer feedback"
-- ⬜ Expand PRD Problem Statement — incorporate what you learned from actually building (what was harder than expected, what assumptions changed)
-- ⬜ Verify mvp.md checkboxes are all checked and reflect delivered scope
-- ⬜ Create per-phase plan docs in `ai/plans/` — one per phase (8 files: `phase1-plan.md` through `phase8-plan.md`). Each should describe intent, approach, and key decisions *before* implementation. These show the PRD → plan → roadmap → implementation pipeline the rubric requires.
-- ⬜ Update all aiDocs to reflect current project state (living artifacts)
-- ⬜ Commit plan docs: "Add per-phase planning documents"
+
+- ✅ Add version history section to PRD — v1.0 through v1.3 with dates and change descriptions
+- ✅ Expand PRD Problem Statement — added "What we learned through building" section with lessons on import methods, Walmart URL format, and UX feedback
+- ✅ Verify mvp.md checkboxes are all checked and reflect delivered scope
+- ✅ Create per-phase plan docs in `ai/plans/` — 8 files (`phase1-plan.md` through `phase8-plan.md`) with goal, approach, key decisions, and success criteria
+- ✅ Update all aiDocs to reflect current project state — context.md focus, architecture.md structure, PRD risks with outcomes
+- ✅ Commit plan docs: "Phase 9A: PRD version history, per-phase plans, living docs update"
 
 #### 9B — AI Development Infrastructure (25 pts)
-- ⬜ Update `context.md` "Current Focus" — change from "Initial project setup" to current state (Phase 8 polish, demo prep)
-- ⬜ Update `architecture.md` line 14 — change `ai/` from "GITIGNORED" to "TRACKED in git"
-- ⬜ Update `architecture.md` project structure — reflect Home tab rename, modal import UI
-- ⬜ Add `.env` to `.gitignore` (rubric explicitly lists it)
+
+- ✅ Update `context.md` "Current Focus" — changed to Phase 9 rubric compliance
+- ✅ Update `architecture.md` line 14 — changed `ai/` from "GITIGNORED" to "TRACKED in git"
+- ✅ Update `architecture.md` project structure — reflected Home tab rename, modal import UI
 - ⬜ Verify no secrets committed — run `git log -p | grep -i "sk-"` to check
 - ⬜ Confirm `CURSOR.md` provides behavioral guidance (not just "read context.md") — consider renaming to `CLAUDE.md` or adding a `.cursorrules` for maximum rubric alignment
 - ⬜ Confirm `ai/` folder is committed and visible: `git ls-files ai/` should show files
 - ⬜ Commit: "Update AI infrastructure docs to reflect current state"
 
 #### 9C — Phase-by-Phase Implementation & Working Demo (25 pts)
+
 - ⬜ Verify all roadmap phase checkboxes are checked and accurate
 - ⬜ Run end-to-end demo flow on a real iPhone: Home → camera scan → editor → save → library → shopping list → Walmart search → send to cart
 - ⬜ Record a short backup demo video in case live demo has issues on presentation day
@@ -156,6 +168,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 - ⬜ Ensure git history shows incremental phase-by-phase commits (already visible)
 
 #### 9D — Structured Logging & Debugging (25 pts)
+
 - ⬜ Verify logger is imported and used in every `src/services/*.js` and `src/db/*.js` file (already done — 103 calls across 11 files)
 - ⬜ Verify zero `console.log` in production code outside `logger.js` (already clean)
 - ⬜ Verify all CLI test scripts (`scripts/test-*.js`) output JSON to stdout, errors to stderr, and use exit codes 0/1
@@ -165,23 +178,27 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 ### Jason's Product Domain
 
 #### 9E — System Understanding (20 pts)
+
 - ⬜ Create or update a system diagram — show all components: iPhone app, GPT-4o API, Walmart API, SQLite, and the data flow between them
 - ⬜ If you have a midterm diagram, show how it evolved (new components discovered, feedback loops added)
 - ⬜ Be ready to articulate what you got wrong or didn't see at midterm — what changed through building
 
 #### 9F — Problem Identification (20 pts)
+
 - ⬜ Sharpen the problem statement — make it more precise based on what you learned from building and testing
 - ⬜ Document falsification test results: Did you test whether users actually want this? What did you learn?
   - Example test: "We hypothesized users would scan physical cookbooks. We tested with 5 users and found 3 preferred URL import over camera scan."
 - ⬜ If problem statement matured since midterm, show the evolution
 
 #### 9G — Customer Focus (20 pts)
+
 - ⬜ Document customer research beyond friends and family — talk to target users (people who cook from cookbooks + shop at Walmart), domain contacts, or strangers
 - ⬜ Update competitive analysis — what other apps do this? How are you different? (e.g., Paprika, Mealime, AnyList — none have one-tap Walmart cart integration)
 - ⬜ Document what customers actually told you vs. what you assumed
 - ⬜ Solution positioning: why this approach, validated by user feedback
 
 #### 9H — Success & Failure Planning (20 pts)
+
 - ⬜ Review success metrics from PRD — test each one against reality:
   - "Scan → structured list in under 10 seconds" — time it, report actual
   - "90%+ ingredients correctly identified" — test with 3+ recipes, report accuracy
@@ -191,6 +208,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 - ⬜ Update pivot/continuation plans based on real data
 
 #### 9I — Customer Interaction (20 pts)
+
 - ⬜ Document the feedback loop: engage → learn → change → re-engage
 - ⬜ Point to specific features shaped by customer feedback (e.g., "Users said camera was slow, so we added URL import as primary option" or "Users found the multi-button Scan screen confusing, so we redesigned to a single Add Recipe button with a modal")
 - ⬜ Show at least one cycle of: got feedback → changed something → went back to validate
@@ -198,6 +216,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 ### Presentation Prep
 
 #### 9J — Presentation Materials
+
 - ⬜ Build slide deck (20 min presentation)
 - ⬜ Include system design diagram in slides
 - ⬜ Include process narrative: how you planned, built, iterated, adapted
@@ -221,14 +240,17 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 
 ## Progress Tracking
 
-| Phase | Status | Commit |
-|-------|--------|--------|
-| 1 — Setup | ✅ Done (2026-04-01) | initial commit of the recipe app |
-| 2 — Database | ✅ Done (2026-04-01) | initial commit of the recipe app |
-| 3 — GPT-4o | ✅ Done (2026-04-01) | implement phase 3 |
-| 4 — Import Methods | ✅ Done (2026-04-02) | phase 4, import methods |
-| 5 — Editor + Library | ✅ Done (2026-04-02) | phase 5 complete, recipe creation |
-| 6 — Shopping List | ✅ Done (2026-04-02) | phase 6: shopping list functionality |
-| 7 — Walmart | ✅ Done (2026-04-02) | Phase 7: Walmart product search and cart integration |
-| 8 — Polish | ✅ Done (2026-04-02) | UI changes and getting the walmart add to cart feature working |
-| 9 — Rubric Compliance | 🔄 In progress | — |
+
+| Phase                 | Status              | Commit                                                         |
+| --------------------- | ------------------- | -------------------------------------------------------------- |
+| 1 — Setup             | ✅ Done (2026-04-01) | initial commit of the recipe app                               |
+| 2 — Database          | ✅ Done (2026-04-01) | initial commit of the recipe app                               |
+| 3 — GPT-4o            | ✅ Done (2026-04-01) | implement phase 3                                              |
+| 4 — Import Methods    | ✅ Done (2026-04-02) | phase 4, import methods                                        |
+| 5 — Editor + Library  | ✅ Done (2026-04-02) | phase 5 complete, recipe creation                              |
+| 6 — Shopping List     | ✅ Done (2026-04-02) | phase 6: shopping list functionality                           |
+| 7 — Walmart           | ✅ Done (2026-04-02) | Phase 7: Walmart product search and cart integration           |
+| 8 — Polish            | ✅ Done (2026-04-02) | UI changes and getting the walmart add to cart feature working |
+| 9 — Rubric Compliance | 🔄 In progress      | —                                                              |
+
+
