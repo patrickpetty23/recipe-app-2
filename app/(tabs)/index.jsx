@@ -20,7 +20,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { parseImageIngredients, parseTextIngredients } from '../../src/services/openai';
+import { parseRecipeFromImage, parseRecipeFromText } from '../../src/services/openai';
 import { scrapeRecipeUrl } from '../../src/services/scraper';
 import { parsePdf, parseDocx } from '../../src/services/fileParser';
 import { getAllRecipes } from '../../src/db/queries';
@@ -49,11 +49,11 @@ export default function HomeScreen() {
     }, [])
   );
 
-  function navigateToEditor(ingredients, sourceType, imageUri) {
+  function navigateToEditor(recipeData, sourceType, imageUri) {
     router.push({
       pathname: '/recipe/editor',
       params: {
-        ingredients: JSON.stringify(ingredients),
+        recipeData: JSON.stringify(recipeData),
         sourceType,
         imageUri: imageUri ?? '',
       },
@@ -80,9 +80,9 @@ export default function HomeScreen() {
       const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.7 });
       setShowCamera(false);
       setLoadingMessage('Analyzing recipe with GPT-4o…');
-      const ingredients = await parseImageIngredients(photo.base64);
+      const recipeData = await parseRecipeFromImage(photo.base64);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigateToEditor(ingredients, 'camera', photo.uri);
+      navigateToEditor(recipeData, 'camera', photo.uri);
     } catch (err) {
       logger.error('scan.handleCapture.error', { error: err.message });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -122,9 +122,9 @@ export default function HomeScreen() {
       }
       setLoadingMessage('Analyzing recipe with GPT-4o…');
       const asset = result.assets[0];
-      const ingredients = await parseImageIngredients(asset.base64);
+      const recipeData = await parseRecipeFromImage(asset.base64);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigateToEditor(ingredients, 'photo', asset.uri);
+      navigateToEditor(recipeData, 'photo', asset.uri);
     } catch (err) {
       logger.error('scan.handlePickPhoto.error', { error: err.message });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -147,9 +147,9 @@ export default function HomeScreen() {
     try {
       const text = await scrapeRecipeUrl(trimmed);
       setLoadingMessage('Extracting ingredients with GPT-4o…');
-      const ingredients = await parseTextIngredients(text);
+      const recipeData = await parseRecipeFromText(text);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigateToEditor(ingredients, 'url', null);
+      navigateToEditor(recipeData, 'url', null);
     } catch (err) {
       logger.error('scan.handleUrlImport.error', { error: err.message });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -182,9 +182,9 @@ export default function HomeScreen() {
       setLoadingMessage('Extracting text from file…');
       const text = isPdf ? await parsePdf(file.uri) : await parseDocx(file.uri);
       setLoadingMessage('Extracting ingredients with GPT-4o…');
-      const ingredients = await parseTextIngredients(text);
+      const recipeData = await parseRecipeFromText(text);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigateToEditor(ingredients, 'file', null);
+      navigateToEditor(recipeData, 'file', null);
     } catch (err) {
       logger.error('scan.handleFilePick.error', { error: err.message });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);

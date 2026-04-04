@@ -16,24 +16,25 @@ import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
 
 import { scaleIngredients } from '../../src/utils/scaler';
-import { saveRecipe, saveIngredients } from '../../src/db/queries';
+import { saveRecipe, saveIngredients, saveRecipeSteps } from '../../src/db/queries';
 import { logger } from '../../src/utils/logger';
 
 export default function EditorScreen() {
   const router = useRouter();
-  const { ingredients: ingredientsJson, sourceType, imageUri } = useLocalSearchParams();
+  const { recipeData: recipeDataJson, sourceType, imageUri } = useLocalSearchParams();
+
   const parsed = useMemo(() => {
     try {
-      return JSON.parse(ingredientsJson);
+      return JSON.parse(recipeDataJson) ?? {};
     } catch {
-      return [];
+      return {};
     }
-  }, [ingredientsJson]);
+  }, [recipeDataJson]);
 
-  const [title, setTitle] = useState('New Recipe');
-  const [lastServings, setLastServings] = useState(1);
-  const [currentServings, setCurrentServings] = useState('1');
-  const [ingredients, setIngredients] = useState(parsed);
+  const [title, setTitle] = useState(parsed.title || 'New Recipe');
+  const [lastServings, setLastServings] = useState(parsed.servings || 1);
+  const [currentServings, setCurrentServings] = useState(String(parsed.servings || 1));
+  const [ingredients, setIngredients] = useState(parsed.ingredients || []);
   const [saving, setSaving] = useState(false);
 
   function handleServingsChange(text) {
@@ -66,8 +67,13 @@ export default function EditorScreen() {
         title: title.trim() || 'New Recipe',
         sourceType: sourceType || 'camera',
         sourceUri: null,
+        sourceUrl: parsed.sourceUrl ?? null,
         imageUri: imageUri || null,
         servings,
+        instructions: null,
+        prepTime: parsed.prepTime ?? null,
+        cookTime: parsed.cookTime ?? null,
+        cuisine: parsed.cuisine ?? null,
         createdAt: now,
         updatedAt: now,
       };
@@ -83,10 +89,23 @@ export default function EditorScreen() {
         sortOrder: i,
       }));
 
+      const stepsToSave = (parsed.steps || []).map((step, i) => ({
+        id: Crypto.randomUUID(),
+        recipeId,
+        stepNumber: step.stepNumber ?? i + 1,
+        instruction: step.instruction,
+        illustrationUrl: null,
+      }));
+
       saveRecipe(recipe);
       saveIngredients(recipeId, ingredientsToSave);
+      if (stepsToSave.length > 0) saveRecipeSteps(recipeId, stepsToSave);
 
-      logger.info('editor.saveRecipe.success', { recipeId, ingredientCount: ingredientsToSave.length });
+      logger.info('editor.saveRecipe.success', {
+        recipeId,
+        ingredientCount: ingredientsToSave.length,
+        stepCount: stepsToSave.length,
+      });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       router.replace(`/recipe/${recipeId}`);
@@ -137,17 +156,22 @@ export default function EditorScreen() {
     );
   }
 
+  const metaChips = [
+    parsed.cuisine,
+    parsed.prepTime ? `Prep ${parsed.prepTime}` : null,
+    parsed.cookTime ? `Cook ${parsed.cookTime}` : null,
+  ].filter(Boolean);
+
   return (
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'android' ? 0 : 0}
     >
       <View style={styles.header}>
         <TouchableOpacity onPress={handleDiscard}>
           <Text style={styles.headerButton}>Cancel</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Recipe</Text>
+        <Text style={styles.headerTitle}>Review Recipe</Text>
         <TouchableOpacity onPress={handleSave} disabled={saving}>
           {saving ? (
             <ActivityIndicator size="small" color="#007AFF" />
@@ -176,14 +200,23 @@ export default function EditorScreen() {
             keyboardType="decimal-pad"
           />
         </View>
-        <Text style={styles.sourceLabel}>
-          Source: {sourceType}{imageUri ? '  ·  Photo saved' : ''}
-        </Text>
+        {metaChips.length > 0 && (
+          <View style={styles.chips}>
+            {metaChips.map((chip) => (
+              <View key={chip} style={styles.chip}>
+                <Text style={styles.chipText}>{chip}</Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
 
       <View style={styles.listHeader}>
         <Text style={styles.listHeaderText}>
           {ingredients.length} ingredient{ingredients.length !== 1 ? 's' : ''}
+          {(parsed.steps || []).length > 0
+            ? `  ·  ${parsed.steps.length} step${parsed.steps.length !== 1 ? 's' : ''}`
+            : ''}
         </Text>
       </View>
 
@@ -254,7 +287,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   servingsInput: {
     borderWidth: 1,
@@ -267,9 +300,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#1C1C1E',
   },
-  sourceLabel: {
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chip: {
+    backgroundColor: '#F2F2F7',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  chipText: {
     fontSize: 13,
-    color: '#8E8E93',
+    fontWeight: '500',
+    color: '#636366',
   },
   listHeader: {
     paddingHorizontal: 16,
