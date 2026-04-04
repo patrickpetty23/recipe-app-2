@@ -4,11 +4,13 @@
 An iOS mobile app (React Native + Expo) that lets users scan physical cookbook recipes with their camera, import recipes from URLs or files, and automatically generate structured shopping lists — culminating in a one-tap Walmart cart integration.
 
 ## Critical Files to Review
-- **PRD**: `aiDocs/prd.md` — full product requirements, user stories, and success metrics
-- **MVP**: `aiDocs/mvp.md` — scoped feature set for the 6-day build
-- **Architecture**: `aiDocs/architecture.md` — file structure, data models, API design, logging
-- **Coding Style**: `aiDocs/coding-style.md` — conventions AI must follow
-- **Changelog**: `aiDocs/changelog.md` — recent changes and decisions
+- **PRD**: `aiDocs/prd.md` — full product requirements, user stories, success metrics, and version history showing how the spec evolved
+- **MVP**: `aiDocs/mvp.md` — scoped feature set for the build; all checkboxes checked as of Phase 8
+- **Architecture**: `aiDocs/architecture.md` — file structure, data models, API design, logging patterns
+- **Coding Style**: `aiDocs/coding-style.md` — conventions AI must follow (logging rules, error handling, file naming)
+- **Changelog**: `aiDocs/changelog.md` — day-by-day record of what changed and why
+- **Roadmap**: `ai/roadmaps/roadmap.md` — phase-by-phase checklist with completion tracking
+- **Plans**: `ai/plans/phase1-plan.md` through `phase8-plan.md` — intent, approach, and key decisions for each phase before implementation
 
 ## Tech Stack
 - **Framework**: React Native (Expo SDK 51+)
@@ -31,4 +33,4 @@ An iOS mobile app (React Native + Expo) that lets users scan physical cookbook r
 - **Secrets live in `.testEnvVars`** (gitignored). Never hardcode API keys.
 
 ## Current Focus
-Initial project setup — scaffolding Expo project, aiDocs structure, and scripts/ folder.
+Phase 9 — rubric compliance and final submission prep. All core features (Phases 1–8) are implemented and working: camera/photo/URL/file import, ingredient editor with scaling, recipe library, shopping list with check-off, and Walmart product search + cart integration. Now finalizing documentation, creating per-phase plan artifacts, and preparing for the April 7 demo.

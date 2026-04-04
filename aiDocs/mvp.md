@@ -8,25 +8,25 @@ The MVP exists to prove the concept works and deliver a compelling demo within 6
 ## What IS in the MVP
 
 ### Input Methods
-- [x] Camera scan (photo → GPT-4o Vision → ingredient list)
-- [x] Camera roll import (pick existing photo → same GPT-4o flow)
-- [x] URL import (scrape recipe page → GPT-4o cleanup → ingredient list)
-- [x] File import — PDF and DOCX (extract text → GPT-4o cleanup → ingredient list)
+- ✅ Camera scan (photo → GPT-4o Vision → ingredient list)
+- ✅ Camera roll import (pick existing photo → same GPT-4o flow)
+- ✅ URL import (scrape recipe page → GPT-4o cleanup → ingredient list)
+- ✅ File import — PDF and DOCX (extract text → GPT-4o cleanup → ingredient list)
 
 ### Recipe Management
-- [x] Editable ingredient list (name, quantity, unit per line)
-- [x] Serving size scaler (multiplier applied to all quantities)
-- [x] Save recipe to local library
-- [x] View saved recipe library
+- ✅ Editable ingredient list (name, quantity, unit per line)
+- ✅ Serving size scaler (multiplier applied to all quantities)
+- ✅ Save recipe to local library
+- ✅ View saved recipe library
 
 ### Shopping
-- [x] Combined shopping list from one or more saved recipes
-- [x] Check off items while shopping
+- ✅ Combined shopping list from one or more saved recipes
+- ✅ Check off items while shopping
 
 ### Walmart Integration
-- [x] Search Walmart Open API for each ingredient
-- [x] Display matched product + price
-- [x] Generate Walmart cart link or deep link and open it
+- ✅ Search Walmart Open API for each ingredient
+- ✅ Display matched product + price
+- ✅ Generate Walmart cart link or deep link and open it
 
 ## What is NOT in the MVP
 | Feature | Reason Cut |

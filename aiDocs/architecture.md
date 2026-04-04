@@ -11,8 +11,9 @@ recipe-scanner/
 │   ├── architecture.md
 │   ├── coding-style.md
 │   └── changelog.md
-├── ai/                            # ← GITIGNORED
+├── ai/                            # ← TRACKED in git
 │   ├── roadmaps/
+│   ├── plans/
 │   └── notes/
 ├── scripts/                       # CLI testing scripts
 │   ├── build.sh
@@ -20,7 +21,7 @@ recipe-scanner/
 │   └── run.sh
 ├── app/                           # Expo Router pages
 │   ├── (tabs)/
-│   │   ├── index.jsx              # Scan / Home tab
+│   │   ├── index.jsx              # Home tab (Add Recipe modal)
 │   │   ├── library.jsx            # Saved recipes tab
 │   │   └── list.jsx               # Shopping list tab
 │   ├── recipe/
@@ -230,14 +231,14 @@ export LOG_LEVEL="debug"
 
 ## Navigation Flow
 ```
-Tab: Scan
-  └─ Camera view → Capture → Processing → Ingredient Editor → Save → Library
+Tab: Home
+  └─ "Add Recipe" button → Modal (Camera / Photos / URL / PDF) → Processing → Ingredient Editor → Save → Library
 
 Tab: Library
   └─ Recipe list → Recipe detail → Edit ingredients → Add to shopping list
 
 Tab: Shopping List
-  └─ Combined ingredients → Check off items → Walmart search → Open cart link
+  └─ Combined ingredients → Check off items → Walmart search per ingredient → Send to Walmart cart
 ```
 
 ## Key Technical Decisions
