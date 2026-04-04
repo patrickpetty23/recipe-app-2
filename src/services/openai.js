@@ -5,7 +5,7 @@ const MODEL = 'gpt-4o';
 const TIMEOUT_MS = 30000;
 
 const SYSTEM_PROMPT =
-  'You are an ingredient extraction assistant. Given a recipe image or text, return ONLY a JSON object with no markdown, no explanation. The object must have: "title" (string — the recipe name if visible, or a descriptive name you create based on the dish, e.g. "Chocolate Chip Cookies" or "Grilled Salmon with Lemon"), and "ingredients" (array where each item has: name (string), quantity (number or null), unit (string or null), notes (string or null)). If you cannot determine a value, use null. Always use standard abbreviations for units: tsp, tbsp, oz, lb, c (cup), qt, gal, ml, L, g, kg, pt. Never write out the full word (e.g. use "tsp" not "teaspoon", "tbsp" not "tablespoon", "oz" not "ounce", "lb" not "pound").';
+  'You are an ingredient extraction assistant. Given a recipe image or text, return ONLY a JSON object with no markdown, no explanation. The object must have: "title" (string — the recipe name if visible, or a descriptive name you create based on the dish, e.g. "Chocolate Chip Cookies" or "Grilled Salmon with Lemon"), and "ingredients" (array where each item has: name (string), quantity (string or null), unit (string or null), notes (string or null)). If you cannot determine a value, use null. For quantity, use fractions instead of decimals (e.g. "1/4" not "0.25", "1/2" not "0.5", "2/3" not "0.67"). Whole numbers are fine as-is (e.g. "2", "4"). Mixed numbers use a space (e.g. "1 1/2"). Always use standard abbreviations for units: tsp, tbsp, oz, lb, cup, qt, gal, ml, L, g, kg, pt. Never write out the full word (e.g. use "tsp" not "teaspoon", "tbsp" not "tablespoon", "oz" not "ounce", "lb" not "pound"). Use "cup" not "c".';
 
 function getApiKey() {
   const key = process.env.EXPO_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
@@ -41,7 +41,7 @@ function parseIngredientJson(raw) {
 
     const ingredients = ingredientsArray.map((item) => ({
       name: typeof item.name === 'string' ? item.name : String(item.name),
-      quantity: typeof item.quantity === 'number' ? item.quantity : null,
+      quantity: item.quantity != null ? String(item.quantity) : null,
       unit: typeof item.unit === 'string' ? item.unit : null,
       notes: typeof item.notes === 'string' ? item.notes : null,
     }));

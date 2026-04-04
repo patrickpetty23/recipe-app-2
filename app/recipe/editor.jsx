@@ -109,10 +109,9 @@ export default function EditorScreen() {
           style={styles.qtyInput}
           value={item.quantity != null ? String(item.quantity) : ''}
           onChangeText={(val) => {
-            const num = parseFloat(val);
-            handleUpdateIngredient(index, 'quantity', isNaN(num) ? null : num);
+            handleUpdateIngredient(index, 'quantity', val || null);
           }}
-          keyboardType="decimal-pad"
+          keyboardType="default"
           placeholder="Qty"
           placeholderTextColor="#999"
         />

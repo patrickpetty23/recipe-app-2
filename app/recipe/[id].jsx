@@ -143,12 +143,11 @@ export default function RecipeDetailScreen() {
       <View style={styles.ingredientRow}>
         <TextInput
           style={styles.qtyInput}
-          value={item.quantity != null ? String(Math.round(item.quantity * 100) / 100) : ''}
+          value={item.quantity != null ? String(item.quantity) : ''}
           onChangeText={(val) => {
-            const num = parseFloat(val);
-            handleUpdateIngredient(index, 'quantity', isNaN(num) ? null : num);
+            handleUpdateIngredient(index, 'quantity', val || null);
           }}
-          keyboardType="decimal-pad"
+          keyboardType="default"
           placeholder="Qty"
           placeholderTextColor="#999"
         />
