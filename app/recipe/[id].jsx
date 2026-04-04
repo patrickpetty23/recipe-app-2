@@ -197,9 +197,7 @@ export default function RecipeDetailScreen() {
         <Text style={styles.headerTitle} numberOfLines={1}>
           {title}
         </Text>
-        <TouchableOpacity onPress={handleDelete}>
-          <Text style={styles.headerButtonDelete}>Delete</Text>
-        </TouchableOpacity>
+        <View style={{ width: 50 }} />
       </View>
 
       <View style={styles.metaSection}>
@@ -281,10 +279,6 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     color: '#007AFF',
-    fontSize: 17,
-  },
-  headerButtonDelete: {
-    color: '#FF3B30',
     fontSize: 17,
   },
   headerTitle: {
@@ -401,14 +395,13 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   deleteButton: {
-    borderWidth: 1,
-    borderColor: '#FF3B30',
+    backgroundColor: '#FF3B30',
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: 'center',
   },
   deleteButtonText: {
-    color: '#FF3B30',
+    color: '#fff',
     fontSize: 17,
     fontWeight: '600',
   },
