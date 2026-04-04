@@ -19,6 +19,7 @@ import {
 } from '../../src/db/queries';
 import { searchProduct, buildCartLink, isWalmartConfigured } from '../../src/services/walmart';
 import { logger } from '../../src/utils/logger';
+import { parseFraction, toFractionString } from '../../src/utils/scaler';
 
 export default function ShoppingListScreen() {
   const [items, setItems] = useState([]);
@@ -42,24 +43,60 @@ export default function ShoppingListScreen() {
     }
   }
 
-  const sections = useMemo(() => {
-    const grouped = {};
+  const mergedItems = useMemo(() => {
+    const groups = {};
     for (const item of items) {
-      const key = item.recipeTitle || 'Unknown Recipe';
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(item);
+      const nameKey = (item.name || '').toLowerCase().trim();
+      const unitKey = (item.unit || '').toLowerCase().trim();
+      const key = `${nameKey}||${unitKey}`;
+      if (!groups[key]) {
+        groups[key] = {
+          id: key,
+          name: item.name,
+          unit: item.unit,
+          quantity: null,
+          checked: true,
+          sourceIds: [],
+          recipeNames: [],
+        };
+      }
+      const group = groups[key];
+      group.sourceIds.push(item.id);
+      if (!item.checked) group.checked = false;
+      const recipeName = item.recipeTitle || 'Unknown';
+      if (!group.recipeNames.includes(recipeName)) group.recipeNames.push(recipeName);
+
+      const existingQty = parseFraction(group.quantity);
+      const newQty = parseFraction(item.quantity);
+      if (existingQty != null && newQty != null) {
+        group.quantity = toFractionString(existingQty + newQty);
+      } else if (newQty != null) {
+        group.quantity = toFractionString(newQty);
+      }
     }
-    return Object.entries(grouped).map(([title, data]) => ({ title, data }));
+    return Object.values(groups);
   }, [items]);
 
-  function handleToggleChecked(item) {
+  const sections = useMemo(() => {
+    return [{ title: 'Shopping List', data: mergedItems }];
+  }, [mergedItems]);
+
+  function handleToggleChecked(mergedItem) {
     try {
-      toggleIngredientChecked(item.id);
+      const newChecked = !mergedItem.checked;
+      for (const sourceId of mergedItem.sourceIds) {
+        const original = items.find((i) => i.id === sourceId);
+        if (original && original.checked !== newChecked) {
+          toggleIngredientChecked(sourceId);
+        }
+      }
       setItems((prev) =>
-        prev.map((i) => (i.id === item.id ? { ...i, checked: !i.checked } : i))
+        prev.map((i) =>
+          mergedItem.sourceIds.includes(i.id) ? { ...i, checked: newChecked } : i
+        )
       );
     } catch (err) {
-      logger.error('shoppingList.toggleChecked.error', { id: item.id, error: err.message });
+      logger.error('shoppingList.toggleChecked.error', { ids: mergedItem.sourceIds, error: err.message });
     }
   }
 
@@ -75,7 +112,8 @@ export default function ShoppingListScreen() {
     if (searchingIds[item.id]) return;
     setSearchingIds((prev) => ({ ...prev, [item.id]: true }));
     try {
-      const product = await searchProduct(item.name);
+      const searchQuery = [item.quantity, item.unit, item.name].filter(Boolean).join(' ');
+      const product = await searchProduct(searchQuery);
       setWalmartResults((prev) => ({
         ...prev,
         [item.id]: product || { noMatch: true },
@@ -100,13 +138,14 @@ export default function ShoppingListScreen() {
     }
 
     setBulkSearching(true);
-    const unsearched = items.filter((i) => !walmartResults[i.id]);
+    const unsearched = mergedItems.filter((i) => !walmartResults[i.id]);
     logger.info('shoppingList.bulkSearch', { count: unsearched.length });
 
     for (const item of unsearched) {
       setSearchingIds((prev) => ({ ...prev, [item.id]: true }));
       try {
-        const product = await searchProduct(item.name);
+        const searchQuery = [item.quantity, item.unit, item.name].filter(Boolean).join(' ');
+        const product = await searchProduct(searchQuery);
         setWalmartResults((prev) => ({
           ...prev,
           [item.id]: product || { noMatch: true },
@@ -192,6 +231,7 @@ export default function ShoppingListScreen() {
     const qtyUnit = [formatQuantity(item.quantity), item.unit].filter(Boolean).join(' ');
     const wResult = walmartResults[item.id];
     const isSearching = searchingIds[item.id];
+    const isMerged = item.sourceIds.length > 1;
 
     return (
       <View style={styles.itemContainer}>
@@ -204,9 +244,16 @@ export default function ShoppingListScreen() {
             {item.checked && <Text style={styles.checkmark}>✓</Text>}
           </View>
           <View style={styles.itemContent}>
-            <Text style={[styles.itemName, item.checked && styles.itemChecked]} numberOfLines={1}>
-              {item.name}
-            </Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.itemName, item.checked && styles.itemChecked]} numberOfLines={1}>
+                {item.name}
+              </Text>
+              {isMerged && (
+                <Text style={styles.mergedHint}>
+                  Combined from: {item.recipeNames.join(', ')}
+                </Text>
+              )}
+            </View>
             {qtyUnit ? (
               <Text style={[styles.itemQty, item.checked && styles.itemChecked]}>
                 {qtyUnit}
@@ -243,12 +290,8 @@ export default function ShoppingListScreen() {
     );
   }
 
-  function renderSectionHeader({ section }) {
-    return (
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{section.title}</Text>
-      </View>
-    );
+  function renderSectionHeader() {
+    return null;
   }
 
   if (items.length === 0) {
@@ -262,16 +305,16 @@ export default function ShoppingListScreen() {
     );
   }
 
-  const checkedCount = items.filter((i) => i.checked).length;
+  const checkedCount = mergedItems.filter((i) => i.checked).length;
   const matchedCount = Object.values(walmartResults).filter((r) => r && r.itemId).length;
-  const unsearchedCount = items.filter((i) => !walmartResults[i.id]).length;
+  const unsearchedCount = mergedItems.filter((i) => !walmartResults[i.id]).length;
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Shopping List</Text>
         <Text style={styles.headerCount}>
-          {checkedCount}/{items.length} checked
+          {checkedCount}/{mergedItems.length} checked
         </Text>
       </View>
 
@@ -417,6 +460,12 @@ const styles = StyleSheet.create({
   itemChecked: {
     textDecorationLine: 'line-through',
     color: '#BBB',
+  },
+  mergedHint: {
+    fontSize: 11,
+    color: '#999',
+    fontStyle: 'italic',
+    marginTop: 2,
   },
   walmartSearchButton: {
     marginLeft: 52,
