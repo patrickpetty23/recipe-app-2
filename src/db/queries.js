@@ -6,12 +6,13 @@ export function saveRecipe(recipe) {
   try {
     const db = getDatabase();
     db.runSync(
-      `INSERT INTO recipes (id, title, source_type, source_uri, servings, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO recipes (id, title, source_type, source_uri, image_uri, servings, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       recipe.id,
       recipe.title,
       recipe.sourceType,
       recipe.sourceUri ?? null,
+      recipe.imageUri ?? null,
       recipe.servings,
       recipe.createdAt,
       recipe.updatedAt
@@ -28,7 +29,13 @@ export function getAllRecipes() {
   try {
     const db = getDatabase();
     const rows = db.getAllSync(
-      'SELECT id, title, source_type, source_uri, servings, created_at, updated_at FROM recipes ORDER BY created_at DESC'
+      `SELECT r.id, r.title, r.source_type, r.source_uri, r.image_uri, r.servings,
+              r.created_at, r.updated_at,
+              COUNT(i.id) AS ingredient_count
+       FROM recipes r
+       LEFT JOIN ingredients i ON i.recipe_id = r.id
+       GROUP BY r.id
+       ORDER BY r.created_at DESC`
     );
     const recipes = rows.map(mapRecipeRow);
     logger.info('queries.getAllRecipes.success', { count: recipes.length });
@@ -44,7 +51,7 @@ export function getRecipeById(id) {
   try {
     const db = getDatabase();
     const row = db.getFirstSync(
-      'SELECT id, title, source_type, source_uri, servings, created_at, updated_at FROM recipes WHERE id = ?',
+      'SELECT id, title, source_type, source_uri, image_uri, servings, created_at, updated_at FROM recipes WHERE id = ?',
       id
     );
     if (!row) {
@@ -217,6 +224,18 @@ export function getShoppingListIngredients() {
   }
 }
 
+export function removeIngredientFromList(id) {
+  logger.info('queries.removeIngredientFromList', { id });
+  try {
+    const db = getDatabase();
+    db.runSync('UPDATE ingredients SET in_list = 0, checked = 0 WHERE id = ?', id);
+    logger.info('queries.removeIngredientFromList.success', { id });
+  } catch (err) {
+    logger.error('queries.removeIngredientFromList.error', { id, error: err.message });
+    throw err;
+  }
+}
+
 export function addRecipeToList(recipeId) {
   logger.info('queries.addRecipeToList', { recipeId });
   try {
@@ -265,13 +284,44 @@ export function clearShoppingList() {
   }
 }
 
+export function getSetting(key) {
+  logger.info('queries.getSetting', { key });
+  try {
+    const db = getDatabase();
+    const row = db.getFirstSync('SELECT value FROM app_settings WHERE key = ?', key);
+    logger.info('queries.getSetting.success', { key, found: !!row });
+    return row ? row.value : null;
+  } catch (err) {
+    logger.error('queries.getSetting.error', { key, error: err.message });
+    throw err;
+  }
+}
+
+export function setSetting(key, value) {
+  logger.info('queries.setSetting', { key });
+  try {
+    const db = getDatabase();
+    db.runSync(
+      'INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)',
+      key,
+      String(value)
+    );
+    logger.info('queries.setSetting.success', { key });
+  } catch (err) {
+    logger.error('queries.setSetting.error', { key, error: err.message });
+    throw err;
+  }
+}
+
 function mapRecipeRow(row) {
   return {
     id: row.id,
     title: row.title,
     sourceType: row.source_type,
     sourceUri: row.source_uri,
+    imageUri: row.image_uri ?? null,
     servings: row.servings,
+    ingredientCount: row.ingredient_count ?? 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
