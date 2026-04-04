@@ -154,10 +154,11 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 - ✅ Update `context.md` "Current Focus" — changed to Phase 9 rubric compliance
 - ✅ Update `architecture.md` line 14 — changed `ai/` from "GITIGNORED" to "TRACKED in git"
 - ✅ Update `architecture.md` project structure — reflected Home tab rename, modal import UI
-- ⬜ Verify no secrets committed — run `git log -p | grep -i "sk-"` to check
-- ⬜ Confirm `CURSOR.md` provides behavioral guidance (not just "read context.md") — consider renaming to `CLAUDE.md` or adding a `.cursorrules` for maximum rubric alignment
-- ⬜ Confirm `ai/` folder is committed and visible: `git ls-files ai/` should show files
-- ⬜ Commit: "Update AI infrastructure docs to reflect current state"
+- ✅ Add `.env` to `.gitignore` (rubric explicitly lists it)
+- ✅ Verify no secrets committed — checked `git log -p` for `sk-`, clean
+- ✅ Converted `CURSOR.md` to `.cursorrules` — enhanced with changelog reference, error handling, EXPO_PUBLIC_ convention; removed from `.gitignore` so graders can see it
+- ✅ Confirm `ai/` folder is committed and visible — `git ls-files ai/` shows 9 files (8 plans + roadmap)
+- ✅ Commit: "Phase 9B: Convert CURSOR.md to .cursorrules, add .env to gitignore"
 
 #### 9C — Phase-by-Phase Implementation & Working Demo (25 pts)
 
