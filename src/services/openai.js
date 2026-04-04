@@ -5,7 +5,7 @@ const MODEL = 'gpt-4o';
 const TIMEOUT_MS = 30000;
 
 const SYSTEM_PROMPT =
-  'You are an ingredient extraction assistant. Given a recipe image or text, extract all ingredients and return ONLY a JSON array with no markdown, no explanation. Each item must have: name (string), quantity (number or null), unit (string or null), notes (string or null). If you cannot determine a value, use null.';
+  'You are an ingredient extraction assistant. Given a recipe image or text, return ONLY a JSON object with no markdown, no explanation. The object must have: "title" (string — the recipe name if visible, or a descriptive name you create based on the dish, e.g. "Chocolate Chip Cookies" or "Grilled Salmon with Lemon"), and "ingredients" (array where each item has: name (string), quantity (number or null), unit (string or null), notes (string or null)). If you cannot determine a value, use null. Always use standard abbreviations for units: tsp, tbsp, oz, lb, c (cup), qt, gal, ml, L, g, kg, pt. Never write out the full word (e.g. use "tsp" not "teaspoon", "tbsp" not "tablespoon", "oz" not "ounce", "lb" not "pound").';
 
 function getApiKey() {
   const key = process.env.EXPO_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
@@ -25,20 +25,28 @@ function parseIngredientJson(raw) {
   if (fenceMatch) text = fenceMatch[1].trim();
   try {
     let parsed = JSON.parse(text);
-    if (!Array.isArray(parsed)) {
-      const arrayVal = Object.values(parsed).find(Array.isArray);
-      if (arrayVal) {
-        parsed = arrayVal;
-      } else {
-        throw new Error('Response does not contain a JSON array of ingredients');
-      }
+    let title = null;
+    let ingredientsArray = null;
+
+    if (Array.isArray(parsed)) {
+      ingredientsArray = parsed;
+    } else if (typeof parsed === 'object' && parsed !== null) {
+      title = typeof parsed.title === 'string' ? parsed.title : null;
+      ingredientsArray = parsed.ingredients || Object.values(parsed).find(Array.isArray);
     }
-    return parsed.map((item) => ({
+
+    if (!ingredientsArray || !Array.isArray(ingredientsArray)) {
+      throw new Error('Response does not contain ingredients');
+    }
+
+    const ingredients = ingredientsArray.map((item) => ({
       name: typeof item.name === 'string' ? item.name : String(item.name),
       quantity: typeof item.quantity === 'number' ? item.quantity : null,
       unit: typeof item.unit === 'string' ? item.unit : null,
       notes: typeof item.notes === 'string' ? item.notes : null,
     }));
+
+    return { title, ingredients };
   } catch (parseErr) {
     logger.error('openai.parseIngredientJson.rawResponse', { preview: raw.slice(0, 200) });
     throw new Error('No ingredients found. Make sure the image clearly shows a recipe with ingredients listed.');
@@ -94,9 +102,9 @@ export async function parseImageIngredients(base64Image) {
         ],
       },
     ]);
-    const ingredients = parseIngredientJson(raw);
-    logger.info('openai.parseImageIngredients.success', { count: ingredients.length });
-    return ingredients;
+    const result = parseIngredientJson(raw);
+    logger.info('openai.parseImageIngredients.success', { title: result.title, count: result.ingredients.length });
+    return result;
   } catch (err) {
     if (err.name === 'AbortError') {
       logger.error('openai.parseImageIngredients.error', { error: 'Request timed out' });
@@ -114,9 +122,9 @@ export async function parseTextIngredients(rawText) {
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: rawText },
     ], { jsonMode: true });
-    const ingredients = parseIngredientJson(raw);
-    logger.info('openai.parseTextIngredients.success', { count: ingredients.length });
-    return ingredients;
+    const result = parseIngredientJson(raw);
+    logger.info('openai.parseTextIngredients.success', { title: result.title, count: result.ingredients.length });
+    return result;
   } catch (err) {
     if (err.name === 'AbortError') {
       logger.error('openai.parseTextIngredients.error', { error: 'Request timed out' });

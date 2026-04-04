@@ -20,7 +20,7 @@ import { logger } from '../../src/utils/logger';
 
 export default function EditorScreen() {
   const router = useRouter();
-  const { ingredients: ingredientsJson, sourceType } = useLocalSearchParams();
+  const { ingredients: ingredientsJson, sourceType, title: paramTitle } = useLocalSearchParams();
   const parsed = useMemo(() => {
     try {
       return JSON.parse(ingredientsJson);
@@ -29,7 +29,7 @@ export default function EditorScreen() {
     }
   }, [ingredientsJson]);
 
-  const [title, setTitle] = useState('New Recipe');
+  const [title, setTitle] = useState(paramTitle || 'New Recipe');
   const [lastServings, setLastServings] = useState(1);
   const [currentServings, setCurrentServings] = useState('1');
   const [ingredients, setIngredients] = useState(parsed);
