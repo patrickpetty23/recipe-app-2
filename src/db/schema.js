@@ -15,6 +15,18 @@ function migrateAddInList(database) {
   }
 }
 
+function migrateAddImageUri(database) {
+  try {
+    database.execSync('ALTER TABLE recipes ADD COLUMN image_uri TEXT');
+    logger.info('schema.migrate', { migration: 'add_image_uri_column' });
+  } catch (err) {
+    if (err.message && err.message.includes('duplicate column')) {
+      return;
+    }
+    logger.error('schema.migrate.error', { migration: 'add_image_uri_column', error: err.message });
+  }
+}
+
 export function getDatabase() {
   if (db) return db;
 
@@ -30,6 +42,7 @@ export function getDatabase() {
       title TEXT NOT NULL,
       source_type TEXT NOT NULL,
       source_uri TEXT,
+      image_uri TEXT,
       servings INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
@@ -51,7 +64,15 @@ export function getDatabase() {
     )
   `);
 
+  db.execSync(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )
+  `);
+
   migrateAddInList(db);
+  migrateAddImageUri(db);
 
   db.execSync(`
     CREATE INDEX IF NOT EXISTS idx_ingredients_in_list ON ingredients(in_list)
