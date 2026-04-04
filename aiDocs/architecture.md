@@ -44,8 +44,7 @@ recipe-scanner/
 │       ├── RecipeCard.jsx
 │       └── ShoppingItem.jsx
 ├── .testEnvVars                   # ← GITIGNORED — API keys for testing
-├── CLAUDE.md                      # ← GITIGNORED — AI tool instructions
-├── .cursorrules                   # ← GITIGNORED — Cursor instructions
+├── .cursorrules                   # ← TRACKED in git — Cursor behavioral guidance
 ├── .gitignore
 ├── app.json
 ├── package.json
