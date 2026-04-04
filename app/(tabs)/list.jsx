@@ -185,7 +185,7 @@ export default function ShoppingListScreen() {
 
   function formatQuantity(qty) {
     if (qty == null) return '';
-    return String(Math.round(qty * 100) / 100);
+    return String(qty);
   }
 
   function renderItem({ item }) {

@@ -121,6 +121,7 @@ export default function EditorScreen() {
           onChangeText={(val) => handleUpdateIngredient(index, 'unit', val || null)}
           placeholder="Unit"
           placeholderTextColor="#999"
+          autoCapitalize="none"
         />
         <TextInput
           style={styles.nameInput}
