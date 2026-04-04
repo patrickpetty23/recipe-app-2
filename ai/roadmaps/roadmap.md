@@ -251,5 +251,3 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 | 7 — Walmart           | ✅ Done (2026-04-02) | Phase 7: Walmart product search and cart integration           |
 | 8 — Polish            | ✅ Done (2026-04-02) | UI changes and getting the walmart add to cart feature working |
 | 9 — Rubric Compliance | 🔄 In progress      | —                                                              |
-
-

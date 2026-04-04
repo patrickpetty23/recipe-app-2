@@ -6,13 +6,14 @@ export function saveRecipe(recipe) {
   try {
     const db = getDatabase();
     db.runSync(
-      `INSERT INTO recipes (id, title, source_type, source_uri, servings, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO recipes (id, title, source_type, source_uri, servings, instructions, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       recipe.id,
       recipe.title,
       recipe.sourceType,
       recipe.sourceUri ?? null,
       recipe.servings,
+      recipe.instructions ?? null,
       recipe.createdAt,
       recipe.updatedAt
     );
@@ -28,7 +29,7 @@ export function getAllRecipes() {
   try {
     const db = getDatabase();
     const rows = db.getAllSync(
-      'SELECT id, title, source_type, source_uri, servings, created_at, updated_at FROM recipes ORDER BY created_at DESC'
+      'SELECT id, title, source_type, source_uri, servings, instructions, created_at, updated_at FROM recipes ORDER BY created_at DESC'
     );
     const recipes = rows.map(mapRecipeRow);
     logger.info('queries.getAllRecipes.success', { count: recipes.length });
@@ -44,7 +45,7 @@ export function getRecipeById(id) {
   try {
     const db = getDatabase();
     const row = db.getFirstSync(
-      'SELECT id, title, source_type, source_uri, servings, created_at, updated_at FROM recipes WHERE id = ?',
+      'SELECT id, title, source_type, source_uri, servings, instructions, created_at, updated_at FROM recipes WHERE id = ?',
       id
     );
     if (!row) {
@@ -69,8 +70,8 @@ export function updateRecipe(id, fields) {
   logger.info('queries.updateRecipe', { id, fields: Object.keys(fields) });
   try {
     const db = getDatabase();
-    const allowed = ['title', 'servings'];
-    const columnMap = { title: 'title', servings: 'servings' };
+    const allowed = ['title', 'servings', 'instructions'];
+    const columnMap = { title: 'title', servings: 'servings', instructions: 'instructions' };
     const setClauses = [];
     const values = [];
     for (const key of allowed) {
@@ -266,12 +267,17 @@ export function clearShoppingList() {
 }
 
 function mapRecipeRow(row) {
+  let instructions = [];
+  if (row.instructions) {
+    try { instructions = JSON.parse(row.instructions); } catch { instructions = []; }
+  }
   return {
     id: row.id,
     title: row.title,
     sourceType: row.source_type,
     sourceUri: row.source_uri,
     servings: row.servings,
+    instructions,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

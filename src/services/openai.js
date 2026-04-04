@@ -5,7 +5,7 @@ const MODEL = 'gpt-4o';
 const TIMEOUT_MS = 30000;
 
 const SYSTEM_PROMPT =
-  'You are an ingredient extraction assistant. Given a recipe image or text, return ONLY a JSON object with no markdown, no explanation. The object must have: "title" (string — extract the main food item or dish from the title and use that as the recipe name. Keep it short and natural, like what you would call the dish in conversation. If no title is visible, create one based on what the dish is.), and "ingredients" (array where each item has: name (string), quantity (string or null), unit (string or null), notes (string or null)). If you cannot determine a value, use null. For quantity, use fractions instead of decimals (e.g. "1/4" not "0.25", "1/2" not "0.5", "2/3" not "0.67"). Whole numbers are fine as-is (e.g. "2", "4"). Mixed numbers use a space (e.g. "1 1/2"). Always use standard abbreviations for units: tsp, tbsp, oz, lb, cup, qt, gal, ml, L, g, kg, pt. Never write out the full word (e.g. use "tsp" not "teaspoon", "tbsp" not "tablespoon", "oz" not "ounce", "lb" not "pound"). Use "cup" not "c". For ingredient names, always use the most specific common canonical name in lowercase. For example: "all-purpose flour" not "flour", "unsalted butter" not "butter", "large eggs" not "eggs", "granulated sugar" not "sugar". But keep distinct ingredients separate — "almond flour" is not "all-purpose flour", "brown sugar" is not "granulated sugar". This consistency is critical for combining ingredients across recipes.';
+  'You are a recipe extraction assistant. Given a recipe image or text, return ONLY a JSON object with no markdown, no explanation. The object must have three keys: "title" (string — extract the main food item or dish and use that as the recipe name. Keep it short and natural. If no title is visible, create one based on what the dish is.), "ingredients" (array where each item has: name (string), quantity (string or null), unit (string or null), notes (string or null)), and "instructions" (array of strings, each string is one cooking step in order). For instructions: if the source includes cooking instructions, extract them step by step. If only ingredients are provided with no instructions, generate reasonable cooking instructions for the dish. If the input is just a photo of food with no recipe text, identify the dish and generate both ingredients and step-by-step instructions. For quantity, use fractions instead of decimals (e.g. "1/4" not "0.25", "1/2" not "0.5", "2/3" not "0.67"). Whole numbers are fine as-is (e.g. "2", "4"). Mixed numbers use a space (e.g. "1 1/2"). Always use standard abbreviations for units: tsp, tbsp, oz, lb, cup, qt, gal, ml, L, g, kg, pt. Never write out the full word (e.g. use "tsp" not "teaspoon", "tbsp" not "tablespoon", "oz" not "ounce", "lb" not "pound"). Use "cup" not "c". For ingredient names, always use the most specific common canonical name in lowercase. For example: "all-purpose flour" not "flour", "unsalted butter" not "butter", "large eggs" not "eggs", "granulated sugar" not "sugar". But keep distinct ingredients separate — "almond flour" is not "all-purpose flour", "brown sugar" is not "granulated sugar". This consistency is critical for combining ingredients across recipes.';
 
 function getApiKey() {
   const key = process.env.EXPO_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
@@ -28,11 +28,16 @@ function parseIngredientJson(raw) {
     let title = null;
     let ingredientsArray = null;
 
+    let instructions = [];
+
     if (Array.isArray(parsed)) {
       ingredientsArray = parsed;
     } else if (typeof parsed === 'object' && parsed !== null) {
       title = typeof parsed.title === 'string' ? parsed.title : null;
       ingredientsArray = parsed.ingredients || Object.values(parsed).find(Array.isArray);
+      if (Array.isArray(parsed.instructions)) {
+        instructions = parsed.instructions.filter((s) => typeof s === 'string' && s.trim());
+      }
     }
 
     if (!ingredientsArray || !Array.isArray(ingredientsArray)) {
@@ -46,7 +51,7 @@ function parseIngredientJson(raw) {
       notes: typeof item.notes === 'string' ? item.notes : null,
     }));
 
-    return { title, ingredients };
+    return { title, ingredients, instructions };
   } catch (parseErr) {
     logger.error('openai.parseIngredientJson.rawResponse', { preview: raw.slice(0, 200) });
     throw new Error('No ingredients found. Make sure the image clearly shows a recipe with ingredients listed.');
@@ -97,13 +102,13 @@ export async function parseImageIngredients(base64Image) {
       {
         role: 'user',
         content: [
-          { type: 'text', text: 'Look at this image. If it shows a recipe with ingredients listed, extract those ingredients exactly. If it shows a prepared dish or meal, identify the dish and generate a complete ingredient list for making it. Always include realistic estimated quantities and units for every ingredient (e.g. 2 cups, 1 tsp, 1 lb). Never leave quantity or unit as null unless truly unknown. Return ONLY a JSON object with an "ingredients" key containing the array.' },
+          { type: 'text', text: 'Look at this image. Extract the recipe title, ingredients, and cooking instructions. If it shows a recipe with instructions, extract them. If it only shows ingredients with no instructions, generate reasonable instructions. If it shows a prepared dish or meal with no recipe text, identify the dish and generate both ingredients and step-by-step instructions. Always include realistic estimated quantities and units for every ingredient.' },
           { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } },
         ],
       },
     ]);
     const result = parseIngredientJson(raw);
-    logger.info('openai.parseImageIngredients.success', { title: result.title, count: result.ingredients.length });
+    logger.info('openai.parseImageIngredients.success', { title: result.title, ingredientCount: result.ingredients.length, stepCount: result.instructions.length });
     return result;
   } catch (err) {
     if (err.name === 'AbortError') {
@@ -123,7 +128,7 @@ export async function parseTextIngredients(rawText) {
       { role: 'user', content: rawText },
     ], { jsonMode: true });
     const result = parseIngredientJson(raw);
-    logger.info('openai.parseTextIngredients.success', { title: result.title, count: result.ingredients.length });
+    logger.info('openai.parseTextIngredients.success', { title: result.title, ingredientCount: result.ingredients.length, stepCount: result.instructions.length });
     return result;
   } catch (err) {
     if (err.name === 'AbortError') {

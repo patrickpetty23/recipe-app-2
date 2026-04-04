@@ -15,6 +15,18 @@ function migrateAddInList(database) {
   }
 }
 
+function migrateAddInstructions(database) {
+  try {
+    database.execSync('ALTER TABLE recipes ADD COLUMN instructions TEXT');
+    logger.info('schema.migrate', { migration: 'add_instructions_column' });
+  } catch (err) {
+    if (err.message && err.message.includes('duplicate column')) {
+      return;
+    }
+    logger.error('schema.migrate.error', { migration: 'add_instructions_column', error: err.message });
+  }
+}
+
 export function getDatabase() {
   if (db) return db;
 
@@ -31,6 +43,7 @@ export function getDatabase() {
       source_type TEXT NOT NULL,
       source_uri TEXT,
       servings INTEGER NOT NULL DEFAULT 1,
+      instructions TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     )
@@ -52,6 +65,7 @@ export function getDatabase() {
   `);
 
   migrateAddInList(db);
+  migrateAddInstructions(db);
 
   db.execSync(`
     CREATE INDEX IF NOT EXISTS idx_ingredients_in_list ON ingredients(in_list)

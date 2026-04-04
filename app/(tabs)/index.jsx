@@ -48,10 +48,15 @@ export default function HomeScreen() {
     }, [])
   );
 
-  function navigateToEditor(ingredients, sourceType, title) {
+  function navigateToEditor(ingredients, sourceType, title, instructions) {
     router.push({
       pathname: '/recipe/editor',
-      params: { ingredients: JSON.stringify(ingredients), sourceType, title: title || '' },
+      params: {
+        ingredients: JSON.stringify(ingredients),
+        sourceType,
+        title: title || '',
+        instructions: JSON.stringify(instructions || []),
+      },
     });
   }
 
@@ -76,7 +81,7 @@ export default function HomeScreen() {
       setShowCamera(false);
       setLoadingMessage('Analyzing recipe with GPT-4o...');
       const result = await parseImageIngredients(photo.base64);
-      navigateToEditor(result.ingredients, 'camera', result.title);
+      navigateToEditor(result.ingredients, 'camera', result.title, result.instructions);
     } catch (err) {
       logger.error('scan.handleCapture.error', { error: err.message });
       Alert.alert('Error', err.message);
@@ -121,7 +126,7 @@ export default function HomeScreen() {
       setLoading(true);
       setLoadingMessage('Analyzing recipe with GPT-4o...');
       const parsed = await parseImageIngredients(result.assets[0].base64);
-      navigateToEditor(parsed.ingredients, 'photo', parsed.title);
+      navigateToEditor(parsed.ingredients, 'photo', parsed.title, parsed.instructions);
     } catch (err) {
       logger.error('scan.handlePickPhoto.error', { error: err.message, stack: err.stack });
       Alert.alert('Error', err.message);
@@ -145,7 +150,7 @@ export default function HomeScreen() {
       const text = await scrapeRecipeUrl(trimmed);
       setLoadingMessage('Extracting ingredients with GPT-4o...');
       const parsed = await parseTextIngredients(text);
-      navigateToEditor(parsed.ingredients, 'url', parsed.title);
+      navigateToEditor(parsed.ingredients, 'url', parsed.title, parsed.instructions);
     } catch (err) {
       logger.error('scan.handleUrlImport.error', { error: err.message });
       Alert.alert('Error', err.message);
@@ -176,7 +181,7 @@ export default function HomeScreen() {
       const text = isPdf ? await parsePdf(file.uri) : await parseDocx(file.uri);
       setLoadingMessage('Extracting ingredients with GPT-4o...');
       const parsed = await parseTextIngredients(text);
-      navigateToEditor(parsed.ingredients, 'file', parsed.title);
+      navigateToEditor(parsed.ingredients, 'file', parsed.title, parsed.instructions);
     } catch (err) {
       logger.error('scan.handleFilePick.error', { error: err.message });
       Alert.alert('Error', err.message);

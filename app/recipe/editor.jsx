@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   StyleSheet,
-  FlatList,
+  ScrollView,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
@@ -20,19 +20,26 @@ import { logger } from '../../src/utils/logger';
 
 export default function EditorScreen() {
   const router = useRouter();
-  const { ingredients: ingredientsJson, sourceType, title: paramTitle } = useLocalSearchParams();
+  const {
+    ingredients: ingredientsJson,
+    sourceType,
+    title: paramTitle,
+    instructions: instructionsJson,
+  } = useLocalSearchParams();
+
   const parsed = useMemo(() => {
-    try {
-      return JSON.parse(ingredientsJson);
-    } catch {
-      return [];
-    }
+    try { return JSON.parse(ingredientsJson); } catch { return []; }
   }, [ingredientsJson]);
+
+  const parsedInstructions = useMemo(() => {
+    try { return JSON.parse(instructionsJson); } catch { return []; }
+  }, [instructionsJson]);
 
   const [title, setTitle] = useState(paramTitle || 'New Recipe');
   const [lastServings, setLastServings] = useState(1);
   const [currentServings, setCurrentServings] = useState('1');
   const [ingredients, setIngredients] = useState(parsed);
+  const [instructions, setInstructions] = useState(parsedInstructions);
   const [saving, setSaving] = useState(false);
 
   function handleServingsChange(text) {
@@ -52,6 +59,22 @@ export default function EditorScreen() {
     });
   }
 
+  function handleUpdateStep(index, text) {
+    setInstructions((prev) => {
+      const updated = [...prev];
+      updated[index] = text;
+      return updated;
+    });
+  }
+
+  function handleAddStep() {
+    setInstructions((prev) => [...prev, '']);
+  }
+
+  function handleRemoveStep(index) {
+    setInstructions((prev) => prev.filter((_, i) => i !== index));
+  }
+
   async function handleSave() {
     if (saving) return;
     setSaving(true);
@@ -59,6 +82,7 @@ export default function EditorScreen() {
       const recipeId = Crypto.randomUUID();
       const now = new Date().toISOString();
       const servings = parseFloat(currentServings) || 1;
+      const cleanedSteps = instructions.filter((s) => s.trim());
 
       const recipe = {
         id: recipeId,
@@ -66,6 +90,7 @@ export default function EditorScreen() {
         sourceType: sourceType || 'camera',
         sourceUri: null,
         servings,
+        instructions: JSON.stringify(cleanedSteps),
         createdAt: now,
         updatedAt: now,
       };
@@ -84,7 +109,7 @@ export default function EditorScreen() {
       saveRecipe(recipe);
       saveIngredients(recipeId, ingredientsToSave);
 
-      logger.info('editor.saveRecipe.success', { recipeId, ingredientCount: ingredientsToSave.length });
+      logger.info('editor.saveRecipe.success', { recipeId, ingredientCount: ingredientsToSave.length, stepCount: cleanedSteps.length });
 
       router.replace(`/recipe/${recipeId}`);
     } catch (err) {
@@ -100,38 +125,6 @@ export default function EditorScreen() {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Discard', style: 'destructive', onPress: () => router.back() },
     ]);
-  }
-
-  function renderIngredient({ item, index }) {
-    return (
-      <View style={styles.ingredientRow}>
-        <TextInput
-          style={styles.qtyInput}
-          value={item.quantity != null ? String(item.quantity) : ''}
-          onChangeText={(val) => {
-            handleUpdateIngredient(index, 'quantity', val || null);
-          }}
-          keyboardType="default"
-          placeholder="Qty"
-          placeholderTextColor="#999"
-        />
-        <TextInput
-          style={styles.unitInput}
-          value={item.unit || ''}
-          onChangeText={(val) => handleUpdateIngredient(index, 'unit', val || null)}
-          placeholder="Unit"
-          placeholderTextColor="#999"
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={styles.nameInput}
-          value={item.name}
-          onChangeText={(val) => handleUpdateIngredient(index, 'name', val)}
-          placeholder="Ingredient"
-          placeholderTextColor="#999"
-        />
-      </View>
-    );
   }
 
   return (
@@ -174,18 +167,71 @@ export default function EditorScreen() {
         <Text style={styles.sourceLabel}>Source: {sourceType}</Text>
       </View>
 
-      <View style={styles.listHeader}>
-        <Text style={styles.listHeaderText}>
-          {ingredients.length} ingredient{ingredients.length !== 1 ? 's' : ''}
-        </Text>
-      </View>
+      <ScrollView style={styles.scrollArea} contentContainerStyle={styles.listContent}>
+        <View style={styles.listHeader}>
+          <Text style={styles.listHeaderText}>
+            {ingredients.length} ingredient{ingredients.length !== 1 ? 's' : ''}
+          </Text>
+        </View>
 
-      <FlatList
-        data={ingredients}
-        renderItem={renderIngredient}
-        keyExtractor={(_, i) => String(i)}
-        contentContainerStyle={styles.listContent}
-      />
+        {ingredients.map((item, index) => (
+          <View key={index} style={styles.ingredientRow}>
+            <TextInput
+              style={styles.qtyInput}
+              value={item.quantity != null ? String(item.quantity) : ''}
+              onChangeText={(val) => handleUpdateIngredient(index, 'quantity', val || null)}
+              keyboardType="default"
+              placeholder="Qty"
+              placeholderTextColor="#999"
+            />
+            <TextInput
+              style={styles.unitInput}
+              value={item.unit || ''}
+              onChangeText={(val) => handleUpdateIngredient(index, 'unit', val || null)}
+              placeholder="Unit"
+              placeholderTextColor="#999"
+              autoCapitalize="none"
+            />
+            <TextInput
+              style={styles.nameInput}
+              value={item.name}
+              onChangeText={(val) => handleUpdateIngredient(index, 'name', val)}
+              placeholder="Ingredient"
+              placeholderTextColor="#999"
+            />
+          </View>
+        ))}
+
+        <View style={styles.listHeader}>
+          <Text style={styles.listHeaderText}>
+            {instructions.length} step{instructions.length !== 1 ? 's' : ''}
+          </Text>
+        </View>
+
+        {instructions.map((step, index) => (
+          <View key={index} style={styles.stepRow}>
+            <Text style={styles.stepNumber}>{index + 1}.</Text>
+            <TextInput
+              style={styles.stepInput}
+              value={step}
+              onChangeText={(val) => handleUpdateStep(index, val)}
+              placeholder="Describe this step..."
+              placeholderTextColor="#999"
+              multiline
+            />
+            <TouchableOpacity
+              style={styles.removeStepButton}
+              onPress={() => handleRemoveStep(index)}
+            >
+              <Text style={styles.removeStepText}>x</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        <TouchableOpacity style={styles.addStepButton} onPress={handleAddStep}>
+          <Text style={styles.addStepText}>+ Add Step</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -269,6 +315,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#555',
   },
+  scrollArea: {
+    flex: 1,
+  },
   listContent: {
     paddingBottom: 40,
   },
@@ -308,5 +357,60 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
     fontSize: 15,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E8E8E8',
+    gap: 8,
+  },
+  stepNumber: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#007AFF',
+    marginTop: 8,
+    width: 24,
+  },
+  stepInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 15,
+    minHeight: 40,
+  },
+  removeStepButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFE5E5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 6,
+  },
+  removeStepText: {
+    color: '#FF3B30',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  addStepButton: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    paddingVertical: 10,
+    borderWidth: 1.5,
+    borderColor: '#007AFF',
+    borderRadius: 8,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+  },
+  addStepText: {
+    color: '#007AFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
