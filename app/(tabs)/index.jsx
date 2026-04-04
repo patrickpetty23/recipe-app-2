@@ -15,6 +15,7 @@ import {
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,10 +49,14 @@ export default function HomeScreen() {
     }, [])
   );
 
-  function navigateToEditor(ingredients, sourceType) {
+  function navigateToEditor(ingredients, sourceType, imageUri) {
     router.push({
       pathname: '/recipe/editor',
-      params: { ingredients: JSON.stringify(ingredients), sourceType },
+      params: {
+        ingredients: JSON.stringify(ingredients),
+        sourceType,
+        imageUri: imageUri ?? '',
+      },
     });
   }
 
@@ -70,15 +75,17 @@ export default function HomeScreen() {
   async function handleCapture() {
     if (!cameraRef.current) return;
     setLoading(true);
-    setLoadingMessage('Capturing photo...');
+    setLoadingMessage('Capturing photo…');
     try {
       const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.7 });
       setShowCamera(false);
-      setLoadingMessage('Analyzing recipe with GPT-4o...');
+      setLoadingMessage('Analyzing recipe with GPT-4o…');
       const ingredients = await parseImageIngredients(photo.base64);
-      navigateToEditor(ingredients, 'camera');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigateToEditor(ingredients, 'camera', photo.uri);
     } catch (err) {
       logger.error('scan.handleCapture.error', { error: err.message });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Error', err.message);
     } finally {
       setLoading(false);
@@ -101,7 +108,7 @@ export default function HomeScreen() {
   async function handlePickPhoto() {
     closeModal();
     setLoading(true);
-    setLoadingMessage('Opening photo library...');
+    setLoadingMessage('Opening photo library…');
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
@@ -113,11 +120,14 @@ export default function HomeScreen() {
         setLoadingMessage('');
         return;
       }
-      setLoadingMessage('Analyzing recipe with GPT-4o...');
-      const ingredients = await parseImageIngredients(result.assets[0].base64);
-      navigateToEditor(ingredients, 'photo');
+      setLoadingMessage('Analyzing recipe with GPT-4o…');
+      const asset = result.assets[0];
+      const ingredients = await parseImageIngredients(asset.base64);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigateToEditor(ingredients, 'photo', asset.uri);
     } catch (err) {
       logger.error('scan.handlePickPhoto.error', { error: err.message });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Error', err.message);
     } finally {
       setLoading(false);
@@ -133,14 +143,16 @@ export default function HomeScreen() {
     }
     closeModal();
     setLoading(true);
-    setLoadingMessage('Fetching recipe from URL...');
+    setLoadingMessage('Fetching recipe from URL…');
     try {
       const text = await scrapeRecipeUrl(trimmed);
-      setLoadingMessage('Extracting ingredients with GPT-4o...');
+      setLoadingMessage('Extracting ingredients with GPT-4o…');
       const ingredients = await parseTextIngredients(text);
-      navigateToEditor(ingredients, 'url');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigateToEditor(ingredients, 'url', null);
     } catch (err) {
       logger.error('scan.handleUrlImport.error', { error: err.message });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Error', err.message);
     } finally {
       setLoading(false);
@@ -151,7 +163,7 @@ export default function HomeScreen() {
   async function handleFilePick() {
     closeModal();
     setLoading(true);
-    setLoadingMessage('Selecting file...');
+    setLoadingMessage('Selecting file…');
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: [
@@ -167,13 +179,15 @@ export default function HomeScreen() {
       }
       const file = result.assets[0];
       const isPdf = file.mimeType === 'application/pdf' || file.name?.endsWith('.pdf');
-      setLoadingMessage('Extracting text from file...');
+      setLoadingMessage('Extracting text from file…');
       const text = isPdf ? await parsePdf(file.uri) : await parseDocx(file.uri);
-      setLoadingMessage('Extracting ingredients with GPT-4o...');
+      setLoadingMessage('Extracting ingredients with GPT-4o…');
       const ingredients = await parseTextIngredients(text);
-      navigateToEditor(ingredients, 'file');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigateToEditor(ingredients, 'file', null);
     } catch (err) {
       logger.error('scan.handleFilePick.error', { error: err.message });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Error', err.message);
     } finally {
       setLoading(false);
@@ -218,6 +232,7 @@ export default function HomeScreen() {
         <TouchableOpacity style={styles.statCard} onPress={() => router.push('/(tabs)/library')}>
           <Text style={styles.statNumber}>{recipeCount}</Text>
           <Text style={styles.statLabel}>{recipeCount === 1 ? 'Recipe Saved' : 'Recipes Saved'}</Text>
+          <Text style={styles.statCta}>View Library →</Text>
         </TouchableOpacity>
       </View>
 
@@ -237,7 +252,7 @@ export default function HomeScreen() {
       >
         <Pressable style={styles.modalBackdrop} onPress={closeModal}>
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.modalPositioner}
           >
             <Pressable style={styles.modalSheet} onPress={() => {}}>
@@ -330,18 +345,18 @@ const styles = StyleSheet.create({
   },
   hero: {
     paddingHorizontal: 24,
-    paddingTop: 80,
+    paddingTop: Platform.OS === 'android' ? 64 : 80,
     paddingBottom: 24,
   },
   greeting: {
     fontSize: 34,
     fontWeight: '800',
-    color: '#111',
+    color: '#1C1C1E',
     marginBottom: 8,
   },
   tagline: {
     fontSize: 16,
-    color: '#666',
+    color: '#636366',
     lineHeight: 22,
   },
   statsRow: {
@@ -349,22 +364,27 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   statCard: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F2F2F7',
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#EEEFF1',
+    elevation: 1,
   },
   statNumber: {
-    fontSize: 36,
-    fontWeight: '700',
+    fontSize: 40,
+    fontWeight: '800',
     color: '#007AFF',
   },
   statLabel: {
     fontSize: 14,
-    color: '#888',
+    color: '#636366',
     marginTop: 4,
+  },
+  statCta: {
+    fontSize: 13,
+    color: '#007AFF',
+    fontWeight: '600',
+    marginTop: 8,
   },
   ctaSection: {
     paddingHorizontal: 24,
@@ -380,11 +400,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     gap: 10,
     width: '100%',
+    elevation: 6,
     shadowColor: '#007AFF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 12,
-    elevation: 6,
   },
   uploadButtonText: {
     color: '#fff',
@@ -393,10 +413,9 @@ const styles = StyleSheet.create({
   },
   ctaHint: {
     fontSize: 13,
-    color: '#999',
+    color: '#8E8E93',
     marginTop: 12,
   },
-
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -424,7 +443,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#111',
+    color: '#1C1C1E',
     marginBottom: 20,
   },
   modalOption: {
@@ -446,11 +465,11 @@ const styles = StyleSheet.create({
   modalOptionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#222',
+    color: '#1C1C1E',
   },
   modalOptionSub: {
     fontSize: 13,
-    color: '#888',
+    color: '#8E8E93',
     marginTop: 2,
   },
   urlInputSection: {
@@ -480,15 +499,14 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingVertical: 14,
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F2F2F7',
     borderRadius: 12,
   },
   modalCancelText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#666',
+    color: '#636366',
   },
-
   cameraContainer: {
     flex: 1,
   },
@@ -530,7 +548,7 @@ const styles = StyleSheet.create({
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
   },

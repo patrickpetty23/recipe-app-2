@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Crypto from 'expo-crypto';
+import * as Haptics from 'expo-haptics';
 
 import { scaleIngredients } from '../../src/utils/scaler';
 import { saveRecipe, saveIngredients } from '../../src/db/queries';
@@ -20,7 +21,7 @@ import { logger } from '../../src/utils/logger';
 
 export default function EditorScreen() {
   const router = useRouter();
-  const { ingredients: ingredientsJson, sourceType } = useLocalSearchParams();
+  const { ingredients: ingredientsJson, sourceType, imageUri } = useLocalSearchParams();
   const parsed = useMemo(() => {
     try {
       return JSON.parse(ingredientsJson);
@@ -65,6 +66,7 @@ export default function EditorScreen() {
         title: title.trim() || 'New Recipe',
         sourceType: sourceType || 'camera',
         sourceUri: null,
+        imageUri: imageUri || null,
         servings,
         createdAt: now,
         updatedAt: now,
@@ -85,6 +87,7 @@ export default function EditorScreen() {
       saveIngredients(recipeId, ingredientsToSave);
 
       logger.info('editor.saveRecipe.success', { recipeId, ingredientCount: ingredientsToSave.length });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       router.replace(`/recipe/${recipeId}`);
     } catch (err) {
@@ -137,7 +140,8 @@ export default function EditorScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'android' ? 0 : 0}
     >
       <View style={styles.header}>
         <TouchableOpacity onPress={handleDiscard}>
@@ -161,6 +165,7 @@ export default function EditorScreen() {
           onChangeText={setTitle}
           placeholder="Recipe name"
           placeholderTextColor="#999"
+          returnKeyType="done"
         />
         <View style={styles.servingsRow}>
           <Text style={styles.label}>Servings</Text>
@@ -171,7 +176,9 @@ export default function EditorScreen() {
             keyboardType="decimal-pad"
           />
         </View>
-        <Text style={styles.sourceLabel}>Source: {sourceType}</Text>
+        <Text style={styles.sourceLabel}>
+          Source: {sourceType}{imageUri ? '  ·  Photo saved' : ''}
+        </Text>
       </View>
 
       <View style={styles.listHeader}>
@@ -185,6 +192,8 @@ export default function EditorScreen() {
         renderItem={renderIngredient}
         keyExtractor={(_, i) => String(i)}
         contentContainerStyle={styles.listContent}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       />
     </KeyboardAvoidingView>
   );
@@ -200,10 +209,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 56,
+    paddingTop: Platform.OS === 'android' ? 40 : 56,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: '#E5E5EA',
     backgroundColor: '#FAFAFA',
   },
   headerButton: {
@@ -218,16 +227,17 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
+    color: '#1C1C1E',
   },
   metaSection: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: '#E5E5EA',
   },
   label: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#666',
+    color: '#636366',
     marginBottom: 4,
     textTransform: 'uppercase',
   },
@@ -235,9 +245,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     borderBottomWidth: 1,
-    borderBottomColor: '#DDD',
+    borderBottomColor: '#E5E5EA',
     paddingVertical: 8,
     marginBottom: 16,
+    color: '#1C1C1E',
   },
   servingsRow: {
     flexDirection: 'row',
@@ -254,20 +265,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     width: 60,
     textAlign: 'center',
+    color: '#1C1C1E',
   },
   sourceLabel: {
     fontSize: 13,
-    color: '#999',
+    color: '#8E8E93',
   },
   listHeader: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F2F2F7',
   },
   listHeaderText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#555',
+    color: '#636366',
   },
   listContent: {
     paddingBottom: 40,
@@ -278,7 +290,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E8E8E8',
+    borderBottomColor: '#E5E5EA',
     gap: 8,
   },
   qtyInput: {
@@ -290,6 +302,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     fontSize: 15,
     textAlign: 'center',
+    color: '#1C1C1E',
   },
   unitInput: {
     width: 60,
@@ -299,6 +312,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
     fontSize: 15,
+    color: '#1C1C1E',
   },
   nameInput: {
     flex: 1,
@@ -308,5 +322,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
     fontSize: 15,
+    color: '#1C1C1E',
   },
 });
