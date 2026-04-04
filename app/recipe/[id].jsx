@@ -14,7 +14,8 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 
-import { getRecipeById, updateRecipe, updateIngredient, deleteRecipe, addRecipeToList, removeRecipeFromList } from '../../src/db/queries';
+import * as Crypto from 'expo-crypto';
+import { getRecipeById, updateRecipe, updateIngredient, saveIngredients, deleteIngredient, deleteRecipe, addRecipeToList, removeRecipeFromList } from '../../src/db/queries';
 import { scaleIngredients } from '../../src/utils/scaler';
 import { logger } from '../../src/utils/logger';
 
@@ -95,6 +96,37 @@ export default function RecipeDetailScreen() {
       updateIngredient(ing.id, { [field]: value });
     } catch (err) {
       logger.error('recipeDetail.updateIngredient.error', { ingredientId: ing.id, error: err.message });
+    }
+  }
+
+  function handleAddIngredient() {
+    try {
+      const newIng = {
+        id: Crypto.randomUUID(),
+        recipeId: id,
+        name: '',
+        quantity: null,
+        unit: null,
+        notes: null,
+        checked: false,
+        sortOrder: ingredients.length,
+      };
+      saveIngredients(id, [newIng]);
+      setIngredients((prev) => [...prev, newIng]);
+      logger.info('recipeDetail.addIngredient', { id, ingredientId: newIng.id });
+    } catch (err) {
+      logger.error('recipeDetail.addIngredient.error', { id, error: err.message });
+    }
+  }
+
+  function handleRemoveIngredient(index) {
+    const ing = ingredients[index];
+    try {
+      deleteIngredient(ing.id);
+      setIngredients((prev) => prev.filter((_, i) => i !== index));
+      logger.info('recipeDetail.removeIngredient', { id, ingredientId: ing.id });
+    } catch (err) {
+      logger.error('recipeDetail.removeIngredient.error', { ingredientId: ing.id, error: err.message });
     }
   }
 
@@ -260,8 +292,18 @@ export default function RecipeDetailScreen() {
               placeholder="Ingredient"
               placeholderTextColor="#999"
             />
+            <TouchableOpacity
+              style={styles.removeStepButton}
+              onPress={() => handleRemoveIngredient(index)}
+            >
+              <Text style={styles.removeStepText}>x</Text>
+            </TouchableOpacity>
           </View>
         ))}
+
+        <TouchableOpacity style={styles.addStepButton} onPress={handleAddIngredient}>
+          <Text style={styles.addStepText}>+ Add Ingredient</Text>
+        </TouchableOpacity>
 
         <View style={styles.listHeader}>
           <Text style={styles.listHeaderText}>

@@ -59,6 +59,14 @@ export default function EditorScreen() {
     });
   }
 
+  function handleAddIngredient() {
+    setIngredients((prev) => [...prev, { name: '', quantity: null, unit: null, notes: null }]);
+  }
+
+  function handleRemoveIngredient(index) {
+    setIngredients((prev) => prev.filter((_, i) => i !== index));
+  }
+
   function handleUpdateStep(index, text) {
     setInstructions((prev) => {
       const updated = [...prev];
@@ -199,8 +207,18 @@ export default function EditorScreen() {
               placeholder="Ingredient"
               placeholderTextColor="#999"
             />
+            <TouchableOpacity
+              style={styles.removeStepButton}
+              onPress={() => handleRemoveIngredient(index)}
+            >
+              <Text style={styles.removeStepText}>x</Text>
+            </TouchableOpacity>
           </View>
         ))}
+
+        <TouchableOpacity style={styles.addStepButton} onPress={handleAddIngredient}>
+          <Text style={styles.addStepText}>+ Add Ingredient</Text>
+        </TouchableOpacity>
 
         <View style={styles.listHeader}>
           <Text style={styles.listHeaderText}>
