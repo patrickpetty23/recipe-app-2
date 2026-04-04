@@ -19,7 +19,7 @@ const SLIDES = [
   {
     key: 'scan',
     icon: 'camera',
-    iconColor: '#007AFF',
+    iconColor: '#FF6B35',
     iconBg: '#EBF3FF',
     title: 'Scan Any Recipe',
     subtitle:
@@ -133,7 +133,7 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFF8F0',
   },
   skipButton: {
     position: 'absolute',
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   },
   skipText: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: '#B38B6D',
     fontWeight: '500',
   },
   flatList: {
@@ -169,13 +169,13 @@ const styles = StyleSheet.create({
   slideTitle: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#1C1C1E',
+    color: '#2D1B00',
     textAlign: 'center',
     marginBottom: 16,
   },
   slideSubtitle: {
     fontSize: 16,
-    color: '#636366',
+    color: '#6B4C2A',
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -194,24 +194,24 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#D1D1D6',
+    backgroundColor: '#F0E0D0',
   },
   dotActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FF6B35',
     width: 24,
   },
   nextButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FF6B35',
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 16,
     gap: 8,
     width: '100%',
     elevation: 4,
-    shadowColor: '#007AFF',
+    shadowColor: '#FF6B35',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 10,

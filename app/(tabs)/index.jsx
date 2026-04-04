@@ -540,7 +540,7 @@ export default function ChatScreen() {
             style={styles.attachIconBtn}
             hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
           >
-            <Ionicons name="add-circle" size={32} color={busy ? '#C7C7CC' : '#007AFF'} />
+            <Ionicons name="add-circle" size={32} color={busy ? '#C7C7CC' : '#FF6B35'} />
           </TouchableOpacity>
 
           <TextInput
@@ -633,7 +633,7 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#FFF8F0',
   },
   header: {
     paddingHorizontal: 16,
@@ -641,16 +641,16 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     backgroundColor: '#fff',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: '#F0E0D0',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1C1C1E',
+    color: '#2D1B00',
   },
   headerSub: {
     fontSize: 12,
-    color: '#8E8E93',
+    color: '#B38B6D',
     marginTop: 1,
   },
 
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   userBubble: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FF6B35',
     borderRadius: 18,
     borderBottomRightRadius: 4,
     paddingHorizontal: 14,
@@ -702,7 +702,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   assistantBubbleText: {
-    color: '#1C1C1E',
+    color: '#2D1B00',
     fontSize: 16,
     lineHeight: 22,
   },
@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#8E8E93',
+    backgroundColor: '#B38B6D',
   },
 
   // ── Recipe card ───────────────────────────────────────────────────────────────
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
   },
   recipeIntroText: {
     fontSize: 14,
-    color: '#636366',
+    color: '#6B4C2A',
     paddingLeft: 4,
   },
   recipeCard: {
@@ -753,7 +753,7 @@ const styles = StyleSheet.create({
   recipeCardTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1C1C1E',
+    color: '#2D1B00',
     lineHeight: 26,
   },
   recipeCardMeta: {
@@ -771,27 +771,27 @@ const styles = StyleSheet.create({
   cuisineChipText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#007AFF',
+    color: '#FF6B35',
   },
   recipeMetaText: {
     fontSize: 13,
-    color: '#636366',
+    color: '#6B4C2A',
   },
   recipeCountText: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: '#B38B6D',
   },
   saveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FF6B35',
     borderRadius: 12,
     paddingVertical: 12,
     gap: 8,
     marginTop: 4,
     elevation: 2,
-    shadowColor: '#007AFF',
+    shadowColor: '#FF6B35',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -806,7 +806,7 @@ const styles = StyleSheet.create({
   inputArea: {
     backgroundColor: '#fff',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E5E5EA',
+    borderTopColor: '#F0E0D0',
     paddingBottom: Platform.OS === 'android' ? 8 : 0,
   },
   attachPreviewRow: {
@@ -826,7 +826,7 @@ const styles = StyleSheet.create({
   },
   attachLabel: {
     fontSize: 13,
-    color: '#636366',
+    color: '#6B4C2A',
   },
   inputRow: {
     flexDirection: 'row',
@@ -840,13 +840,13 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#FFF8F0',
     borderRadius: 22,
     paddingHorizontal: 14,
     paddingTop: 10,
     paddingBottom: 10,
     fontSize: 16,
-    color: '#1C1C1E',
+    color: '#2D1B00',
     maxHeight: 120,
     lineHeight: 20,
   },
@@ -854,13 +854,13 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FF6B35',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,
   },
   sendBtnDisabled: {
-    backgroundColor: '#E5E5EA',
+    backgroundColor: '#F0E0D0',
   },
 
   // ── Attachment sheet ──────────────────────────────────────────────────────────
@@ -888,7 +888,7 @@ const styles = StyleSheet.create({
   sheetTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1C1C1E',
+    color: '#2D1B00',
     marginBottom: 16,
   },
   sheetRow: {
@@ -907,23 +907,23 @@ const styles = StyleSheet.create({
   sheetRowTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1C1C1E',
+    color: '#2D1B00',
   },
   sheetRowSub: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: '#B38B6D',
     marginTop: 1,
   },
   sheetCancel: {
     marginTop: 12,
     paddingVertical: 14,
     alignItems: 'center',
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#FFF8F0',
     borderRadius: 12,
   },
   sheetCancelText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#636366',
+    color: '#6B4C2A',
   },
 });

@@ -438,24 +438,24 @@ export default function ShoppingListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFF8F0',
   },
   header: {
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'android' ? 52 : 60,
     paddingBottom: 12,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#FFF8F0',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: '#F0E0D0',
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#1C1C1E',
+    color: '#2D1B00',
   },
   headerCount: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: '#B38B6D',
     marginTop: 2,
   },
   list: {
@@ -468,29 +468,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#FFF0E8',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: '#F0E0D0',
   },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#636366',
+    color: '#6B4C2A',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     flex: 1,
   },
   sectionCount: {
     fontSize: 12,
-    color: '#8E8E93',
+    color: '#B38B6D',
     fontWeight: '500',
   },
   itemContainer: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
-    backgroundColor: '#fff',
+    borderBottomColor: '#F0E0D0',
+    backgroundColor: '#FFF8F0',
   },
   itemRow: {
     flexDirection: 'row',
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
   },
   itemQty: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: '#B38B6D',
   },
   inlinePrice: {
     fontSize: 13,
@@ -587,8 +587,8 @@ const styles = StyleSheet.create({
   },
   bottomBar: {
     borderTopWidth: 1,
-    borderTopColor: '#E5E5EA',
-    backgroundColor: '#FAFAFA',
+    borderTopColor: '#F0E0D0',
+    backgroundColor: '#FFF8F0',
   },
   toolbar: {
     flexDirection: 'row',
@@ -598,7 +598,7 @@ const styles = StyleSheet.create({
   },
   toolbarButton: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#FFF0E8',
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
@@ -606,7 +606,7 @@ const styles = StyleSheet.create({
   toolbarButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1C1C1E',
+    color: '#2D1B00',
   },
   toolbarButtonDanger: {
     backgroundColor: '#FFF0F0',
@@ -625,7 +625,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#D0E2F5',
   },
   walmartSearchAllButton: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFF8F0',
     borderWidth: 1.5,
     borderColor: '#0071DC',
     borderRadius: 10,

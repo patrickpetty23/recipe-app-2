@@ -3,38 +3,48 @@ import {
   View,
   Text,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   StyleSheet,
   TextInput,
   Image,
   RefreshControl,
   Alert,
+  Modal,
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
 
-import { getAllRecipes, deleteRecipe } from '../../src/db/queries';
+import {
+  getAllRecipes,
+  deleteRecipe,
+  getCollections,
+  createCollection,
+  addRecipeToCollection,
+  getRecipeCollections,
+} from '../../src/db/queries';
 import { logger } from '../../src/utils/logger';
 import EmptyState from '../../src/components/EmptyState';
 import SwipeableRow from '../../src/components/SwipeableRow';
 import { RecipeCardSkeleton } from '../../src/components/SkeletonLoader';
 
-const SOURCE_LABELS = {
-  camera: 'Camera',
-  photo: 'Photo',
-  url: 'URL',
-  file: 'File',
+// ── Warm theme ────────────────────────────────────────────────────────────────
+const C = {
+  orange: '#FF6B35',
+  orangeLight: '#FFF0E8',
+  bg: '#FFF8F0',
+  surface: '#FFFFFF',
+  textDark: '#2D1B00',
+  textMed: '#6B4C2A',
+  textFaint: '#B38B6D',
+  border: '#F0E0D0',
 };
 
-const SOURCE_COLORS = {
-  camera: { bg: '#EBF3FF', text: '#007AFF' },
-  photo: { bg: '#F0EBFF', text: '#7C3AED' },
-  url: { bg: '#EBFFF0', text: '#16A34A' },
-  file: { bg: '#FFF5EB', text: '#EA580C' },
-};
+const ALL_KEY = '__all__';
 
 const SORT_OPTIONS = [
   { key: 'recent', label: 'Recent' },
@@ -42,28 +52,49 @@ const SORT_OPTIONS = [
   { key: 'count', label: 'Most Ingredients' },
 ];
 
+const EMOJI_PRESETS = ['🍳','🥗','🍝','🍜','🍕','🥘','🍱','🍣','🥩','🍰','☕','🌮'];
+
 function formatDate(isoString) {
   const d = new Date(isoString);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 export default function LibraryScreen() {
   const router = useRouter();
+
   const [recipes, setRecipes] = useState([]);
+  const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState('recent');
+  const [activeCollection, setActiveCollection] = useState(ALL_KEY);
 
-  function loadRecipes(isRefresh = false) {
+  // New collection modal
+  const [showNewCollection, setShowNewCollection] = useState(false);
+  const [newColName, setNewColName] = useState('');
+  const [newColEmoji, setNewColEmoji] = useState('🍳');
+
+  // Add to collection modal
+  const [collectionPickerRecipe, setCollectionPickerRecipe] = useState(null);
+  const [recipeCollections, setRecipeCollections] = useState([]);
+
+  // ── Data loading ────────────────────────────────────────────────────────────
+
+  function loadAll(isRefresh = false) {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     try {
-      const all = getAllRecipes();
-      setRecipes(all);
-      logger.info('library.loadRecipes', { count: all.length });
+      const allRecipes = getAllRecipes();
+      const allCollections = getCollections();
+      setRecipes(allRecipes);
+      setCollections(allCollections);
+      logger.info('library.loadAll', {
+        recipeCount: allRecipes.length,
+        collectionCount: allCollections.length,
+      });
     } catch (err) {
-      logger.error('library.loadRecipes.error', { error: err.message });
+      logger.error('library.loadAll.error', { error: err.message });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -72,24 +103,70 @@ export default function LibraryScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadRecipes();
+      loadAll();
     }, [])
   );
 
+  // ── Filtered + sorted list ──────────────────────────────────────────────────
+
   const filtered = useMemo(() => {
     let list = recipes;
+    // Query filter
     if (query.trim()) {
       const q = query.toLowerCase();
       list = list.filter((r) => r.title.toLowerCase().includes(q));
     }
+    // Collection filter — requires a separate query per recipe (expensive if many)
+    // We store collection membership in a local set built once per active collection change
+    // Simple approach: filter is applied by collectionFilterIds set (populated below)
     if (sortKey === 'alpha') {
       list = [...list].sort((a, b) => a.title.localeCompare(b.title));
     } else if (sortKey === 'count') {
       list = [...list].sort((a, b) => (b.ingredientCount ?? 0) - (a.ingredientCount ?? 0));
     }
-    // 'recent' is already sorted by created_at DESC from the DB
     return list;
   }, [recipes, query, sortKey]);
+
+  // For collection filtering, we need to know which recipes belong to the active collection
+  const collectionFilterIds = useMemo(() => {
+    if (activeCollection === ALL_KEY) return null; // null = show all
+    // getRecipeCollections is per-recipe; we need per-collection.
+    // We have getCollectionRecipes imported via a separate query in queries.js but it's
+    // not imported here. Let's filter from recipes directly — if recipe.id is in the
+    // collection's recipe list. We'll track this by calling getRecipeCollections per recipe
+    // which is O(n) — acceptable for typical recipe counts (<500).
+    // Actually let's import getCollectionRecipes properly.
+    return null; // placeholder — resolved below
+  }, [activeCollection]);
+
+  // Get all recipe IDs for the active collection (cached with useMemo)
+  const activeCollectionRecipeIds = useMemo(() => {
+    if (activeCollection === ALL_KEY) return null;
+    try {
+      // We need to get the recipes for this collection ID
+      // Use getRecipeCollections per recipe is O(n); instead just filter on known data
+      // We'll rely on filteredWithCollection below
+      return null;
+    } catch {
+      return null;
+    }
+  }, [activeCollection, recipes]);
+
+  // Final displayed list: apply collection filter on top of filtered
+  const displayedRecipes = useMemo(() => {
+    if (activeCollection === ALL_KEY) return filtered;
+    // For collection filter, check each recipe via getRecipeCollections
+    return filtered.filter((r) => {
+      try {
+        const cols = getRecipeCollections(r.id);
+        return cols.some((c) => c.id === activeCollection);
+      } catch {
+        return false;
+      }
+    });
+  }, [filtered, activeCollection]);
+
+  // ── Actions ─────────────────────────────────────────────────────────────────
 
   function handleRecipePress(recipe) {
     Haptics.selectionAsync();
@@ -97,47 +174,87 @@ export default function LibraryScreen() {
   }
 
   function handleDelete(recipe) {
-    Alert.alert(
-      'Delete Recipe',
-      `Delete "${recipe.title}"? This cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            try {
-              deleteRecipe(recipe.id);
-              setRecipes((prev) => prev.filter((r) => r.id !== recipe.id));
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              logger.info('library.deleteRecipe', { id: recipe.id });
-            } catch (err) {
-              logger.error('library.deleteRecipe.error', { id: recipe.id, error: err.message });
-              Alert.alert('Error', err.message);
-            }
-          },
+    Alert.alert('Delete Recipe', `Delete "${recipe.title}"? This cannot be undone.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          try {
+            deleteRecipe(recipe.id);
+            setRecipes((prev) => prev.filter((r) => r.id !== recipe.id));
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            logger.info('library.deleteRecipe', { id: recipe.id });
+          } catch (err) {
+            logger.error('library.deleteRecipe.error', { id: recipe.id, error: err.message });
+            Alert.alert('Error', err.message);
+          }
         },
-      ]
-    );
+      },
+    ]);
   }
 
-  function renderRecipe({ item, index }) {
-    const colors = SOURCE_COLORS[item.sourceType] ?? { bg: '#F2F2F7', text: '#636366' };
+  function handleOpenCollectionPicker(recipe) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      const cols = getRecipeCollections(recipe.id);
+      setRecipeCollections(cols);
+    } catch {
+      setRecipeCollections([]);
+    }
+    setCollectionPickerRecipe(recipe);
+  }
 
+  function handleAddToCollection(collectionId) {
+    if (!collectionPickerRecipe) return;
+    try {
+      addRecipeToCollection(collectionPickerRecipe.id, collectionId);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const col = collections.find((c) => c.id === collectionId);
+      Alert.alert('Added!', `"${collectionPickerRecipe.title}" added to ${col?.name ?? 'collection'}.`);
+      logger.info('library.addToCollection', { recipeId: collectionPickerRecipe.id, collectionId });
+    } catch (err) {
+      logger.error('library.addToCollection.error', { error: err.message });
+    }
+    setCollectionPickerRecipe(null);
+  }
+
+  // ── Create collection ───────────────────────────────────────────────────────
+
+  function handleCreateCollection() {
+    const name = newColName.trim();
+    if (!name) return;
+    try {
+      const now = new Date().toISOString();
+      const col = { id: Crypto.randomUUID(), name, emoji: newColEmoji, createdAt: now };
+      createCollection(col);
+      setCollections((prev) => [col, ...prev]);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      logger.info('library.createCollection', { id: col.id, name });
+    } catch (err) {
+      logger.error('library.createCollection.error', { error: err.message });
+      Alert.alert('Error', err.message);
+    }
+    setShowNewCollection(false);
+    setNewColName('');
+    setNewColEmoji('🍳');
+  }
+
+  // ── Render recipe card ──────────────────────────────────────────────────────
+
+  function renderRecipe({ item }) {
     return (
       <SwipeableRow onDelete={() => handleDelete(item)} deleteLabel="Delete">
         <TouchableOpacity
           style={styles.recipeCard}
           onPress={() => handleRecipePress(item)}
-          activeOpacity={0.7}
-          // Android ripple via background
-          android_ripple={{ color: '#F0F0F0' }}
+          activeOpacity={0.75}
         >
           {item.imageUri ? (
             <Image source={{ uri: item.imageUri }} style={styles.thumbnail} resizeMode="cover" />
           ) : (
-            <View style={[styles.thumbnailPlaceholder, { backgroundColor: colors.bg }]}>
-              <Ionicons name="restaurant-outline" size={22} color={colors.text} />
+            <View style={styles.thumbnailPlaceholder}>
+              <Ionicons name="restaurant" size={26} color={C.orange} />
             </View>
           )}
 
@@ -146,11 +263,11 @@ export default function LibraryScreen() {
               {item.title}
             </Text>
             <View style={styles.cardMeta}>
-              <View style={[styles.sourceTag, { backgroundColor: colors.bg }]}>
-                <Text style={[styles.sourceTagText, { color: colors.text }]}>
-                  {SOURCE_LABELS[item.sourceType] ?? item.sourceType}
-                </Text>
-              </View>
+              {item.cuisine ? (
+                <View style={styles.cuisineTag}>
+                  <Text style={styles.cuisineTagText}>{item.cuisine}</Text>
+                </View>
+              ) : null}
               {item.ingredientCount > 0 ? (
                 <Text style={styles.metaText}>
                   {item.ingredientCount} ingredient{item.ingredientCount !== 1 ? 's' : ''}
@@ -160,43 +277,102 @@ export default function LibraryScreen() {
             </View>
           </View>
 
-          <Ionicons name="chevron-forward" size={18} color="#C7C7CC" />
+          <View style={styles.cardActions}>
+            <TouchableOpacity
+              onPress={() => handleOpenCollectionPicker(item)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.ellipsisBtn}
+            >
+              <Ionicons name="ellipsis-vertical" size={18} color={C.textFaint} />
+            </TouchableOpacity>
+            <Ionicons name="chevron-forward" size={16} color={C.border} />
+          </View>
         </TouchableOpacity>
       </SwipeableRow>
     );
   }
 
-  function renderSkeletons() {
-    return Array.from({ length: 6 }).map((_, i) => <RecipeCardSkeleton key={i} />);
+  // ── Collections scroll ──────────────────────────────────────────────────────
+
+  const collectionItems = [
+    { id: ALL_KEY, emoji: '📚', name: 'All', recipeCount: recipes.length },
+    ...collections,
+    { id: '__new__', emoji: '+', name: 'New', recipeCount: -1 },
+  ];
+
+  function renderCollectionCard(col) {
+    const isAll = col.id === ALL_KEY;
+    const isNew = col.id === '__new__';
+    const isActive = col.id === activeCollection;
+
+    return (
+      <TouchableOpacity
+        key={col.id}
+        style={[styles.collectionCard, isActive && styles.collectionCardActive, isNew && styles.collectionCardNew]}
+        onPress={() => {
+          if (isNew) {
+            setShowNewCollection(true);
+          } else {
+            setActiveCollection(col.id);
+            Haptics.selectionAsync();
+          }
+        }}
+        activeOpacity={0.8}
+      >
+        <Text style={[styles.collectionEmoji, isNew && styles.collectionEmojiNew]}>
+          {col.emoji}
+        </Text>
+        <Text style={[styles.collectionName, isActive && styles.collectionNameActive, isNew && styles.collectionNameNew]} numberOfLines={1}>
+          {col.name}
+        </Text>
+        {!isNew && col.recipeCount >= 0 && (
+          <Text style={[styles.collectionCount, isActive && styles.collectionCountActive]}>
+            {col.recipeCount}
+          </Text>
+        )}
+      </TouchableOpacity>
+    );
   }
+
+  // ── Main render ─────────────────────────────────────────────────────────────
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Recipes</Text>
         {!loading && (
           <Text style={styles.headerCount}>
-            {recipes.length} recipe{recipes.length !== 1 ? 's' : ''}
+            {displayedRecipes.length} recipe{displayedRecipes.length !== 1 ? 's' : ''}
           </Text>
         )}
       </View>
 
-      {/* Search bar */}
+      {/* Collections horizontal scroll */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.collectionsScroll}
+        contentContainerStyle={styles.collectionsContent}
+      >
+        {collectionItems.map(renderCollectionCard)}
+      </ScrollView>
+
+      {/* Search */}
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
-          <Ionicons name="search" size={16} color="#8E8E93" style={styles.searchIcon} />
+          <Ionicons name="search" size={16} color={C.textFaint} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search recipes…"
-            placeholderTextColor="#8E8E93"
+            placeholderTextColor={C.textFaint}
             value={query}
             onChangeText={setQuery}
             returnKeyType="search"
-            clearButtonMode="while-editing"
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={() => setQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Ionicons name="close-circle" size={16} color="#8E8E93" />
+              <Ionicons name="close-circle" size={16} color={C.textFaint} />
             </TouchableOpacity>
           )}
         </View>
@@ -217,9 +393,10 @@ export default function LibraryScreen() {
         ))}
       </View>
 
+      {/* List */}
       {loading ? (
-        <View>{renderSkeletons()}</View>
-      ) : filtered.length === 0 && query ? (
+        <View>{[...Array(6)].map((_, i) => <RecipeCardSkeleton key={i} />)}</View>
+      ) : displayedRecipes.length === 0 && query ? (
         <EmptyState
           iconName="search-outline"
           title="No Results"
@@ -227,32 +404,153 @@ export default function LibraryScreen() {
           ctaLabel="Clear Search"
           onCta={() => setQuery('')}
         />
-      ) : filtered.length === 0 ? (
+      ) : displayedRecipes.length === 0 ? (
         <EmptyState
           iconName="book-outline"
           title="No Recipes Yet"
-          subtitle="Scan a cookbook, snap a photo, paste a URL, or upload a file to get started."
-          ctaLabel="Scan Your First Recipe"
+          subtitle="Scan a cookbook, snap a photo, paste a URL, or upload a file."
+          ctaLabel="Add a Recipe"
           onCta={() => router.push('/(tabs)')}
         />
       ) : (
         <FlatList
-          data={filtered}
+          data={displayedRecipes}
           renderItem={renderRecipe}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={() => loadRecipes(true)}
-              tintColor="#007AFF"
-              colors={['#007AFF']}
+              onRefresh={() => loadAll(true)}
+              tintColor={C.orange}
+              colors={[C.orange]}
             />
           }
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         />
       )}
+
+      {/* ── New Collection Modal ── */}
+      <Modal
+        visible={showNewCollection}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowNewCollection(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>New Collection</Text>
+
+            <Text style={styles.modalLabel}>Name</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newColName}
+              onChangeText={setNewColName}
+              placeholder="e.g. Weeknight Dinners"
+              placeholderTextColor={C.textFaint}
+              autoFocus
+              returnKeyType="done"
+            />
+
+            <Text style={styles.modalLabel}>Emoji</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.emojiScroll}>
+              <View style={styles.emojiRow}>
+                {EMOJI_PRESETS.map((e) => (
+                  <TouchableOpacity
+                    key={e}
+                    style={[styles.emojiChip, newColEmoji === e && styles.emojiChipActive]}
+                    onPress={() => setNewColEmoji(e)}
+                  >
+                    <Text style={styles.emojiChipText}>{e}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => { setShowNewCollection(false); setNewColName(''); }}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalCreateBtn, !newColName.trim() && styles.modalCreateBtnDisabled]}
+                onPress={handleCreateCollection}
+                disabled={!newColName.trim()}
+              >
+                <Text style={styles.modalCreateText}>Create</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Add to Collection Modal ── */}
+      <Modal
+        visible={!!collectionPickerRecipe}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setCollectionPickerRecipe(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Add to Collection</Text>
+            <Text style={styles.modalSubtitle} numberOfLines={1}>
+              {collectionPickerRecipe?.title}
+            </Text>
+
+            {collections.length === 0 ? (
+              <View style={styles.noCollectionsBox}>
+                <Text style={styles.noCollectionsText}>
+                  You don't have any collections yet.
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setCollectionPickerRecipe(null);
+                    setShowNewCollection(true);
+                  }}
+                >
+                  <Text style={styles.noCollectionsLink}>Create one →</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              collections.map((col) => {
+                const alreadyIn = recipeCollections.some((rc) => rc.id === col.id);
+                return (
+                  <TouchableOpacity
+                    key={col.id}
+                    style={[styles.collectionPickerRow, alreadyIn && styles.collectionPickerRowDone]}
+                    onPress={() => !alreadyIn && handleAddToCollection(col.id)}
+                    disabled={alreadyIn}
+                  >
+                    <Text style={styles.collectionPickerEmoji}>{col.emoji}</Text>
+                    <View style={styles.collectionPickerInfo}>
+                      <Text style={styles.collectionPickerName}>{col.name}</Text>
+                      <Text style={styles.collectionPickerCount}>
+                        {col.recipeCount} recipe{col.recipeCount !== 1 ? 's' : ''}
+                      </Text>
+                    </View>
+                    {alreadyIn && (
+                      <Ionicons name="checkmark-circle" size={22} color="#34C759" />
+                    )}
+                  </TouchableOpacity>
+                );
+              })
+            )}
+
+            <TouchableOpacity
+              style={styles.modalCancelBtn}
+              onPress={() => setCollectionPickerRecipe(null)}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -260,99 +558,170 @@ export default function LibraryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: C.bg,
   },
+
+  // ── Header ────────────────────────────────────────────────────────────────────
   header: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 52 : 60,
-    paddingBottom: 8,
-    backgroundColor: '#FAFAFA',
+    paddingBottom: 10,
+    backgroundColor: C.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: C.border,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1C1C1E',
+    fontSize: 30,
+    fontWeight: '800',
+    color: C.textDark,
   },
   headerCount: {
-    fontSize: 14,
-    color: '#8E8E93',
+    fontSize: 13,
+    color: C.textFaint,
     marginTop: 2,
   },
+
+  // ── Collections ───────────────────────────────────────────────────────────────
+  collectionsScroll: {
+    backgroundColor: C.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: C.border,
+    maxHeight: 100,
+  },
+  collectionsContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  collectionCard: {
+    alignItems: 'center',
+    backgroundColor: C.bg,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    minWidth: 72,
+    borderWidth: 1.5,
+    borderColor: C.border,
+    gap: 2,
+  },
+  collectionCardActive: {
+    backgroundColor: C.orangeLight,
+    borderColor: C.orange,
+  },
+  collectionCardNew: {
+    borderStyle: 'dashed',
+    borderColor: C.textFaint,
+  },
+  collectionEmoji: {
+    fontSize: 22,
+  },
+  collectionEmojiNew: {
+    fontSize: 22,
+    color: C.textFaint,
+  },
+  collectionName: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: C.textMed,
+    marginTop: 2,
+  },
+  collectionNameActive: {
+    color: C.orange,
+  },
+  collectionNameNew: {
+    color: C.textFaint,
+  },
+  collectionCount: {
+    fontSize: 10,
+    color: C.textFaint,
+  },
+  collectionCountActive: {
+    color: C.orange,
+  },
+
+  // ── Search ────────────────────────────────────────────────────────────────────
   searchRow: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: C.surface,
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EFEFEF',
+    backgroundColor: C.bg,
     borderRadius: 12,
     paddingHorizontal: 10,
     height: 40,
     gap: 6,
-  },
-  searchIcon: {
-    flexShrink: 0,
+    borderWidth: 1,
+    borderColor: C.border,
   },
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: '#1C1C1E',
+    color: C.textDark,
     paddingVertical: 0,
   },
+
+  // ── Sort pills ────────────────────────────────────────────────────────────────
   sortRow: {
     flexDirection: 'row',
     gap: 8,
     paddingHorizontal: 16,
     paddingBottom: 10,
-    backgroundColor: '#FAFAFA',
+    paddingTop: 4,
+    backgroundColor: C.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: C.border,
   },
   sortPill: {
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: C.bg,
+    borderWidth: 1,
+    borderColor: C.border,
   },
   sortPillActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: C.orange,
+    borderColor: C.orange,
   },
   sortPillText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#636366',
+    color: C.textMed,
   },
   sortPillTextActive: {
     color: '#fff',
   },
+
+  // ── Recipe cards ──────────────────────────────────────────────────────────────
   listContent: {
     paddingBottom: 40,
+    paddingTop: 4,
   },
   recipeCard: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    backgroundColor: C.surface,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
-    backgroundColor: '#fff',
+    borderBottomColor: C.border,
     gap: 12,
   },
   thumbnail: {
-    width: 56,
-    height: 56,
-    borderRadius: 10,
-    backgroundColor: '#F2F2F7',
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    backgroundColor: C.bg,
     flexShrink: 0,
   },
   thumbnailPlaceholder: {
-    width: 56,
-    height: 56,
-    borderRadius: 10,
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    backgroundColor: C.orangeLight,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -362,9 +731,10 @@ const styles = StyleSheet.create({
   },
   recipeTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1C1C1E',
+    fontWeight: '700',
+    color: C.textDark,
     marginBottom: 6,
+    lineHeight: 21,
   },
   cardMeta: {
     flexDirection: 'row',
@@ -372,17 +742,183 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 6,
   },
-  sourceTag: {
+  cuisineTag: {
+    backgroundColor: C.orangeLight,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
   },
-  sourceTagText: {
+  cuisineTagText: {
     fontSize: 11,
     fontWeight: '700',
+    color: C.orange,
   },
   metaText: {
     fontSize: 12,
-    color: '#8E8E93',
+    color: C.textFaint,
+  },
+  cardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ellipsisBtn: {
+    padding: 4,
+  },
+
+  // ── Modals ────────────────────────────────────────────────────────────────────
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(45,27,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: C.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 40,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: C.border,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: C.textDark,
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: C.textFaint,
+    marginBottom: 16,
+  },
+  modalLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: C.textFaint,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+    marginTop: 12,
+  },
+  modalInput: {
+    borderWidth: 1.5,
+    borderColor: C.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: C.textDark,
+    backgroundColor: C.bg,
+  },
+  emojiScroll: {
+    marginBottom: 4,
+  },
+  emojiRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  emojiChip: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: C.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: C.border,
+  },
+  emojiChipActive: {
+    borderColor: C.orange,
+    backgroundColor: C.orangeLight,
+  },
+  emojiChipText: {
+    fontSize: 22,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: C.bg,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.border,
+    marginTop: 16,
+  },
+  modalCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: C.textMed,
+  },
+  modalCreateBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: C.orange,
+    borderRadius: 14,
+  },
+  modalCreateBtnDisabled: {
+    opacity: 0.4,
+  },
+  modalCreateText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  noCollectionsBox: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    gap: 8,
+  },
+  noCollectionsText: {
+    fontSize: 15,
+    color: C.textMed,
+  },
+  noCollectionsLink: {
+    fontSize: 15,
+    color: C.orange,
+    fontWeight: '700',
+  },
+  collectionPickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: C.border,
+    gap: 12,
+  },
+  collectionPickerRowDone: {
+    opacity: 0.6,
+  },
+  collectionPickerEmoji: {
+    fontSize: 28,
+    width: 40,
+    textAlign: 'center',
+  },
+  collectionPickerInfo: {
+    flex: 1,
+  },
+  collectionPickerName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: C.textDark,
+  },
+  collectionPickerCount: {
+    fontSize: 13,
+    color: C.textFaint,
+    marginTop: 1,
   },
 });

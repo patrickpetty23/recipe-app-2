@@ -10,14 +10,30 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Image,
+  ScrollView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 
 import { scaleIngredients } from '../../src/utils/scaler';
 import { saveRecipe, saveIngredients, saveRecipeSteps } from '../../src/db/queries';
+import { generateStepIllustration } from '../../src/services/openai';
 import { logger } from '../../src/utils/logger';
+
+// ── Warm theme ────────────────────────────────────────────────────────────────
+const C = {
+  orange: '#FF6B35',
+  orangeLight: '#FFF0E8',
+  bg: '#FFF8F0',
+  surface: '#FFFFFF',
+  textDark: '#2D1B00',
+  textMed: '#6B4C2A',
+  textFaint: '#B38B6D',
+  border: '#F0E0D0',
+};
 
 export default function EditorScreen() {
   const router = useRouter();
@@ -34,8 +50,18 @@ export default function EditorScreen() {
   const [title, setTitle] = useState(parsed.title || 'New Recipe');
   const [lastServings, setLastServings] = useState(parsed.servings || 1);
   const [currentServings, setCurrentServings] = useState(String(parsed.servings || 1));
+  const [prepTime, setPrepTime] = useState(parsed.prepTime || '');
+  const [cookTime, setCookTime] = useState(parsed.cookTime || '');
+  const [cuisine, setCuisine] = useState(parsed.cuisine || '');
   const [ingredients, setIngredients] = useState(parsed.ingredients || []);
+  const [steps, setSteps] = useState(
+    (parsed.steps || []).map((s) => ({ ...s, localId: Crypto.randomUUID() }))
+  );
   const [saving, setSaving] = useState(false);
+  const [illustrating, setIllustrating] = useState(false);
+  const [illustrateProgress, setIllustrateProgress] = useState({ done: 0, total: 0 });
+
+  // ── Servings ──────────────────────────────────────────────────────────────────
 
   function handleServingsChange(text) {
     setCurrentServings(text);
@@ -46,6 +72,8 @@ export default function EditorScreen() {
     setLastServings(num);
   }
 
+  // ── Ingredients ───────────────────────────────────────────────────────────────
+
   function handleUpdateIngredient(index, field, value) {
     setIngredients((prev) => {
       const updated = [...prev];
@@ -53,6 +81,69 @@ export default function EditorScreen() {
       return updated;
     });
   }
+
+  // ── Steps ─────────────────────────────────────────────────────────────────────
+
+  function handleUpdateStep(localId, instruction) {
+    setSteps((prev) =>
+      prev.map((s) => (s.localId === localId ? { ...s, instruction } : s))
+    );
+  }
+
+  function handleAddStep() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSteps((prev) => [
+      ...prev,
+      {
+        localId: Crypto.randomUUID(),
+        stepNumber: prev.length + 1,
+        instruction: '',
+        illustrationUrl: null,
+      },
+    ]);
+  }
+
+  function handleRemoveStep(localId) {
+    setSteps((prev) => {
+      const filtered = prev.filter((s) => s.localId !== localId);
+      return filtered.map((s, i) => ({ ...s, stepNumber: i + 1 }));
+    });
+  }
+
+  // ── Generate illustrations ────────────────────────────────────────────────────
+
+  async function handleGenerateIllustrations() {
+    const stepsToIllustrate = steps.filter(
+      (s) => !s.illustrationUrl && s.instruction.trim().length > 0
+    );
+    if (stepsToIllustrate.length === 0) {
+      Alert.alert('Nothing to generate', 'All steps already have illustrations or have no instruction text.');
+      return;
+    }
+
+    const recipeTitleForAI = title.trim() || 'Recipe';
+    setIllustrating(true);
+    setIllustrateProgress({ done: 0, total: stepsToIllustrate.length });
+
+    for (let i = 0; i < stepsToIllustrate.length; i++) {
+      const step = stepsToIllustrate[i];
+      try {
+        const url = await generateStepIllustration(step.instruction, recipeTitleForAI);
+        setSteps((prev) =>
+          prev.map((s) => (s.localId === step.localId ? { ...s, illustrationUrl: url } : s))
+        );
+        logger.info('editor.generateIllustration.success', { stepNumber: step.stepNumber });
+      } catch (err) {
+        logger.error('editor.generateIllustration.error', { stepNumber: step.stepNumber, error: err.message });
+      }
+      setIllustrateProgress({ done: i + 1, total: stepsToIllustrate.length });
+    }
+
+    setIllustrating(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }
+
+  // ── Save ──────────────────────────────────────────────────────────────────────
 
   async function handleSave() {
     if (saving) return;
@@ -71,9 +162,9 @@ export default function EditorScreen() {
         imageUri: imageUri || null,
         servings,
         instructions: null,
-        prepTime: parsed.prepTime ?? null,
-        cookTime: parsed.cookTime ?? null,
-        cuisine: parsed.cuisine ?? null,
+        prepTime: prepTime.trim() || null,
+        cookTime: cookTime.trim() || null,
+        cuisine: cuisine.trim() || null,
         createdAt: now,
         updatedAt: now,
       };
@@ -89,13 +180,15 @@ export default function EditorScreen() {
         sortOrder: i,
       }));
 
-      const stepsToSave = (parsed.steps || []).map((step, i) => ({
-        id: Crypto.randomUUID(),
-        recipeId,
-        stepNumber: step.stepNumber ?? i + 1,
-        instruction: step.instruction,
-        illustrationUrl: null,
-      }));
+      const stepsToSave = steps
+        .filter((s) => s.instruction.trim().length > 0)
+        .map((s, i) => ({
+          id: Crypto.randomUUID(),
+          recipeId,
+          stepNumber: i + 1,
+          instruction: s.instruction,
+          illustrationUrl: s.illustrationUrl ?? null,
+        }));
 
       saveRecipe(recipe);
       saveIngredients(recipeId, ingredientsToSave);
@@ -107,7 +200,6 @@ export default function EditorScreen() {
         stepCount: stepsToSave.length,
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
       router.replace(`/recipe/${recipeId}`);
     } catch (err) {
       logger.error('editor.saveRecipe.error', { error: err.message });
@@ -124,110 +216,235 @@ export default function EditorScreen() {
     ]);
   }
 
-  function renderIngredient({ item, index }) {
-    return (
-      <View style={styles.ingredientRow}>
-        <TextInput
-          style={styles.qtyInput}
-          value={item.quantity != null ? String(item.quantity) : ''}
-          onChangeText={(val) => {
-            const num = parseFloat(val);
-            handleUpdateIngredient(index, 'quantity', isNaN(num) ? null : num);
-          }}
-          keyboardType="decimal-pad"
-          placeholder="Qty"
-          placeholderTextColor="#999"
-        />
-        <TextInput
-          style={styles.unitInput}
-          value={item.unit || ''}
-          onChangeText={(val) => handleUpdateIngredient(index, 'unit', val || null)}
-          placeholder="Unit"
-          placeholderTextColor="#999"
-        />
-        <TextInput
-          style={styles.nameInput}
-          value={item.name}
-          onChangeText={(val) => handleUpdateIngredient(index, 'name', val)}
-          placeholder="Ingredient"
-          placeholderTextColor="#999"
-        />
-      </View>
-    );
-  }
-
-  const metaChips = [
-    parsed.cuisine,
-    parsed.prepTime ? `Prep ${parsed.prepTime}` : null,
-    parsed.cookTime ? `Cook ${parsed.cookTime}` : null,
-  ].filter(Boolean);
+  // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleDiscard}>
-          <Text style={styles.headerButton}>Cancel</Text>
+          <Text style={styles.headerCancel}>Cancel</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Review Recipe</Text>
         <TouchableOpacity onPress={handleSave} disabled={saving}>
           {saving ? (
-            <ActivityIndicator size="small" color="#007AFF" />
+            <ActivityIndicator size="small" color={C.orange} />
           ) : (
-            <Text style={styles.headerButtonSave}>Save</Text>
+            <Text style={styles.headerSave}>Save</Text>
           )}
         </TouchableOpacity>
       </View>
 
-      <View style={styles.metaSection}>
-        <Text style={styles.label}>Recipe Title</Text>
-        <TextInput
-          style={styles.titleInput}
-          value={title}
-          onChangeText={setTitle}
-          placeholder="Recipe name"
-          placeholderTextColor="#999"
-          returnKeyType="done"
-        />
-        <View style={styles.servingsRow}>
-          <Text style={styles.label}>Servings</Text>
-          <TextInput
-            style={styles.servingsInput}
-            value={currentServings}
-            onChangeText={handleServingsChange}
-            keyboardType="decimal-pad"
-          />
-        </View>
-        {metaChips.length > 0 && (
-          <View style={styles.chips}>
-            {metaChips.map((chip) => (
-              <View key={chip} style={styles.chip}>
-                <Text style={styles.chipText}>{chip}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
-
-      <View style={styles.listHeader}>
-        <Text style={styles.listHeaderText}>
-          {ingredients.length} ingredient{ingredients.length !== 1 ? 's' : ''}
-          {(parsed.steps || []).length > 0
-            ? `  ·  ${parsed.steps.length} step${parsed.steps.length !== 1 ? 's' : ''}`
-            : ''}
-        </Text>
-      </View>
-
-      <FlatList
-        data={ingredients}
-        renderItem={renderIngredient}
-        keyExtractor={(_, i) => String(i)}
-        contentContainerStyle={styles.listContent}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
-      />
+      >
+        {/* Source image */}
+        {imageUri ? (
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: imageUri }}
+              style={styles.sourceImage}
+              resizeMode="cover"
+            />
+          </View>
+        ) : null}
+
+        {/* Title */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Recipe Title</Text>
+          <TextInput
+            style={styles.titleInput}
+            value={title}
+            onChangeText={setTitle}
+            placeholder="Recipe name"
+            placeholderTextColor={C.textFaint}
+            returnKeyType="done"
+          />
+        </View>
+
+        {/* Meta row: prep / cook / servings */}
+        <View style={styles.section}>
+          <View style={styles.metaRow}>
+            <View style={styles.metaField}>
+              <Text style={styles.sectionLabel}>Prep Time</Text>
+              <TextInput
+                style={styles.metaInput}
+                value={prepTime}
+                onChangeText={setPrepTime}
+                placeholder="e.g. 15 min"
+                placeholderTextColor={C.textFaint}
+                returnKeyType="done"
+              />
+            </View>
+            <View style={styles.metaField}>
+              <Text style={styles.sectionLabel}>Cook Time</Text>
+              <TextInput
+                style={styles.metaInput}
+                value={cookTime}
+                onChangeText={setCookTime}
+                placeholder="e.g. 30 min"
+                placeholderTextColor={C.textFaint}
+                returnKeyType="done"
+              />
+            </View>
+            <View style={styles.metaField}>
+              <Text style={styles.sectionLabel}>Servings</Text>
+              <TextInput
+                style={[styles.metaInput, styles.metaInputCenter]}
+                value={currentServings}
+                onChangeText={handleServingsChange}
+                keyboardType="decimal-pad"
+                placeholder="1"
+                placeholderTextColor={C.textFaint}
+              />
+            </View>
+          </View>
+
+          {/* Cuisine chip */}
+          <View style={styles.cuisineRow}>
+            <Text style={styles.sectionLabel}>Cuisine</Text>
+            {cuisine ? (
+              <TouchableOpacity
+                style={styles.cuisineChip}
+                onPress={() => setCuisine('')}
+              >
+                <Text style={styles.cuisineChipText}>{cuisine}</Text>
+                <Ionicons name="close-circle" size={14} color={C.orange} />
+              </TouchableOpacity>
+            ) : (
+              <TextInput
+                style={styles.cuisineInput}
+                value={cuisine}
+                onChangeText={setCuisine}
+                placeholder="e.g. Italian"
+                placeholderTextColor={C.textFaint}
+                returnKeyType="done"
+              />
+            )}
+          </View>
+        </View>
+
+        {/* Ingredients */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionLabel}>
+              Ingredients ({ingredients.length})
+            </Text>
+          </View>
+          {ingredients.map((item, index) => (
+            <View key={index} style={styles.ingredientRow}>
+              <TextInput
+                style={styles.qtyInput}
+                value={item.quantity != null ? String(item.quantity) : ''}
+                onChangeText={(val) => {
+                  const num = parseFloat(val);
+                  handleUpdateIngredient(index, 'quantity', isNaN(num) ? null : num);
+                }}
+                keyboardType="decimal-pad"
+                placeholder="Qty"
+                placeholderTextColor={C.textFaint}
+              />
+              <TextInput
+                style={styles.unitInput}
+                value={item.unit || ''}
+                onChangeText={(val) => handleUpdateIngredient(index, 'unit', val || null)}
+                placeholder="Unit"
+                placeholderTextColor={C.textFaint}
+              />
+              <TextInput
+                style={styles.nameInput}
+                value={item.name}
+                onChangeText={(val) => handleUpdateIngredient(index, 'name', val)}
+                placeholder="Ingredient"
+                placeholderTextColor={C.textFaint}
+              />
+            </View>
+          ))}
+        </View>
+
+        {/* Steps */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionLabel}>Steps ({steps.length})</Text>
+            {steps.length > 0 && (
+              <TouchableOpacity
+                style={[styles.illustrateBtn, illustrating && styles.illustrateBtnBusy]}
+                onPress={handleGenerateIllustrations}
+                disabled={illustrating}
+              >
+                {illustrating ? (
+                  <>
+                    <ActivityIndicator size="small" color={C.orange} />
+                    <Text style={styles.illustrateBtnText}>
+                      {illustrateProgress.done}/{illustrateProgress.total}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons name="sparkles-outline" size={14} color={C.orange} />
+                    <Text style={styles.illustrateBtnText}>Generate Illustrations</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {steps.map((step) => (
+            <View key={step.localId} style={styles.stepRow}>
+              <View style={styles.stepNumberCircle}>
+                <Text style={styles.stepNumber}>{step.stepNumber}</Text>
+              </View>
+              <TextInput
+                style={styles.stepInput}
+                value={step.instruction}
+                onChangeText={(val) => handleUpdateStep(step.localId, val)}
+                placeholder="Describe this step…"
+                placeholderTextColor={C.textFaint}
+                multiline
+              />
+              {step.illustrationUrl ? (
+                <Ionicons name="image" size={20} color="#34C759" />
+              ) : null}
+              <TouchableOpacity
+                onPress={() => handleRemoveStep(step.localId)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="close-circle-outline" size={20} color={C.textFaint} />
+              </TouchableOpacity>
+            </View>
+          ))}
+
+          <TouchableOpacity style={styles.addStepBtn} onPress={handleAddStep}>
+            <Ionicons name="add-circle-outline" size={18} color={C.orange} />
+            <Text style={styles.addStepText}>Add Step</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Bottom save button */}
+        <View style={styles.saveSection}>
+          <TouchableOpacity
+            style={[styles.saveButton, saving && styles.saveButtonBusy]}
+            onPress={handleSave}
+            disabled={saving}
+            activeOpacity={0.85}
+          >
+            {saving ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Ionicons name="bookmark" size={18} color="#fff" />
+                <Text style={styles.saveButtonText}>Save Recipe</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -235,7 +452,7 @@ export default function EditorScreen() {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: C.bg,
   },
   header: {
     flexDirection: 'row',
@@ -245,128 +462,268 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? 40 : 56,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
-    backgroundColor: '#FAFAFA',
+    borderBottomColor: C.border,
+    backgroundColor: C.surface,
   },
-  headerButton: {
-    color: '#007AFF',
+  headerCancel: {
+    color: C.textMed,
     fontSize: 17,
   },
-  headerButtonSave: {
-    color: '#007AFF',
+  headerSave: {
+    color: C.orange,
     fontSize: 17,
     fontWeight: '700',
   },
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#1C1C1E',
+    color: C.textDark,
   },
-  metaSection: {
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 48,
+  },
+
+  // ── Image ─────────────────────────────────────────────────────────────────────
+  imageContainer: {
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    paddingBottom: 0,
+    alignItems: 'center',
   },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#636366',
-    marginBottom: 4,
+  sourceImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 16,
+    backgroundColor: C.border,
+  },
+
+  // ── Sections ──────────────────────────────────────────────────────────────────
+  section: {
+    backgroundColor: C.surface,
+    marginTop: 12,
+    marginHorizontal: 16,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#2D1B00',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: C.textFaint,
     textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 6,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   titleInput: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: C.textDark,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: C.border,
     paddingVertical: 8,
-    marginBottom: 16,
-    color: '#1C1C1E',
   },
-  servingsRow: {
+
+  // ── Meta row ──────────────────────────────────────────────────────────────────
+  metaRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  metaField: {
+    flex: 1,
+  },
+  metaInput: {
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: C.textDark,
+    backgroundColor: C.bg,
+  },
+  metaInputCenter: {
+    textAlign: 'center',
+  },
+  cuisineRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
+    gap: 10,
   },
-  servingsInput: {
-    borderWidth: 1,
-    borderColor: '#CCC',
-    borderRadius: 8,
+  cuisineChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.orangeLight,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    fontSize: 16,
-    width: 60,
-    textAlign: 'center',
-    color: '#1C1C1E',
-  },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    backgroundColor: '#F2F2F7',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
     borderRadius: 20,
+    gap: 6,
   },
-  chipText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#636366',
-  },
-  listHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#F2F2F7',
-  },
-  listHeaderText: {
+  cuisineChipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#636366',
+    color: C.orange,
   },
-  listContent: {
-    paddingBottom: 40,
+  cuisineInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: C.textDark,
+    backgroundColor: C.bg,
   },
+
+  // ── Ingredients ───────────────────────────────────────────────────────────────
   ingredientRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: C.border,
     gap: 8,
   },
   qtyInput: {
-    width: 50,
+    width: 52,
     borderWidth: 1,
-    borderColor: '#DDD',
-    borderRadius: 6,
-    paddingHorizontal: 8,
+    borderColor: C.border,
+    borderRadius: 8,
+    paddingHorizontal: 6,
     paddingVertical: 6,
-    fontSize: 15,
+    fontSize: 14,
     textAlign: 'center',
-    color: '#1C1C1E',
+    color: C.textDark,
+    backgroundColor: C.bg,
   },
   unitInput: {
-    width: 60,
+    width: 62,
     borderWidth: 1,
-    borderColor: '#DDD',
-    borderRadius: 6,
-    paddingHorizontal: 8,
+    borderColor: C.border,
+    borderRadius: 8,
+    paddingHorizontal: 6,
     paddingVertical: 6,
-    fontSize: 15,
-    color: '#1C1C1E',
+    fontSize: 14,
+    color: C.textDark,
+    backgroundColor: C.bg,
   },
   nameInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#DDD',
-    borderRadius: 6,
+    borderColor: C.border,
+    borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 6,
+    fontSize: 14,
+    color: C.textDark,
+    backgroundColor: C.bg,
+  },
+
+  // ── Steps ─────────────────────────────────────────────────────────────────────
+  illustrateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: C.orangeLight,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  illustrateBtnBusy: {
+    opacity: 0.7,
+  },
+  illustrateBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: C.orange,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: C.border,
+    gap: 10,
+  },
+  stepNumberCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: C.orange,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    flexShrink: 0,
+  },
+  stepNumber: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  stepInput: {
+    flex: 1,
     fontSize: 15,
-    color: '#1C1C1E',
+    color: C.textDark,
+    lineHeight: 22,
+    paddingVertical: 2,
+    minHeight: 44,
+  },
+  addStepBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 10,
+    borderStyle: 'dashed',
+  },
+  addStepText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: C.orange,
+  },
+
+  // ── Save ──────────────────────────────────────────────────────────────────────
+  saveSection: {
+    padding: 16,
+    paddingTop: 20,
+  },
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: C.orange,
+    borderRadius: 16,
+    paddingVertical: 16,
+    elevation: 3,
+    shadowColor: C.orange,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+  },
+  saveButtonBusy: {
+    opacity: 0.7,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
   },
 });

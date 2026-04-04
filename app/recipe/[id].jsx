@@ -502,7 +502,7 @@ export default function RecipeDetailScreen() {
                               {
                                 color: anim.interpolate({
                                   inputRange: [0, 1],
-                                  outputRange: ['#1C1C1E', '#8E8E93'],
+                                  outputRange: ['#2D1B00', '#B38B6D'],
                                 }),
                               },
                             ]}
@@ -610,7 +610,7 @@ export default function RecipeDetailScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#FFF8F0',
   },
   scroll: {
     flex: 1,
@@ -622,17 +622,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#FFF8F0',
   },
   emptyText: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: '#B38B6D',
   },
 
   // ── Hero ──────────────────────────────────────────────────────────────────────
   hero: {
     height: HERO_HEIGHT,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#2D1B00',
     overflow: 'hidden',
   },
   heroImage: {
@@ -715,7 +715,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: '#F0E0D0',
     // elevation for sticky
     elevation: 3,
     shadowColor: '#000',
@@ -730,13 +730,13 @@ const styles = StyleSheet.create({
   },
   metaLabel: {
     fontSize: 12,
-    color: '#8E8E93',
+    color: '#B38B6D',
     fontWeight: '500',
   },
   metaValue: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#1C1C1E',
+    color: '#2D1B00',
   },
   stepper: {
     flexDirection: 'row',
@@ -747,14 +747,14 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#FFF8F0',
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepperBtnText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#007AFF',
+    color: '#FF6B35',
     lineHeight: 22,
   },
   stepperBtnDisabled: {
@@ -763,12 +763,12 @@ const styles = StyleSheet.create({
   stepperValue: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#1C1C1E',
+    color: '#2D1B00',
     minWidth: 24,
     textAlign: 'center',
   },
   cuisineBadge: {
-    backgroundColor: '#EBF3FF',
+    backgroundColor: '#FFF0E8',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 20,
@@ -776,7 +776,7 @@ const styles = StyleSheet.create({
   cuisineBadgeText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#007AFF',
+    color: '#FF6B35',
   },
 
   // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -784,7 +784,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#fff',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: '#F0E0D0',
   },
   tab: {
     flex: 1,
@@ -794,15 +794,15 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   tabActive: {
-    borderBottomColor: '#007AFF',
+    borderBottomColor: '#FF6B35',
   },
   tabText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: '#B38B6D',
   },
   tabTextActive: {
-    color: '#007AFF',
+    color: '#FF6B35',
   },
 
   // ── Tab content ───────────────────────────────────────────────────────────────
@@ -817,7 +817,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#F2F2F7',
+    borderBottomColor: '#FFF8F0',
     gap: 12,
   },
   checkbox: {
@@ -843,7 +843,7 @@ const styles = StyleSheet.create({
   },
   ingredientQty: {
     fontSize: 14,
-    color: '#636366',
+    color: '#6B4C2A',
     fontWeight: '500',
     marginLeft: 8,
   },
@@ -852,7 +852,7 @@ const styles = StyleSheet.create({
   },
   ingredientNotes: {
     fontSize: 13,
-    color: '#8E8E93',
+    color: '#B38B6D',
     marginTop: 2,
   },
   ingredientEditRow: {
@@ -862,35 +862,35 @@ const styles = StyleSheet.create({
   editQtyInput: {
     width: 52,
     borderWidth: 1,
-    borderColor: '#E5E5EA',
+    borderColor: '#F0E0D0',
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 5,
     fontSize: 14,
     textAlign: 'center',
-    color: '#1C1C1E',
+    color: '#2D1B00',
     backgroundColor: '#FAFAFA',
   },
   editUnitInput: {
     width: 64,
     borderWidth: 1,
-    borderColor: '#E5E5EA',
+    borderColor: '#F0E0D0',
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 5,
     fontSize: 14,
-    color: '#1C1C1E',
+    color: '#2D1B00',
     backgroundColor: '#FAFAFA',
   },
   editNameInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#E5E5EA',
+    borderColor: '#F0E0D0',
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 5,
     fontSize: 14,
-    color: '#1C1C1E',
+    color: '#2D1B00',
     backgroundColor: '#FAFAFA',
   },
   listButtonContainer: {
@@ -900,12 +900,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FF6B35',
     borderRadius: 14,
     paddingVertical: 14,
     gap: 8,
     elevation: 2,
-    shadowColor: '#007AFF',
+    shadowColor: '#FF6B35',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 6,
@@ -924,14 +924,14 @@ const styles = StyleSheet.create({
   },
   emptyStepsText: {
     fontSize: 15,
-    color: '#8E8E93',
+    color: '#B38B6D',
   },
   stepRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#F2F2F7',
+    borderBottomColor: '#FFF8F0',
     gap: 14,
     alignItems: 'flex-start',
   },
@@ -957,19 +957,19 @@ const styles = StyleSheet.create({
   stepInstruction: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#1C1C1E',
+    color: '#2D1B00',
   },
   stepIllustration: {
     width: '100%',
     height: 160,
     borderRadius: 12,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#FFF8F0',
   },
   stepIllustrationPlaceholder: {
     width: '100%',
     height: 100,
     borderRadius: 12,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#FFF8F0',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
@@ -979,7 +979,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#EBF3FF',
+    backgroundColor: '#FFF0E8',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -987,7 +987,7 @@ const styles = StyleSheet.create({
   generateBtnText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#007AFF',
+    color: '#FF6B35',
   },
 
   // ── FAB ───────────────────────────────────────────────────────────────────────
