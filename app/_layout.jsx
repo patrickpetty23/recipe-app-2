@@ -40,6 +40,10 @@ export default function RootLayout() {
           options={{ headerShown: false, presentation: 'modal' }}
         />
         <Stack.Screen name="recipe/[id]" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="recipe/cooking"
+          options={{ headerShown: false, presentation: 'fullScreenModal' }}
+        />
       </Stack>
     </GestureHandlerRootView>
   );
