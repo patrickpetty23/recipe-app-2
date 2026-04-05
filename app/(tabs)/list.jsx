@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,16 +6,25 @@ import {
   Alert,
   StyleSheet,
   SectionList,
+  FlatList,
+  Modal,
   ActivityIndicator,
   Linking,
+  SafeAreaView,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 
 import {
   getShoppingListIngredients,
   toggleIngredientChecked,
+  deleteIngredient,
   clearCheckedItems,
   clearShoppingList,
+  addIngredientsToList,
+  getAllRecipes,
+  getRecipeById,
 } from '../../src/db/queries';
 import { searchProduct, buildCartLink, isWalmartConfigured } from '../../src/services/walmart';
 import { logger } from '../../src/utils/logger';
@@ -26,6 +35,12 @@ export default function ShoppingListScreen() {
   const [walmartResults, setWalmartResults] = useState({});
   const [searchingIds, setSearchingIds] = useState({});
   const [bulkSearching, setBulkSearching] = useState(false);
+
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [addStep, setAddStep] = useState('recipes');
+  const [allRecipes, setAllRecipes] = useState([]);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [selectedIngredientIds, setSelectedIngredientIds] = useState({});
 
   useFocusEffect(
     useCallback(() => {
@@ -188,6 +203,23 @@ export default function ShoppingListScreen() {
     }
   }
 
+  function handleDeleteItem(mergedItem) {
+    try {
+      for (const sourceId of mergedItem.sourceIds) {
+        deleteIngredient(sourceId);
+      }
+      setItems((prev) => prev.filter((i) => !mergedItem.sourceIds.includes(i.id)));
+      setWalmartResults((prev) => {
+        const next = { ...prev };
+        delete next[mergedItem.id];
+        return next;
+      });
+      logger.info('shoppingList.deleteItem', { ids: mergedItem.sourceIds });
+    } catch (err) {
+      logger.error('shoppingList.deleteItem.error', { ids: mergedItem.sourceIds, error: err.message });
+    }
+  }
+
   function handleClearChecked() {
     try {
       clearCheckedItems();
@@ -222,6 +254,52 @@ export default function ShoppingListScreen() {
     );
   }
 
+  function openAddModal() {
+    try {
+      const recipes = getAllRecipes();
+      setAllRecipes(recipes);
+      setAddStep('recipes');
+      setSelectedRecipe(null);
+      setSelectedIngredientIds({});
+      setAddModalVisible(true);
+    } catch (err) {
+      logger.error('shoppingList.openAddModal.error', { error: err.message });
+    }
+  }
+
+  function handleSelectRecipe(recipe) {
+    try {
+      const full = getRecipeById(recipe.id);
+      setSelectedRecipe(full);
+      setSelectedIngredientIds({});
+      setAddStep('ingredients');
+    } catch (err) {
+      logger.error('shoppingList.selectRecipe.error', { error: err.message });
+    }
+  }
+
+  function handleToggleIngredient(id) {
+    setSelectedIngredientIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  }
+
+  function handleConfirmAdd() {
+    const ids = Object.entries(selectedIngredientIds)
+      .filter(([, selected]) => selected)
+      .map(([id]) => id);
+    if (ids.length === 0) {
+      Alert.alert('No Items Selected', 'Tap ingredients to select them first.');
+      return;
+    }
+    try {
+      addIngredientsToList(ids);
+      loadList();
+      setAddModalVisible(false);
+      logger.info('shoppingList.addIngredients', { count: ids.length });
+    } catch (err) {
+      logger.error('shoppingList.addIngredients.error', { error: err.message });
+    }
+  }
+
   function formatQuantity(qty) {
     if (qty == null) return '';
     return String(qty);
@@ -232,8 +310,24 @@ export default function ShoppingListScreen() {
     const wResult = walmartResults[item.id];
     const isSearching = searchingIds[item.id];
     const isMerged = item.sourceIds.length > 1;
+    let swipeableRef = null;
+
+    const renderRightActions = () => (
+      <View style={styles.swipeDeleteWrapper}>
+        <View style={styles.swipeDeleteCircle}>
+          <Ionicons name="trash" size={22} color="#fff" />
+        </View>
+      </View>
+    );
 
     return (
+      <Swipeable
+        renderRightActions={renderRightActions}
+        friction={2}
+        rightThreshold={80}
+        onSwipeableOpen={() => handleDeleteItem(item)}
+        ref={(ref) => { swipeableRef = ref; }}
+      >
       <View style={styles.itemContainer}>
         <TouchableOpacity
           style={styles.itemRow}
@@ -287,6 +381,7 @@ export default function ShoppingListScreen() {
           </TouchableOpacity>
         )}
       </View>
+      </Swipeable>
     );
   }
 
@@ -341,22 +436,30 @@ export default function ShoppingListScreen() {
         </View>
 
         <View style={styles.walmartSection}>
-          <TouchableOpacity
-            style={styles.walmartSearchAllButton}
-            onPress={handleBulkWalmartSearch}
-            disabled={bulkSearching}
-          >
-            {bulkSearching ? (
-              <View style={styles.searchAllRow}>
-                <ActivityIndicator size="small" color="#0071DC" />
-                <Text style={styles.walmartSearchAllText}>Searching...</Text>
-              </View>
-            ) : (
-              <Text style={styles.walmartSearchAllText}>
-                Search All on Walmart ({unsearchedCount})
-              </Text>
-            )}
-          </TouchableOpacity>
+          <View style={styles.walmartTopRow}>
+            <TouchableOpacity
+              style={[styles.walmartSearchAllButton, { flex: 1 }]}
+              onPress={handleBulkWalmartSearch}
+              disabled={bulkSearching}
+            >
+              {bulkSearching ? (
+                <View style={styles.searchAllRow}>
+                  <ActivityIndicator size="small" color="#0071DC" />
+                  <Text style={styles.walmartSearchAllText}>Searching...</Text>
+                </View>
+              ) : (
+                <Text style={styles.walmartSearchAllText} numberOfLines={1}>
+                  Search Walmart ({unsearchedCount})
+                </Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.addItemsButton}
+              onPress={openAddModal}
+            >
+              <Text style={styles.addItemsText}>+ Add Items</Text>
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity
             style={[styles.walmartCartButton, matchedCount === 0 && styles.walmartCartButtonDisabled]}
@@ -368,6 +471,75 @@ export default function ShoppingListScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      <Modal visible={addModalVisible} animationType="slide" presentationStyle="pageSheet">
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            {addStep === 'ingredients' ? (
+              <TouchableOpacity onPress={() => setAddStep('recipes')}>
+                <Text style={styles.modalBack}>‹ Back</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={{ width: 60 }} />
+            )}
+            <Text style={styles.modalTitle}>
+              {addStep === 'recipes' ? 'Select Recipe' : selectedRecipe?.title}
+            </Text>
+            <TouchableOpacity onPress={() => setAddModalVisible(false)}>
+              <Text style={styles.modalClose}>Done</Text>
+            </TouchableOpacity>
+          </View>
+
+          {addStep === 'recipes' ? (
+            <FlatList
+              data={allRecipes}
+              keyExtractor={(r) => r.id}
+              renderItem={({ item: recipe }) => (
+                <TouchableOpacity
+                  style={styles.modalRecipeRow}
+                  onPress={() => handleSelectRecipe(recipe)}
+                >
+                  <Text style={styles.modalRecipeName}>{recipe.title}</Text>
+                  <Text style={styles.modalRecipeChevron}>›</Text>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={styles.modalEmpty}>No recipes saved yet.</Text>
+              }
+            />
+          ) : (
+            <>
+              <FlatList
+                data={selectedRecipe?.ingredients ?? []}
+                keyExtractor={(i) => i.id}
+                renderItem={({ item: ing }) => {
+                  const selected = !!selectedIngredientIds[ing.id];
+                  const qtyUnit = [ing.quantity, ing.unit].filter(Boolean).join(' ');
+                  return (
+                    <TouchableOpacity
+                      style={[styles.modalIngredientRow, selected && styles.modalIngredientSelected]}
+                      onPress={() => handleToggleIngredient(ing.id)}
+                    >
+                      <View style={[styles.modalCheckbox, selected && styles.modalCheckboxChecked]}>
+                        {selected && <Text style={styles.modalCheckmark}>✓</Text>}
+                      </View>
+                      <Text style={styles.modalIngredientName}>{ing.name}</Text>
+                      {qtyUnit ? <Text style={styles.modalIngredientQty}>{qtyUnit}</Text> : null}
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+              <View style={styles.modalFooter}>
+                <TouchableOpacity style={styles.modalConfirmButton} onPress={handleConfirmAdd}>
+                  <Text style={styles.modalConfirmText}>
+                    Add {Object.values(selectedIngredientIds).filter(Boolean).length} Items to List
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 }
@@ -414,6 +586,7 @@ const styles = StyleSheet.create({
   itemContainer: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#E8E8E8',
+    backgroundColor: '#fff',
   },
   itemRow: {
     flexDirection: 'row',
@@ -421,6 +594,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 4,
+    backgroundColor: '#fff',
+  },
+  swipeDeleteWrapper: {
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  swipeDeleteCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#FF3B30',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   checkbox: {
     width: 24,
@@ -546,6 +733,10 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#D0E2F5',
   },
+  walmartTopRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   walmartSearchAllButton: {
     backgroundColor: '#fff',
     borderWidth: 1.5,
@@ -563,6 +754,128 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  addItemsButton: {
+    flex: 1,
+    backgroundColor: '#34C759',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addItemsText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E0E0E0',
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
+  },
+  modalBack: {
+    fontSize: 17,
+    color: '#007AFF',
+    width: 60,
+  },
+  modalClose: {
+    fontSize: 17,
+    color: '#007AFF',
+    fontWeight: '600',
+    width: 60,
+    textAlign: 'right',
+  },
+  modalRecipeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E8E8E8',
+  },
+  modalRecipeName: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+  },
+  modalRecipeChevron: {
+    fontSize: 20,
+    color: '#C7C7CC',
+  },
+  modalEmpty: {
+    textAlign: 'center',
+    color: '#999',
+    marginTop: 40,
+    fontSize: 15,
+  },
+  modalIngredientRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E8E8E8',
+    gap: 12,
+  },
+  modalIngredientSelected: {
+    backgroundColor: '#F0FFF4',
+  },
+  modalCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#CCC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCheckboxChecked: {
+    backgroundColor: '#34C759',
+    borderColor: '#34C759',
+  },
+  modalCheckmark: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  modalIngredientName: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+  },
+  modalIngredientQty: {
+    fontSize: 14,
+    color: '#888',
+  },
+  modalFooter: {
+    padding: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E0E0E0',
+  },
+  modalConfirmButton: {
+    backgroundColor: '#34C759',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  modalConfirmText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
   },
   walmartCartButton: {
     backgroundColor: '#0071DC',

@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.recipe-scanner"
+      "bundleIdentifier": "com.patrickpetty.recipe-scanner"
     },
     "android": {
       "adaptiveIcon": {

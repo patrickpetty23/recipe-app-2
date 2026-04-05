@@ -188,7 +188,7 @@ export default function EditorScreen() {
               style={styles.qtyInput}
               value={item.quantity != null ? String(item.quantity) : ''}
               onChangeText={(val) => handleUpdateIngredient(index, 'quantity', val || null)}
-              keyboardType="default"
+              keyboardType="numbers-and-punctuation"
               placeholder="Qty"
               placeholderTextColor="#999"
             />
