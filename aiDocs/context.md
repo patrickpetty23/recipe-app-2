@@ -13,24 +13,33 @@ An iOS mobile app (React Native + Expo) that lets users scan physical cookbook r
 - **Plans**: `ai/plans/phase1-plan.md` through `phase8-plan.md` — intent, approach, and key decisions for each phase before implementation
 
 ## Tech Stack
-- **Framework**: React Native (Expo SDK 51+)
+- **Framework**: React Native (Expo SDK 54)
 - **Language**: JavaScript (not TypeScript — keep it simple)
-- **AI/Parsing**: OpenAI GPT-4o API — ingredient extraction and cleanup
-- **OCR**: Expo Camera + Vision (device-native) for image capture; raw image passed to GPT-4o Vision
-- **Storage**: AsyncStorage (app state) + SQLite via expo-sqlite (recipe library)
-- **Navigation**: Expo Router (file-based)
+- **AI/Parsing**: OpenAI GPT-4o API — recipe extraction, chat, nutrition estimation, recipe lightening
+- **Image Generation**: DALL-E 3 (hero thumbnails 1792×1024) + DALL-E 2 (step illustrations, parallel)
+- **TTS**: expo-speech — voice-guided cooking mode narration
+- **OCR**: GPT-4o Vision directly — no separate OCR library
+- **Storage**: SQLite via expo-sqlite v16 (WAL mode, FK cascade) — fully offline
+- **Navigation**: Expo Router v6 (file-based)
 - **HTTP**: fetch() — no axios
 - **Logging**: Custom structured JSON logger (see architecture.md)
 - **External API**: Walmart Open API (product search + affiliate cart links)
 
 ## Important Notes
 - **No user accounts.** Everything is local on device.
-- **No Android testing.** Expo handles cross-platform but we only verify on iOS.
-- **No unit conversion database.** Raw recipe amounts are shown as-is.
-- **GPT-4o Vision handles OCR.** We do NOT use a separate OCR library — the image goes straight to GPT-4o which extracts and cleans ingredients in one step.
+- **Android verified.** App tested on Android via Expo Go in addition to iOS.
+- **GPT-4o Vision handles OCR.** No separate OCR library — image goes straight to GPT-4o.
 - **All scripts return JSON to stdout.** Errors go to stderr. Exit codes are mandatory.
 - **Structured logging** is used throughout — never console.log in production code.
-- **Secrets live in `.testEnvVars`** (gitignored). Never hardcode API keys.
+- **Secrets live in `.env`** (gitignored). API key is `EXPO_PUBLIC_OPENAI_API_KEY`.
+- **AI tasks are non-blocking.** Nutrition estimation, thumbnail generation, and step illustrations all fire in the background after save — user navigates immediately.
 
 ## Current Focus
-Phase 9 — rubric compliance and final submission prep. All core features (Phases 1–8) are implemented and working: camera/photo/URL/file import, ingredient editor with scaling, recipe library, shopping list with check-off, and Walmart product search + cart integration. Now finalizing documentation, creating per-phase plan artifacts, and preparing for the April 7 demo.
+Phase 9 complete — rubric compliance, Android polish, and demo preparation.
+
+The app has expanded significantly beyond the original MVP scope. Five milestones were executed on the `feature/android-polish` branch:
+- **Milestone 1–2**: Full schema, queries, OpenAI service, iMessage-style chat tab
+- **Milestone 3**: Recipe detail redesign — hero image, gradient, tabs, cooking mode screen
+- **Milestone 4**: Editor redesign, Collections in Library, warm colour theme (#FF6B35 orange)
+- **Milestone 5**: Nutrition tracking (GPT-4o macros, cook log, Tracker tab), voice cooking (TTS + timers), "Make it Lighter" AI feature
+- **Auto-generation**: On every save — DALL-E 3 thumbnail, DALL-E 2 parallel step illustrations, GPT-4o nutrition — all non-blocking background tasks

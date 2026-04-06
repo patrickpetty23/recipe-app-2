@@ -10,16 +10,19 @@ import {
   Modal,
   ActivityIndicator,
   Linking,
-  SafeAreaView,
+  Animated,
+  Platform,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 
 import {
   getShoppingListIngredients,
   toggleIngredientChecked,
-  deleteIngredient,
+  removeIngredientFromList,
   clearCheckedItems,
   clearShoppingList,
   addIngredientsToList,
@@ -28,9 +31,22 @@ import {
 } from '../../src/db/queries';
 import { searchProduct, buildCartLink, isWalmartConfigured } from '../../src/services/walmart';
 import { logger } from '../../src/utils/logger';
-import { parseFraction, toFractionString } from '../../src/utils/scaler';
+import EmptyState from '../../src/components/EmptyState';
+import SwipeableRow from '../../src/components/SwipeableRow';
+import WalmartProductCard from '../../src/components/WalmartProductCard';
+
+// Keeps animated values across renders without re-creating them
+const checkAnimations = {};
+
+function getCheckAnim(id) {
+  if (!checkAnimations[id]) {
+    checkAnimations[id] = new Animated.Value(0);
+  }
+  return checkAnimations[id];
+}
 
 export default function ShoppingListScreen() {
+  const insets = useSafeAreaInsets();
   const [items, setItems] = useState([]);
   const [walmartResults, setWalmartResults] = useState({});
   const [searchingIds, setSearchingIds] = useState({});
@@ -52,6 +68,11 @@ export default function ShoppingListScreen() {
     try {
       const all = getShoppingListIngredients();
       setItems(all);
+      // Initialise animation values for newly loaded items
+      for (const item of all) {
+        const anim = getCheckAnim(item.id);
+        anim.setValue(item.checked ? 1 : 0);
+      }
       logger.info('shoppingList.load', { count: all.length });
     } catch (err) {
       logger.error('shoppingList.load.error', { error: err.message });
@@ -92,11 +113,22 @@ export default function ShoppingListScreen() {
     return Object.values(groups);
   }, [items]);
 
-  const sections = useMemo(() => {
-    return [{ title: 'Shopping List', data: mergedItems }];
-  }, [mergedItems]);
+  const totalEstimated = useMemo(() => {
+    return Object.values(walmartResults)
+      .filter((r) => r && r.price != null)
+      .reduce((sum, r) => sum + r.price, 0);
+  }, [walmartResults]);
 
-  function handleToggleChecked(mergedItem) {
+  function handleToggleChecked(item) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const anim = getCheckAnim(item.id);
+    const nowChecked = !item.checked;
+    Animated.spring(anim, {
+      toValue: nowChecked ? 1 : 0,
+      useNativeDriver: false,
+      tension: 80,
+      friction: 8,
+    }).start();
     try {
       const newChecked = !mergedItem.checked;
       for (const sourceId of mergedItem.sourceIds) {
@@ -106,19 +138,33 @@ export default function ShoppingListScreen() {
         }
       }
       setItems((prev) =>
-        prev.map((i) =>
-          mergedItem.sourceIds.includes(i.id) ? { ...i, checked: newChecked } : i
-        )
+        prev.map((i) => (i.id === item.id ? { ...i, checked: nowChecked } : i))
       );
     } catch (err) {
       logger.error('shoppingList.toggleChecked.error', { ids: mergedItem.sourceIds, error: err.message });
     }
   }
 
+  function handleRemoveItem(item) {
+    try {
+      removeIngredientFromList(item.id);
+      delete checkAnimations[item.id];
+      setItems((prev) => prev.filter((i) => i.id !== item.id));
+      setWalmartResults((prev) => {
+        const next = { ...prev };
+        delete next[item.id];
+        return next;
+      });
+      logger.info('shoppingList.removeItem', { id: item.id });
+    } catch (err) {
+      logger.error('shoppingList.removeItem.error', { id: item.id, error: err.message });
+    }
+  }
+
   function showNotConfiguredAlert() {
     Alert.alert(
       'Walmart API Not Set Up',
-      'To use Walmart features, add your WALMART_CLIENT_ID and WALMART_PRIVATE_KEY to the .testEnvVars file and restart the app.',
+      'Add your WALMART_CLIENT_ID and WALMART_PRIVATE_KEY to .testEnvVars and restart.',
       [{ text: 'OK' }]
     );
   }
@@ -151,31 +197,34 @@ export default function ShoppingListScreen() {
       showNotConfiguredAlert();
       return;
     }
-
     setBulkSearching(true);
     const unsearched = mergedItems.filter((i) => !walmartResults[i.id]);
     logger.info('shoppingList.bulkSearch', { count: unsearched.length });
-
-    for (const item of unsearched) {
-      setSearchingIds((prev) => ({ ...prev, [item.id]: true }));
-      try {
-        const searchQuery = [item.quantity, item.unit, item.name].filter(Boolean).join(' ');
-        const product = await searchProduct(searchQuery);
-        setWalmartResults((prev) => ({
-          ...prev,
-          [item.id]: product || { noMatch: true },
-        }));
-      } catch (err) {
-        if (err.code === 'WALMART_NOT_CONFIGURED') {
-          showNotConfiguredAlert();
-          break;
+    setSearchingIds((prev) => {
+      const next = { ...prev };
+      unsearched.forEach((i) => { next[i.id] = true; });
+      return next;
+    });
+    await Promise.allSettled(
+      unsearched.map(async (item) => {
+        try {
+          const product = await searchProduct(item.name);
+          setWalmartResults((prev) => ({
+            ...prev,
+            [item.id]: product || { noMatch: true },
+          }));
+        } catch (err) {
+          if (err.code === 'WALMART_NOT_CONFIGURED') {
+            showNotConfiguredAlert();
+            return;
+          }
+          logger.error('shoppingList.bulkSearch.error', { id: item.id, error: err.message });
+          setWalmartResults((prev) => ({ ...prev, [item.id]: { noMatch: true } }));
+        } finally {
+          setSearchingIds((prev) => ({ ...prev, [item.id]: false }));
         }
-        logger.error('shoppingList.bulkSearch.error', { id: item.id, error: err.message });
-        setWalmartResults((prev) => ({ ...prev, [item.id]: { noMatch: true } }));
-      } finally {
-        setSearchingIds((prev) => ({ ...prev, [item.id]: false }));
-      }
-    }
+      })
+    );
     setBulkSearching(false);
   }
 
@@ -184,23 +233,34 @@ export default function ShoppingListScreen() {
       showNotConfiguredAlert();
       return;
     }
-
     const matchedIds = Object.values(walmartResults)
       .filter((r) => r && r.itemId)
       .map((r) => r.itemId);
-
     if (matchedIds.length === 0) {
       Alert.alert('No Matches Yet', 'Search for items on Walmart first.');
       return;
     }
-
-    try {
-      const url = buildCartLink(matchedIds);
-      Linking.openURL(url);
-    } catch (err) {
-      logger.error('shoppingList.sendToWalmart.error', { error: err.message });
-      Alert.alert('Error', err.message);
-    }
+    const total = totalEstimated > 0 ? `\n\nEstimated total: $${totalEstimated.toFixed(2)}` : '';
+    Alert.alert(
+      'Open Walmart Cart',
+      `Add ${matchedIds.length} item${matchedIds.length !== 1 ? 's' : ''} to your Walmart cart?${total}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Open Walmart',
+          onPress: () => {
+            try {
+              const url = buildCartLink(matchedIds);
+              Linking.openURL(url);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } catch (err) {
+              logger.error('shoppingList.sendToWalmart.error', { error: err.message });
+              Alert.alert('Error', err.message);
+            }
+          },
+        },
+      ]
+    );
   }
 
   function handleDeleteItem(mergedItem) {
@@ -223,6 +283,10 @@ export default function ShoppingListScreen() {
   function handleClearChecked() {
     try {
       clearCheckedItems();
+      const clearedIds = items.filter((i) => i.checked).map((i) => i.id);
+      for (const id of clearedIds) {
+        getCheckAnim(id).setValue(0);
+      }
       setItems((prev) => prev.map((i) => ({ ...i, checked: false })));
       logger.info('shoppingList.clearChecked', {});
     } catch (err) {
@@ -233,7 +297,7 @@ export default function ShoppingListScreen() {
   function handleClearList() {
     Alert.alert(
       'Clear Shopping List',
-      'Are you sure? This will clear your entire shopping list.',
+      'This will remove all items from your shopping list.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -242,6 +306,9 @@ export default function ShoppingListScreen() {
           onPress: () => {
             try {
               clearShoppingList();
+              for (const item of items) {
+                delete checkAnimations[item.id];
+              }
               setItems([]);
               setWalmartResults({});
               logger.info('shoppingList.clearList', {});
@@ -309,93 +376,105 @@ export default function ShoppingListScreen() {
     const qtyUnit = [formatQuantity(item.quantity), item.unit].filter(Boolean).join(' ');
     const wResult = walmartResults[item.id];
     const isSearching = searchingIds[item.id];
-    const isMerged = item.sourceIds.length > 1;
-    let swipeableRef = null;
+    const anim = getCheckAnim(item.id);
 
-    const renderRightActions = () => (
-      <View style={styles.swipeDeleteWrapper}>
-        <View style={styles.swipeDeleteCircle}>
-          <Ionicons name="trash" size={22} color="#fff" />
-        </View>
-      </View>
-    );
+    const strikeOpacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+    const checkScale = anim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1.3, 1] });
+    const textColor = anim.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['#1C1C1E', '#AEAEB2'],
+    });
 
     return (
-      <Swipeable
-        renderRightActions={renderRightActions}
-        friction={2}
-        rightThreshold={80}
-        onSwipeableOpen={() => handleDeleteItem(item)}
-        ref={(ref) => { swipeableRef = ref; }}
-      >
-      <View style={styles.itemContainer}>
-        <TouchableOpacity
-          style={styles.itemRow}
-          onPress={() => handleToggleChecked(item)}
-          activeOpacity={0.6}
-        >
-          <View style={[styles.checkbox, item.checked && styles.checkboxChecked]}>
-            {item.checked && <Text style={styles.checkmark}>✓</Text>}
-          </View>
-          <View style={styles.itemContent}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.itemName, item.checked && styles.itemChecked]} numberOfLines={1}>
-                {item.name}
-              </Text>
-              {isMerged && (
-                <Text style={styles.mergedHint}>
-                  Combined from: {item.recipeNames.join(', ')}
-                </Text>
-              )}
-            </View>
-            {qtyUnit ? (
-              <Text style={[styles.itemQty, item.checked && styles.itemChecked]}>
-                {qtyUnit}
-              </Text>
-            ) : null}
-          </View>
-        </TouchableOpacity>
-
-        {wResult && !wResult.noMatch ? (
-          <View style={styles.walmartResult}>
-            <Text style={styles.walmartName} numberOfLines={1}>{wResult.name}</Text>
-            {wResult.price != null && (
-              <Text style={styles.walmartPrice}>${wResult.price.toFixed(2)}</Text>
-            )}
-          </View>
-        ) : wResult && wResult.noMatch ? (
-          <View style={styles.walmartResult}>
-            <Text style={styles.walmartNoMatch}>No match found</Text>
-          </View>
-        ) : (
+      <SwipeableRow onDelete={() => handleRemoveItem(item)} deleteLabel="Remove">
+        <View style={styles.itemContainer}>
           <TouchableOpacity
-            style={styles.walmartSearchButton}
-            onPress={() => handleWalmartSearch(item)}
-            disabled={isSearching}
+            style={styles.itemRow}
+            onPress={() => handleToggleChecked(item)}
+            activeOpacity={0.6}
           >
-            {isSearching ? (
-              <ActivityIndicator size="small" color="#0071DC" />
-            ) : (
-              <Text style={styles.walmartSearchText}>Find on Walmart</Text>
-            )}
+            <Animated.View
+              style={[
+                styles.checkbox,
+                {
+                  backgroundColor: anim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['transparent', '#34C759'],
+                  }),
+                  borderColor: anim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['#C7C7CC', '#34C759'],
+                  }),
+                  transform: [{ scale: checkScale }],
+                },
+              ]}
+            >
+              <Animated.Text style={[styles.checkmark, { opacity: strikeOpacity }]}>✓</Animated.Text>
+            </Animated.View>
+
+            <View style={styles.itemContent}>
+              <View style={styles.itemTextRow}>
+                <Animated.Text style={[styles.itemName, { color: textColor }]} numberOfLines={1}>
+                  {item.name}
+                </Animated.Text>
+                <Animated.View
+                  style={[
+                    styles.strikethrough,
+                    { opacity: strikeOpacity, backgroundColor: textColor },
+                  ]}
+                />
+              </View>
+              <View style={styles.itemBottom}>
+                {qtyUnit ? <Text style={styles.itemQty}>{qtyUnit}</Text> : null}
+                {wResult && wResult.price != null && (
+                  <Text style={styles.inlinePrice}>${wResult.price.toFixed(2)}</Text>
+                )}
+              </View>
+            </View>
           </TouchableOpacity>
-        )}
-      </View>
-      </Swipeable>
+
+          {wResult ? (
+            <WalmartProductCard product={wResult} />
+          ) : (
+            <TouchableOpacity
+              style={styles.walmartSearchButton}
+              onPress={() => handleWalmartSearch(item)}
+              disabled={isSearching}
+            >
+              {isSearching ? (
+                <ActivityIndicator size="small" color="#0071DC" />
+              ) : (
+                <Text style={styles.walmartSearchText}>Find on Walmart</Text>
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
+      </SwipeableRow>
     );
   }
 
-  function renderSectionHeader() {
-    return null;
+  function renderSectionHeader({ section }) {
+    return (
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>{section.title}</Text>
+        <Text style={styles.sectionCount}>
+          {section.data.filter((i) => i.checked).length}/{section.data.length}
+        </Text>
+      </View>
+    );
   }
 
   if (items.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyTitle}>Shopping List Empty</Text>
-        <Text style={styles.emptySubtitle}>
-          Add a recipe from your Library to get started.
-        </Text>
+      <View style={styles.container}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <Text style={styles.headerTitle}>Shopping List</Text>
+        </View>
+        <EmptyState
+          iconName="cart-outline"
+          title="List is Empty"
+          subtitle="Add a recipe from your Library to populate your shopping list."
+        />
       </View>
     );
   }
@@ -406,7 +485,7 @@ export default function ShoppingListScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Text style={styles.headerTitle}>Shopping List</Text>
         <Text style={styles.headerCount}>
           {checkedCount}/{mergedItems.length} checked
@@ -420,9 +499,17 @@ export default function ShoppingListScreen() {
         renderSectionHeader={renderSectionHeader}
         keyExtractor={(item) => item.id}
         stickySectionHeadersEnabled={false}
+        contentContainerStyle={styles.listContent}
       />
 
-      <View style={styles.bottomBar}>
+      {totalEstimated > 0 && (
+        <View style={styles.totalBar}>
+          <Text style={styles.totalLabel}>Estimated Total</Text>
+          <Text style={styles.totalAmount}>${totalEstimated.toFixed(2)}</Text>
+        </View>
+      )}
+
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom }]}>
         <View style={styles.toolbar}>
           <TouchableOpacity style={styles.toolbarButton} onPress={handleClearChecked}>
             <Text style={styles.toolbarButtonText}>Clear Checked</Text>
@@ -436,37 +523,29 @@ export default function ShoppingListScreen() {
         </View>
 
         <View style={styles.walmartSection}>
-          <View style={styles.walmartTopRow}>
-            <TouchableOpacity
-              style={[styles.walmartSearchAllButton, { flex: 1 }]}
-              onPress={handleBulkWalmartSearch}
-              disabled={bulkSearching}
-            >
-              {bulkSearching ? (
-                <View style={styles.searchAllRow}>
-                  <ActivityIndicator size="small" color="#0071DC" />
-                  <Text style={styles.walmartSearchAllText}>Searching...</Text>
-                </View>
-              ) : (
-                <Text style={styles.walmartSearchAllText} numberOfLines={1}>
-                  Search Walmart ({unsearchedCount})
-                </Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.addItemsButton}
-              onPress={openAddModal}
-            >
-              <Text style={styles.addItemsText}>+ Add Items</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.walmartSearchAllButton}
+            onPress={handleBulkWalmartSearch}
+            disabled={bulkSearching}
+          >
+            {bulkSearching ? (
+              <View style={styles.searchAllRow}>
+                <ActivityIndicator size="small" color="#0071DC" />
+                <Text style={styles.walmartSearchAllText}>Searching Walmart…</Text>
+              </View>
+            ) : (
+              <Text style={styles.walmartSearchAllText}>
+                Search All on Walmart ({unsearchedCount})
+              </Text>
+            )}
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.walmartCartButton, matchedCount === 0 && styles.walmartCartButtonDisabled]}
             onPress={handleSendToWalmart}
           >
             <Text style={[styles.walmartCartText, matchedCount === 0 && styles.walmartCartTextDisabled]}>
-              Send to Walmart Cart{matchedCount > 0 ? ` (${matchedCount})` : ''}
+              {matchedCount > 0 ? `Send ${matchedCount} Items to Cart` : 'Send to Walmart Cart'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -547,106 +626,115 @@ export default function ShoppingListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFF8F0',
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: 60,
+    paddingTop: 12,
     paddingBottom: 12,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#FFF8F0',
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: '#F0E0D0',
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: '700',
+    color: '#2D1B00',
   },
   headerCount: {
     fontSize: 14,
-    color: '#888',
-    marginTop: 4,
+    color: '#B38B6D',
+    marginTop: 2,
   },
   list: {
     flex: 1,
   },
+  listContent: {
+    paddingBottom: 8,
+  },
   sectionHeader: {
-    backgroundColor: '#F5F5F5',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF0E8',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: '#F0E0D0',
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#555',
+    color: '#6B4C2A',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    flex: 1,
+  },
+  sectionCount: {
+    fontSize: 12,
+    color: '#B38B6D',
+    fontWeight: '500',
   },
   itemContainer: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E8E8E8',
-    backgroundColor: '#fff',
+    borderBottomColor: '#F0E0D0',
+    backgroundColor: '#FFF8F0',
   },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 4,
-    backgroundColor: '#fff',
-  },
-  swipeDeleteWrapper: {
-    width: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  swipeDeleteCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#FF3B30',
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingBottom: 6,
   },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     borderWidth: 2,
-    borderColor: '#CCC',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-  },
-  checkboxChecked: {
-    backgroundColor: '#34C759',
-    borderColor: '#34C759',
+    flexShrink: 0,
   },
   checkmark: {
     color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '800',
   },
   itemContent: {
     flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  },
+  itemTextRow: {
+    position: 'relative',
+    justifyContent: 'center',
   },
   itemName: {
     fontSize: 16,
-    color: '#333',
-    flex: 1,
+    fontWeight: '500',
+  },
+  strikethrough: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 1.5,
+    top: '50%',
+    borderRadius: 1,
+  },
+  itemBottom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 2,
   },
   itemQty: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 8,
+    fontSize: 13,
+    color: '#B38B6D',
   },
-  itemChecked: {
-    textDecorationLine: 'line-through',
-    color: '#BBB',
+  inlinePrice: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0071DC',
   },
   mergedHint: {
     fontSize: 11,
@@ -655,49 +743,46 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   walmartSearchButton: {
-    marginLeft: 52,
+    marginLeft: 54,
     marginRight: 16,
-    marginBottom: 8,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 4,
+    marginBottom: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     backgroundColor: '#EBF4FF',
     alignSelf: 'flex-start',
-    minWidth: 110,
+    minWidth: 120,
     alignItems: 'center',
   },
   walmartSearchText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#0071DC',
-  },
-  walmartResult: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 52,
-    marginRight: 16,
-    marginBottom: 8,
-    gap: 8,
-  },
-  walmartName: {
-    fontSize: 12,
-    color: '#0071DC',
-    flex: 1,
-  },
-  walmartPrice: {
-    fontSize: 13,
     fontWeight: '700',
     color: '#0071DC',
   },
-  walmartNoMatch: {
-    fontSize: 12,
-    color: '#999',
-    fontStyle: 'italic',
+  totalBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#F0F7FF',
+    borderTopWidth: 1,
+    borderTopColor: '#D0E8FF',
+  },
+  totalLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0D5FA6',
+  },
+  totalAmount: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0071DC',
   },
   bottomBar: {
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    backgroundColor: '#FAFAFA',
+    borderTopColor: '#F0E0D0',
+    backgroundColor: '#FFF8F0',
   },
   toolbar: {
     flexDirection: 'row',
@@ -707,15 +792,15 @@ const styles = StyleSheet.create({
   },
   toolbarButton: {
     flex: 1,
-    backgroundColor: '#F0F0F0',
-    borderRadius: 8,
+    backgroundColor: '#FFF0E8',
+    borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
   },
   toolbarButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#2D1B00',
   },
   toolbarButtonDanger: {
     backgroundColor: '#FFF0F0',
@@ -738,10 +823,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   walmartSearchAllButton: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFF8F0',
     borderWidth: 1.5,
     borderColor: '#0071DC',
-    borderRadius: 8,
+    borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
   },
@@ -879,12 +964,19 @@ const styles = StyleSheet.create({
   },
   walmartCartButton: {
     backgroundColor: '#0071DC',
-    borderRadius: 8,
-    paddingVertical: 12,
+    borderRadius: 10,
+    paddingVertical: 13,
     alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#0071DC',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
   walmartCartButtonDisabled: {
     backgroundColor: '#B0C4DE',
+    elevation: 0,
+    shadowOpacity: 0,
   },
   walmartCartText: {
     fontSize: 16,
@@ -893,23 +985,5 @@ const styles = StyleSheet.create({
   },
   walmartCartTextDisabled: {
     opacity: 0.7,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 15,
-    color: '#999',
-    textAlign: 'center',
-    lineHeight: 22,
   },
 });

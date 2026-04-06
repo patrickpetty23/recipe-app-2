@@ -187,7 +187,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 - ⬜ Sharpen the problem statement — make it more precise based on what you learned from building and testing
 - ⬜ Document falsification test results: Did you test whether users actually want this? What did you learn?
   - Example test: "We hypothesized users would scan physical cookbooks. We tested with 5 users and found 3 preferred URL import over camera scan."
-- ⬜ If problem statement matured since midterm, show the evolution
+- ✅ If problem statement matured since midterm, show the evolution
 
 #### 9G — Customer Focus (20 pts)
 
@@ -203,8 +203,8 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
   - "90%+ ingredients correctly identified" — test with 3+ recipes, report accuracy
   - "Send to Walmart opens populated cart" — confirm it works
   - "Full flow works end-to-end without crashes" — confirm in demo
-- ⬜ Report where you actually stand: which criteria met, which fell short, and what you learned
-- ⬜ Update pivot/continuation plans based on real data
+- ✅ Report where you actually stand: which criteria met, which fell short, and what you learned
+- ✅ Update pivot/continuation plans based on real data
 
 #### 9I — Customer Interaction (20 pts)
 

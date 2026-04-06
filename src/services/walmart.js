@@ -9,9 +9,11 @@ function getCredentials() {
   const consumerId = process.env.EXPO_PUBLIC_WALMART_CLIENT_ID || process.env.WALMART_CLIENT_ID;
   const privateKeyPem = (process.env.EXPO_PUBLIC_WALMART_PRIVATE_KEY || process.env.WALMART_PRIVATE_KEY || '').replace(/\\n/g, '\n');
   const keyVersion = process.env.EXPO_PUBLIC_WALMART_KEY_VERSION || process.env.WALMART_KEY_VERSION || '1';
-  if (!consumerId || !privateKeyPem) {
+  if (!consumerId || !rawPem) {
     return null;
   }
+  // Handle both quoted multiline (real \n) and escaped \n from different dotenv parsers
+  const privateKeyPem = rawPem.includes('\\n') ? rawPem.replace(/\\n/g, '\n') : rawPem;
   return { consumerId, privateKeyPem, keyVersion };
 }
 
@@ -21,12 +23,13 @@ export function isWalmartConfigured() {
 
 async function generateAuthHeaders(consumerId, privateKeyPem, keyVersion) {
   const timestamp = Date.now().toString();
-  const sortedHashString = `${consumerId}\n${timestamp}\n${keyVersion}\n`;
+  const message = `${consumerId}\n${timestamp}\n${keyVersion}\n`;
 
+  // node-forge is pure JS — works in Expo Go (no native crypto required)
   const forge = require('node-forge');
   const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
   const md = forge.md.sha256.create();
-  md.update(sortedHashString, 'utf8');
+  md.update(message, 'utf8');
   const signatureBytes = privateKey.sign(md);
   const signature = forge.util.encode64(signatureBytes);
 

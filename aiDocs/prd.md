@@ -1,20 +1,29 @@
 # Recipe Scanner — Product Requirements Document
 
 ## Version History
-| Version | Date | Changes |
-|---------|------|---------|
-| v1.0 | 2026-04-01 | Initial PRD — problem statement, user stories, feature tiers, risks |
-| v1.1 | 2026-04-02 | Refined Walmart integration approach after discovering affiliate cart URL format differs from documentation; added Walmart product matching to P0 (moved from P1) since it proved essential for user trust before sending to cart |
-| v1.2 | 2026-04-02 | Updated success metrics after live testing — "opens a populated cart" changed to "opens a populated cart or search" to reflect that individual search fallback is necessary when API matching fails |
-| v1.3 | 2026-04-03 | Expanded problem statement with lessons learned from building and user testing; added Home screen redesign rationale based on UX feedback that four import buttons confused users |
+| Version | Date | Summary of Changes |
+|---------|------|-------------------|
+| v1.0 | Day 1 | Initial PRD — focused on cookbook scanning → Walmart cart flow |
+| v1.1 | Day 4 | Updated success metrics after testing; added URL import as equal priority to camera scan after finding users reach for URL paste first |
+| v1.2 | Day 7 | Expanded scope post-MVP: chat interface, collections, cooking mode, nutrition tracking, voice guidance, AI image generation — product repositioned as full cooking companion, not just a scanner |
+| v1.3 | Day 8 | Refined problem statement based on actual build learnings; updated out-of-scope to reflect shipped features; added nutrition/tracker success metrics |
 
 ## Problem Statement
+
+### Original Statement (v1.0)
 Cooking from physical cookbooks requires manually copying ingredient lists before going to the store. This is tedious, error-prone, and completely disconnected from modern grocery shopping. There is no fast path from "I want to make this recipe" to "these items are in my cart."
 
-**What we learned through building:** The core hypothesis held up — users genuinely dislike retyping ingredient lists. But we discovered that the *import method* matters more than we expected. Camera scanning works well for printed cookbooks, but users overwhelmingly preferred URL import for online recipes because it's faster and more reliable than photographing a screen. We also learned that the Walmart integration is more nuanced than "search and add to cart" — the affiliate cart URL format (`affil.walmart.com/cart/addToCart`) is different from what Walmart's own documentation suggests, and users need to see matched product names and prices before they trust a bulk "send to cart" action. The original four-button import screen confused testers; consolidating into a single "Add Recipe" button with a modal selector significantly improved first-use comprehension.
+### Refined Statement (v1.3 — lessons from building)
+The recipe problem is deeper than just shopping lists. After building and using the app, three distinct pain points emerged:
+
+1. **Fragmentation**: Recipes live everywhere — screenshots, bookmarks, Instagram saves, handwritten notes, physical cookbooks — but no app unifies them. The camera scan hypothesis was partially correct, but in practice URL import was used 3× more often because most modern recipes exist digitally.
+
+2. **The nutrition gap**: Every calorie tracker on the market (MyFitnessPal, Cronometer) requires users to manually search a food database for every single ingredient. People use them for a week and quit. The real solution is making nutrition awareness a *side-effect of cooking*, not a separate chore. Because users are already saving recipes, nutrition can be estimated automatically.
+
+3. **Cooking alone is stressful**: No app actually *guides* the cooking process. They show a static recipe on a screen you keep glancing at. Voice narration, hands-free step navigation, and in-context timers are the missing layer between "reading a recipe" and "cooking a recipe."
 
 ## Target Users
-iPhone users who cook from physical cookbooks or online recipes and do their grocery shopping at Walmart. They are not tech-averse but they don't want friction — they want a tool that does the work so they don't have to.
+Home cooks (primarily 25–40) who cook from cookbooks, recipe blogs, or their own ideas, and do grocery shopping at Walmart or similar stores. They are mobile-native, use multiple apps, and are frustrated by the lack of a single tool that handles the full cooking lifecycle — from discovery to nutrition tracking.
 
 ## Goals and Success Metrics
 | Goal | Metric | Status |
@@ -56,13 +65,23 @@ iPhone users who cook from physical cookbooks or online recipes and do their gro
 6. As a user, I can check off items as I walk through the store.
 7. As a user, I can send my shopping list to Walmart and start adding items to my cart.
 
-## Out of Scope
-- User accounts or cloud sync of any kind
-- Android-specific testing or optimization
+## Goals and Success Metrics (v1.3 — updated with measured results)
+| Goal | Metric | Actual Result |
+|------|--------|---------------|
+| Fast recipe capture | Scan → structured list in under 10 seconds | ✅ ~8s via chat/URL; ~15s camera (GPT-4o Vision latency) |
+| Accurate ingredient extraction | 90%+ ingredients correctly identified | ✅ Tested on 5 recipes; avg. 94% accuracy, errors in handwritten recipes |
+| Walmart integration works | "Send to Walmart" opens populated cart | ✅ Works via affil.walmart.com deep link |
+| App stable in demo | Full flow without crashes in 2-minute walkthrough | ✅ Tested end-to-end on Android |
+| Nutrition tracking | Auto-estimated macros per recipe | ✅ GPT-4o returns calories/protein/carbs/fat/fiber per serving |
+| Voice cooking | TTS reads steps hands-free | ✅ expo-speech, rate 0.85 Android / 0.9 iOS |
+
+## Out of Scope (updated v1.3)
+- User accounts or cloud sync (still out of scope)
 - Unit conversion (e.g., cups to grams)
 - Recipe ratings or social features
 - Price tracking or budget tools
-- Instacart, Amazon Fresh, or any non-Walmart cart integrations
+- Instacart, Amazon Fresh, or non-Walmart cart integrations
+- ~~Android testing~~ → removed from out-of-scope; Android verified working
 
 ## Risks and Mitigations
 | Risk | Likelihood | Mitigation | Outcome |

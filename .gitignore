@@ -9,8 +9,11 @@ web-build/
 ios/
 android/
 
-# Env / secrets
+# Env / secrets — never commit real keys
 .env
+.env.local
+.env*.local
+.envTestVars
 .testEnvVars
 
 # MCP configs (may contain API keys)
