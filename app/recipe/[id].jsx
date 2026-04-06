@@ -85,17 +85,9 @@ export default function RecipeDetailScreen() {
 
   // Animated values for checked items
   const checkAnims = useRef(new Map()).current;
-  const pollRef = useRef(null);
-
   useFocusEffect(
     useCallback(() => {
       loadRecipe();
-      return () => {
-        if (pollRef.current) {
-          clearInterval(pollRef.current);
-          pollRef.current = null;
-        }
-      };
     }, [id])
   );
 
@@ -125,22 +117,25 @@ export default function RecipeDetailScreen() {
         ingredientCount: (data.ingredients || []).length,
         stepCount: loadedSteps.length,
       });
-      // If any steps are missing illustrations, poll DB until they're all ready
-      // (editor fires generation in the background on save)
-      if (loadedSteps.length > 0 && loadedSteps.some((s) => !s.illustrationUrl)) {
+      // Auto-generate illustrations for any steps that don't have one yet
+      const stepsNeedingIllustration = loadedSteps.filter((s) => !s.illustrationUrl);
+      if (stepsNeedingIllustration.length > 0) {
         setAutoGenerating(true);
-        if (pollRef.current) clearInterval(pollRef.current);
-        pollRef.current = setInterval(() => {
-          const fresh = getRecipeById(id);
-          if (!fresh) return;
-          const freshSteps = fresh.steps || [];
-          setSteps(freshSteps);
-          if (freshSteps.every((s) => s.illustrationUrl)) {
-            clearInterval(pollRef.current);
-            pollRef.current = null;
-            setAutoGenerating(false);
-          }
-        }, 5000);
+        generateAllStepIllustrations(stepsNeedingIllustration, data.title, data.ingredients)
+          .then((fulfilled) => {
+            fulfilled.forEach(({ stepId, url }) => updateStepIllustration(stepId, url));
+            setSteps((prev) =>
+              prev.map((s) => {
+                const hit = fulfilled.find((f) => f.stepId === s.id);
+                return hit ? { ...s, illustrationUrl: hit.url } : s;
+              })
+            );
+            logger.info('recipeDetail.autoIllustrate.done', { count: fulfilled.length });
+          })
+          .catch((err) =>
+            logger.error('recipeDetail.autoIllustrate.error', { error: err.message })
+          )
+          .finally(() => setAutoGenerating(false));
       }
     } catch (err) {
       logger.error('recipeDetail.load.error', { id, error: err.message });

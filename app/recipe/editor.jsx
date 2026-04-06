@@ -24,8 +24,8 @@ import {
   updateStepIllustration,
 } from '../../src/db/queries';
 import {
-  generateStepIllustration, estimateNutrition,
-  generateRecipeThumbnail, generateAllStepIllustrations,
+  estimateNutrition,
+  generateRecipeThumbnail,
 } from '../../src/services/openai';
 import { logger } from '../../src/utils/logger';
 
@@ -230,19 +230,6 @@ export default function EditorScreen() {
         .catch((err) => {
           logger.error('editor.thumbnailGeneration.error', { recipeId, error: err.message });
         });
-
-      // 3. Auto-illustrate steps in parallel — skip any step already illustrated
-      const stepsNeedingIllustration = stepsToSave.filter((s) => !s.illustrationUrl);
-      if (stepsNeedingIllustration.length > 0) {
-        generateAllStepIllustrations(stepsNeedingIllustration, recipe.title, ingredientsToSave)
-          .then((fulfilled) => {
-            fulfilled.forEach(({ stepId, url }) => updateStepIllustration(stepId, url));
-            logger.info('editor.illustrationsGenerated', { recipeId, count: fulfilled.length });
-          })
-          .catch((err) => {
-            logger.error('editor.illustrationsGeneration.error', { recipeId, error: err.message });
-          });
-      }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace(`/recipe/${recipeId}`);
