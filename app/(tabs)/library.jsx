@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
@@ -61,6 +62,7 @@ function formatDate(isoString) {
 
 export default function LibraryScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [recipes, setRecipes] = useState([]);
   const [collections, setCollections] = useState([]);
@@ -339,7 +341,7 @@ export default function LibraryScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <Text style={styles.headerTitle}>Recipes</Text>
         {!loading && (
           <Text style={styles.headerCount}>
@@ -564,7 +566,7 @@ const styles = StyleSheet.create({
   // ── Header ────────────────────────────────────────────────────────────────────
   header: {
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 52 : 60,
+    paddingTop: 12,
     paddingBottom: 10,
     backgroundColor: C.surface,
     borderBottomWidth: 1,

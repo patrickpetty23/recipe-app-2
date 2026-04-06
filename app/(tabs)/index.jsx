@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -152,6 +153,7 @@ function RecipeCard({ item, onSave }) {
 
 export default function ChatScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const flatRef = useRef(null);
   const inputRef = useRef(null);
   // Stores Animated.Values keyed by message id for entrance animations
@@ -499,7 +501,7 @@ export default function ChatScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <Text style={styles.headerTitle}>Recipe Assistant</Text>
         <Text style={styles.headerSub}>GPT-4o powered</Text>
       </View>
@@ -637,7 +639,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 48 : 60,
+    paddingTop: 12,
     paddingBottom: 12,
     backgroundColor: '#fff',
     borderBottomWidth: StyleSheet.hairlineWidth,

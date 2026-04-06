@@ -7,6 +7,7 @@ import {
   Alert,
   StyleSheet,
   ScrollView,
+  KeyboardAvoidingView,
   Image,
   Share,
   Platform,
@@ -15,6 +16,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -62,6 +64,7 @@ const macroStyles = StyleSheet.create({
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [recipe, setRecipe] = useState(null);
   const [ingredients, setIngredients] = useState([]);
@@ -435,7 +438,10 @@ export default function RecipeDetailScreen() {
   }
 
   return (
-    <View style={styles.screen}>
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
@@ -467,7 +473,7 @@ export default function RecipeDetailScreen() {
 
           {/* Back button */}
           <TouchableOpacity
-            style={styles.backBtn}
+            style={[styles.backBtn, { top: insets.top + 8 }]}
             onPress={() => router.back()}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
@@ -477,7 +483,7 @@ export default function RecipeDetailScreen() {
           </TouchableOpacity>
 
           {/* Header actions */}
-          <View style={styles.heroActions}>
+          <View style={[styles.heroActions, { top: insets.top + 8 }]}>
             <TouchableOpacity
               style={styles.heroBtnCircle}
               onPress={handleShare}
@@ -825,7 +831,7 @@ export default function RecipeDetailScreen() {
           <Text style={styles.fabText}>Start Cooking</Text>
         </TouchableOpacity>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -874,7 +880,7 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 42 : 56,
+    top: 8,
     left: 16,
   },
   backBtnInner: {
@@ -887,7 +893,7 @@ const styles = StyleSheet.create({
   },
   heroActions: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 42 : 56,
+    top: 8,
     right: 16,
     flexDirection: 'row',
     gap: 8,

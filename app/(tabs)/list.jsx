@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 import {
@@ -38,6 +39,7 @@ function getCheckAnim(id) {
 }
 
 export default function ShoppingListScreen() {
+  const insets = useSafeAreaInsets();
   const [items, setItems] = useState([]);
   const [walmartResults, setWalmartResults] = useState({});
   const [searchingIds, setSearchingIds] = useState({});
@@ -348,7 +350,7 @@ export default function ShoppingListScreen() {
   if (items.length === 0) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
           <Text style={styles.headerTitle}>Shopping List</Text>
         </View>
         <EmptyState
@@ -366,7 +368,7 @@ export default function ShoppingListScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <Text style={styles.headerTitle}>Shopping List</Text>
         <Text style={styles.headerCount}>
           {checkedCount}/{items.length} checked
@@ -442,7 +444,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 52 : 60,
+    paddingTop: 12,
     paddingBottom: 12,
     backgroundColor: '#FFF8F0',
     borderBottomWidth: 1,

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -43,6 +44,7 @@ const C = {
 
 export default function EditorScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { recipeData: recipeDataJson, sourceType, imageUri } = useLocalSearchParams();
 
   const parsed = useMemo(() => {
@@ -256,7 +258,7 @@ export default function EditorScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <TouchableOpacity onPress={handleDiscard}>
           <Text style={styles.headerCancel}>Cancel</Text>
         </TouchableOpacity>
@@ -491,7 +493,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 40 : 56,
+    paddingTop: 12,
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: C.border,
