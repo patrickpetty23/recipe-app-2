@@ -316,7 +316,7 @@ export default function LibraryScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Text style={styles.headerTitle}>Recipes</Text>
         {!loading && (
           <Text style={styles.headerCount}>

@@ -264,7 +264,7 @@ export default function EditorScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity onPress={handleDiscard}>
           <Text style={styles.headerCancel}>Cancel</Text>
         </TouchableOpacity>

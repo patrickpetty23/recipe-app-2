@@ -6,9 +6,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
 
-  // Tab bar height: icon+label area (49 iOS / 60 Android) + bottom safe area
-  const tabBarHeight = Platform.OS === 'android' ? 60 : 49 + insets.bottom;
-  const tabBarPaddingBottom = Platform.OS === 'android' ? 8 : insets.bottom;
+  // Base icon+label area: 56 Android / 49 iOS. Add insets.bottom on BOTH
+  // platforms so gesture-nav Android and home-indicator iPhones get proper clearance.
+  const baseHeight = Platform.OS === 'android' ? 56 : 49;
+  const basePadding = Platform.OS === 'android' ? 6 : 0;
+  const tabBarHeight = baseHeight + insets.bottom;
+  const tabBarPaddingBottom = basePadding + insets.bottom;
 
   return (
     <Tabs
@@ -28,8 +31,8 @@ export default function TabLayout() {
           paddingBottom: tabBarPaddingBottom,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '700',
+          fontSize: 12,
+          fontWeight: '600',
         },
         headerStyle: {
           backgroundColor: '#FFF8F0',

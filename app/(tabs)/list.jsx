@@ -356,7 +356,7 @@ export default function ShoppingListScreen() {
   if (items.length === 0) {
     return (
       <View style={styles.container}>
-        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
           <Text style={styles.headerTitle}>Shopping List</Text>
         </View>
         <EmptyState
@@ -374,7 +374,7 @@ export default function ShoppingListScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Text style={styles.headerTitle}>Shopping List</Text>
         <Text style={styles.headerCount}>
           {checkedCount}/{items.length} checked
