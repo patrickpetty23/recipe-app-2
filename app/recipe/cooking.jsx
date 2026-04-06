@@ -15,6 +15,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useKeepAwake } from 'expo-keep-awake';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
@@ -96,6 +97,7 @@ export default function CookingScreen() {
 
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [recipe, setRecipe] = useState(null);
   const [steps, setSteps] = useState([]);
@@ -291,7 +293,7 @@ export default function CookingScreen() {
   if (done) {
     return (
       <View style={styles.screen}>
-        <TouchableOpacity style={styles.exitBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={[styles.exitBtn, { marginTop: insets.top + 10, marginLeft: 16 }]} onPress={() => router.back()}>
           <Ionicons name="close" size={24} color="#fff" />
         </TouchableOpacity>
         <View style={styles.doneContainer}>
@@ -315,7 +317,7 @@ export default function CookingScreen() {
   return (
     <View style={styles.screen}>
       {/* Top bar */}
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity style={styles.exitBtn} onPress={() => { Speech.stop(); router.back(); }}>
           <Ionicons name="close" size={22} color="#fff" />
         </TouchableOpacity>
@@ -456,7 +458,7 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: Platform.OS === 'android' ? 44 : 58,
+    paddingTop: 10,
     paddingHorizontal: 16,
     paddingBottom: 12,
   },

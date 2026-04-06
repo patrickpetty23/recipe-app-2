@@ -114,14 +114,10 @@ export default function LibraryScreen() {
 
   const filtered = useMemo(() => {
     let list = recipes;
-    // Query filter
     if (query.trim()) {
       const q = query.toLowerCase();
       list = list.filter((r) => r.title.toLowerCase().includes(q));
     }
-    // Collection filter — requires a separate query per recipe (expensive if many)
-    // We store collection membership in a local set built once per active collection change
-    // Simple approach: filter is applied by collectionFilterIds set (populated below)
     if (sortKey === 'alpha') {
       list = [...list].sort((a, b) => a.title.localeCompare(b.title));
     } else if (sortKey === 'count') {
@@ -130,35 +126,9 @@ export default function LibraryScreen() {
     return list;
   }, [recipes, query, sortKey]);
 
-  // For collection filtering, we need to know which recipes belong to the active collection
-  const collectionFilterIds = useMemo(() => {
-    if (activeCollection === ALL_KEY) return null; // null = show all
-    // getRecipeCollections is per-recipe; we need per-collection.
-    // We have getCollectionRecipes imported via a separate query in queries.js but it's
-    // not imported here. Let's filter from recipes directly — if recipe.id is in the
-    // collection's recipe list. We'll track this by calling getRecipeCollections per recipe
-    // which is O(n) — acceptable for typical recipe counts (<500).
-    // Actually let's import getCollectionRecipes properly.
-    return null; // placeholder — resolved below
-  }, [activeCollection]);
-
-  // Get all recipe IDs for the active collection (cached with useMemo)
-  const activeCollectionRecipeIds = useMemo(() => {
-    if (activeCollection === ALL_KEY) return null;
-    try {
-      // We need to get the recipes for this collection ID
-      // Use getRecipeCollections per recipe is O(n); instead just filter on known data
-      // We'll rely on filteredWithCollection below
-      return null;
-    } catch {
-      return null;
-    }
-  }, [activeCollection, recipes]);
-
-  // Final displayed list: apply collection filter on top of filtered
+  // Final displayed list: apply collection filter on top of text/sort filter
   const displayedRecipes = useMemo(() => {
     if (activeCollection === ALL_KEY) return filtered;
-    // For collection filter, check each recipe via getRecipeCollections
     return filtered.filter((r) => {
       try {
         const cols = getRecipeCollections(r.id);
@@ -216,6 +186,10 @@ export default function LibraryScreen() {
       const col = collections.find((c) => c.id === collectionId);
       Alert.alert('Added!', `"${collectionPickerRecipe.title}" added to ${col?.name ?? 'collection'}.`);
       logger.info('library.addToCollection', { recipeId: collectionPickerRecipe.id, collectionId });
+      // Refresh collection counts so the pill badges update
+      setCollections((prev) =>
+        prev.map((c) => (c.id === collectionId ? { ...c, recipeCount: c.recipeCount + 1 } : c))
+      );
     } catch (err) {
       logger.error('library.addToCollection.error', { error: err.message });
     }
@@ -406,6 +380,14 @@ export default function LibraryScreen() {
           subtitle={`No recipes match "${query}"`}
           ctaLabel="Clear Search"
           onCta={() => setQuery('')}
+        />
+      ) : displayedRecipes.length === 0 && activeCollection !== ALL_KEY ? (
+        <EmptyState
+          iconName="folder-open-outline"
+          title="Collection is Empty"
+          subtitle="Add recipes to this collection using the ··· menu on any recipe."
+          ctaLabel="View All Recipes"
+          onCta={() => setActiveCollection(ALL_KEY)}
         />
       ) : displayedRecipes.length === 0 ? (
         <EmptyState
