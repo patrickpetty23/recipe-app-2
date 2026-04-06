@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger';
 
 const CHAT_API_URL = 'https://api.openai.com/v1/chat/completions';
-const IMAGE_API_URL = 'https://api.openai.com/v1/images/generations';
+const FAL_IMAGE_URL = 'https://fal.run/fal-ai/flux/schnell';
 const MODEL = 'gpt-4o';
 const TIMEOUT_MS = 45000;
 const ILLUSTRATION_TIMEOUT_MS = 60000;
@@ -43,6 +43,46 @@ function getApiKey() {
   const key = process.env.EXPO_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
   if (!key) throw new Error('OPENAI_API_KEY is not set');
   return key;
+}
+
+function getFalApiKey() {
+  const key = process.env.EXPO_PUBLIC_FAL_API_KEY || process.env.FAL_API_KEY;
+  if (!key) throw new Error('FAL_API_KEY is not set');
+  return key;
+}
+
+async function falGenerateImage(prompt, imageSize = 'square_hd') {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ILLUSTRATION_TIMEOUT_MS);
+  try {
+    const response = await fetch(FAL_IMAGE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Key ${getFalApiKey()}`,
+      },
+      body: JSON.stringify({
+        prompt,
+        image_size: imageSize,
+        num_inference_steps: 4,
+        num_images: 1,
+      }),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const errBody = await response.text();
+      throw new Error(`fal.ai API error ${response.status}: ${errBody}`);
+    }
+    const data = await response.json();
+    const url = data?.images?.[0]?.url;
+    if (!url) throw new Error('fal.ai returned no image URL');
+    return url;
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error('Image generation timed out.');
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // ── Core HTTP helper ──────────────────────────────────────────────────────────
@@ -350,115 +390,40 @@ export async function lightenRecipe(recipe) {
   }
 }
 
-// Calls DALL-E 3 to generate a minimalist flat cookbook illustration for a
-// recipe step. Returns the hosted image URL from OpenAI's CDN.
+// Generates a minimalist flat cookbook illustration for a recipe step via fal.ai FLUX.
 export async function generateStepIllustration(stepText, recipeTitle) {
   logger.info('openai.generateStepIllustration', {
     recipeTitle,
     stepPreview: stepText.slice(0, 60),
   });
-
   const prompt =
     `Minimalist flat 2D cookbook illustration. Recipe: "${recipeTitle}". ` +
     `Step: "${stepText}". ` +
     `Style: clean line art, soft pastel colors, simple geometric shapes, ` +
     `no text or labels, white background, professional cookbook aesthetic.`;
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ILLUSTRATION_TIMEOUT_MS);
-
   try {
-    const response = await fetch(IMAGE_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${getApiKey()}`,
-      },
-      body: JSON.stringify({
-        model: 'dall-e-3',
-        prompt,
-        n: 1,
-        size: '1024x1024',
-        style: 'natural',
-        response_format: 'url',
-      }),
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      const errBody = await response.text();
-      throw new Error(`DALL-E API error ${response.status}: ${errBody}`);
-    }
-
-    const data = await response.json();
-    const url = data?.data?.[0]?.url;
-    if (!url) throw new Error('DALL-E returned no image URL');
+    const url = await falGenerateImage(prompt, 'square_hd');
     logger.info('openai.generateStepIllustration.success', { recipeTitle });
     return url;
   } catch (err) {
-    if (err.name === 'AbortError') {
-      logger.error('openai.generateStepIllustration.timeout', {});
-      throw new Error('Illustration request timed out.');
-    }
     logger.error('openai.generateStepIllustration.error', { error: err.message });
     throw err;
-  } finally {
-    clearTimeout(timer);
   }
 }
 
-// ── Fast DALL-E 2 step illustration (used for parallel auto-generation) ────────
-
-async function generateStepIllustrationFast(stepText, recipeTitle) {
-  const prompt =
-    `Minimalist flat 2D cookbook illustration. Recipe: "${recipeTitle}". ` +
-    `Step: "${stepText}". ` +
-    `Style: clean line art, soft pastel colors, simple geometric shapes, ` +
-    `no text or labels, white background, professional cookbook aesthetic.`;
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ILLUSTRATION_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(IMAGE_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getApiKey()}` },
-      body: JSON.stringify({
-        model: 'dall-e-2',
-        prompt,
-        n: 1,
-        size: '1024x1024',
-        response_format: 'url',
-      }),
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      const errBody = await response.text();
-      throw new Error(`DALL-E API error ${response.status}: ${errBody}`);
-    }
-    const data = await response.json();
-    const url = data?.data?.[0]?.url;
-    if (!url) throw new Error('DALL-E returned no image URL');
-    return url;
-  } catch (err) {
-    if (err.name === 'AbortError') throw new Error('Illustration timed out.');
-    throw err;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-// Fires all step illustrations in parallel (DALL-E 2 for speed + higher rate limits).
+// Fires all step illustrations in parallel via fal.ai FLUX.
 // Returns [{stepId, url}] for every step that succeeded; failures are silently skipped.
 export async function generateAllStepIllustrations(steps, recipeTitle) {
   logger.info('openai.generateAllStepIllustrations', { recipeTitle, stepCount: steps.length });
   const settled = await Promise.allSettled(
-    steps.map((step) =>
-      generateStepIllustrationFast(step.instruction, recipeTitle).then((url) => ({
-        stepId: step.id,
-        url,
-      }))
-    )
+    steps.map((step) => {
+      const prompt =
+        `Minimalist flat 2D cookbook illustration. Recipe: "${recipeTitle}". ` +
+        `Step: "${step.instruction}". ` +
+        `Style: clean line art, soft pastel colors, simple geometric shapes, ` +
+        `no text or labels, white background, professional cookbook aesthetic.`;
+      return falGenerateImage(prompt, 'square_hd').then((url) => ({ stepId: step.id, url }));
+    })
   );
   const fulfilled = settled.filter((r) => r.status === 'fulfilled').map((r) => r.value);
   logger.info('openai.generateAllStepIllustrations.done', {
@@ -468,10 +433,9 @@ export async function generateAllStepIllustrations(steps, recipeTitle) {
   return fulfilled;
 }
 
-// ── Recipe thumbnail (DALL-E 3, landscape) ────────────────────────────────────
+// ── Recipe thumbnail (fal.ai FLUX, landscape) ─────────────────────────────────
 
 // Generates a food-photography-style hero thumbnail for a recipe.
-// Returns the hosted image URL from OpenAI's CDN.
 export async function generateRecipeThumbnail(title, cuisine, ingredients) {
   logger.info('openai.generateRecipeThumbnail', { title });
 
@@ -487,40 +451,12 @@ export async function generateRecipeThumbnail(title, cuisine, ingredients) {
     `Warm studio lighting, shallow depth of field, clean white plate or rustic wooden surface, ` +
     `restaurant-quality presentation. No text, no watermarks.`;
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ILLUSTRATION_TIMEOUT_MS);
-
   try {
-    const response = await fetch(IMAGE_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getApiKey()}` },
-      body: JSON.stringify({
-        model: 'dall-e-3',
-        prompt,
-        n: 1,
-        size: '1792x1024',
-        style: 'natural',
-        response_format: 'url',
-      }),
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      const errBody = await response.text();
-      throw new Error(`DALL-E API error ${response.status}: ${errBody}`);
-    }
-    const data = await response.json();
-    const url = data?.data?.[0]?.url;
-    if (!url) throw new Error('DALL-E returned no image URL');
+    const url = await falGenerateImage(prompt, 'landscape_16_9');
     logger.info('openai.generateRecipeThumbnail.success', { title });
     return url;
   } catch (err) {
-    if (err.name === 'AbortError') {
-      logger.error('openai.generateRecipeThumbnail.timeout', {});
-      throw new Error('Thumbnail request timed out.');
-    }
     logger.error('openai.generateRecipeThumbnail.error', { error: err.message });
     throw err;
-  } finally {
-    clearTimeout(timer);
   }
 }

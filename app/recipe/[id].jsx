@@ -31,7 +31,7 @@ import {
   logCook,
 } from '../../src/db/queries';
 import { scaleIngredients } from '../../src/utils/scaler';
-import { generateStepIllustration, estimateNutrition, lightenRecipe } from '../../src/services/openai';
+import { generateStepIllustration, generateAllStepIllustrations, estimateNutrition, lightenRecipe } from '../../src/services/openai';
 import { logger } from '../../src/utils/logger';
 import * as Crypto from 'expo-crypto';
 
@@ -76,6 +76,7 @@ export default function RecipeDetailScreen() {
   const [checked, setChecked] = useState({});
   // per-step illustration loading
   const [generatingStep, setGeneratingStep] = useState(null);
+  const [autoGenerating, setAutoGenerating] = useState(false);
   // nutrition
   const [nutrition, setNutrition] = useState(null);
   const [estimatingNutrition, setEstimatingNutrition] = useState(false);
@@ -104,7 +105,8 @@ export default function RecipeDetailScreen() {
       setRecipe(data);
       setTitle(data.title);
       setIngredients(data.ingredients || []);
-      setSteps(data.steps || []);
+      const loadedSteps = data.steps || [];
+      setSteps(loadedSteps);
       setLastServings(data.servings || 1);
       setCurrentServings(data.servings || 1);
       setChecked({});
@@ -114,8 +116,28 @@ export default function RecipeDetailScreen() {
       logger.info('recipeDetail.load', {
         id,
         ingredientCount: (data.ingredients || []).length,
-        stepCount: (data.steps || []).length,
+        stepCount: loadedSteps.length,
       });
+      // Auto-generate illustrations for any steps that don't have one yet
+      const stepsNeedingIllustration = loadedSteps.filter((s) => !s.illustrationUrl);
+      if (stepsNeedingIllustration.length > 0) {
+        setAutoGenerating(true);
+        generateAllStepIllustrations(stepsNeedingIllustration, data.title)
+          .then((fulfilled) => {
+            fulfilled.forEach(({ stepId, url }) => updateStepIllustration(stepId, url));
+            setSteps((prev) =>
+              prev.map((s) => {
+                const hit = fulfilled.find((f) => f.stepId === s.id);
+                return hit ? { ...s, illustrationUrl: hit.url } : s;
+              })
+            );
+            logger.info('recipeDetail.autoIllustrate.done', { count: fulfilled.length });
+          })
+          .catch((err) =>
+            logger.error('recipeDetail.autoIllustrate.error', { error: err.message })
+          )
+          .finally(() => setAutoGenerating(false));
+      }
     } catch (err) {
       logger.error('recipeDetail.load.error', { id, error: err.message });
       Alert.alert('Error', err.message);
@@ -755,21 +777,21 @@ export default function RecipeDetailScreen() {
                       />
                     ) : (
                       <View style={styles.stepIllustrationPlaceholder}>
-                        <Ionicons name="image-outline" size={28} color="#C7C7CC" />
-                        <TouchableOpacity
-                          style={styles.generateBtn}
-                          onPress={() => handleGenerateIllustration(step)}
-                          disabled={!!generatingStep}
-                        >
-                          {generatingStep === step.id ? (
-                            <ActivityIndicator size="small" color="#007AFF" />
-                          ) : (
-                            <>
+                        {autoGenerating || generatingStep === step.id ? (
+                          <ActivityIndicator size="small" color="#007AFF" />
+                        ) : (
+                          <>
+                            <Ionicons name="image-outline" size={28} color="#C7C7CC" />
+                            <TouchableOpacity
+                              style={styles.generateBtn}
+                              onPress={() => handleGenerateIllustration(step)}
+                              disabled={!!generatingStep}
+                            >
                               <Ionicons name="sparkles-outline" size={14} color="#007AFF" />
-                              <Text style={styles.generateBtnText}>Generate</Text>
-                            </>
-                          )}
-                        </TouchableOpacity>
+                              <Text style={styles.generateBtnText}>Retry</Text>
+                            </TouchableOpacity>
+                          </>
+                        )}
                       </View>
                     )}
                   </View>
