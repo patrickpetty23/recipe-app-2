@@ -18,6 +18,7 @@ android/
 
 # Test artifacts
 .test-recipe-scanner.db*
+/build/
 
 # AI tool instructions (local only)
 CLAUDE.md
