@@ -385,7 +385,7 @@ export default function CookingScreen() {
       </View>
 
       {/* Navigation arrows */}
-      <View style={styles.navRow}>
+      <View style={[styles.navRow, { paddingBottom: (insets.bottom || 16) + 8 }]}>
         <TouchableOpacity
           style={[styles.navBtn, currentIndex === 0 && styles.navBtnDisabled]}
           onPress={goPrev}
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingBottom: Platform.OS === 'android' ? 24 : 40,
+    // paddingBottom applied dynamically via insets.bottom in render
     gap: 16,
   },
   navBtn: {

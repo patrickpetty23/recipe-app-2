@@ -280,7 +280,7 @@ export default function EditorScreen() {
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: (insets.bottom || 0) + 48 }]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >

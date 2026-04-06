@@ -539,7 +539,7 @@ export default function ChatScreen() {
       />
 
       {/* Input area */}
-      <View style={styles.inputArea}>
+      <View style={[styles.inputArea, { paddingBottom: insets.bottom || 8 }]}>
         {attachedImage ? (
           <View style={styles.attachPreviewRow}>
             <Image source={{ uri: attachedImage.uri }} style={styles.attachThumb} resizeMode="cover" />
@@ -828,7 +828,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#F0E0D0',
-    paddingBottom: Platform.OS === 'android' ? 8 : 0,
+    // paddingBottom applied dynamically via insets.bottom in render
   },
   attachPreviewRow: {
     flexDirection: 'row',

@@ -398,7 +398,7 @@ export default function ShoppingListScreen() {
         </View>
       )}
 
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom }]}>
         <View style={styles.toolbar}>
           <TouchableOpacity style={styles.toolbarButton} onPress={handleClearChecked}>
             <Text style={styles.toolbarButtonText}>Clear Checked</Text>
