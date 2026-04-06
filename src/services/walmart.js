@@ -12,8 +12,8 @@ function getCredentials() {
   if (!consumerId || !rawPem) {
     return null;
   }
-  // .env stores multiline PEM as a single line with literal \n escapes — restore real newlines
-  const privateKeyPem = rawPem.replace(/\\n/g, '\n');
+  // Handle both quoted multiline (real \n) and escaped \n from different dotenv parsers
+  const privateKeyPem = rawPem.includes('\\n') ? rawPem.replace(/\\n/g, '\n') : rawPem;
   return { consumerId, privateKeyPem, keyVersion };
 }
 
