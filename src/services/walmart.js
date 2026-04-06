@@ -9,11 +9,9 @@ function getCredentials() {
   const consumerId = process.env.EXPO_PUBLIC_WALMART_CLIENT_ID || process.env.WALMART_CLIENT_ID;
   const privateKeyPem = (process.env.EXPO_PUBLIC_WALMART_PRIVATE_KEY || process.env.WALMART_PRIVATE_KEY || '').replace(/\\n/g, '\n');
   const keyVersion = process.env.EXPO_PUBLIC_WALMART_KEY_VERSION || process.env.WALMART_KEY_VERSION || '1';
-  if (!consumerId || !rawPem) {
+  if (!consumerId || !privateKeyPem) {
     return null;
   }
-  // Handle both quoted multiline (real \n) and escaped \n from different dotenv parsers
-  const privateKeyPem = rawPem.includes('\\n') ? rawPem.replace(/\\n/g, '\n') : rawPem;
   return { consumerId, privateKeyPem, keyVersion };
 }
 

@@ -12,6 +12,7 @@ import {
   Linking,
   Animated,
   Platform,
+  SafeAreaView,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,6 +24,7 @@ import {
   getShoppingListIngredients,
   toggleIngredientChecked,
   removeIngredientFromList,
+  deleteIngredient,
   clearCheckedItems,
   clearShoppingList,
   addIngredientsToList,
@@ -31,6 +33,7 @@ import {
 } from '../../src/db/queries';
 import { searchProduct, buildCartLink, isWalmartConfigured } from '../../src/services/walmart';
 import { logger } from '../../src/utils/logger';
+import { parseFraction, toFractionString } from '../../src/utils/scaler';
 import EmptyState from '../../src/components/EmptyState';
 import SwipeableRow from '../../src/components/SwipeableRow';
 import WalmartProductCard from '../../src/components/WalmartProductCard';
@@ -130,18 +133,18 @@ export default function ShoppingListScreen() {
       friction: 8,
     }).start();
     try {
-      const newChecked = !mergedItem.checked;
-      for (const sourceId of mergedItem.sourceIds) {
+      const newChecked = !item.checked;
+      for (const sourceId of item.sourceIds) {
         const original = items.find((i) => i.id === sourceId);
         if (original && original.checked !== newChecked) {
           toggleIngredientChecked(sourceId);
         }
       }
       setItems((prev) =>
-        prev.map((i) => (i.id === item.id ? { ...i, checked: nowChecked } : i))
+        prev.map((i) => item.sourceIds.includes(i.id) ? { ...i, checked: newChecked } : i)
       );
     } catch (err) {
-      logger.error('shoppingList.toggleChecked.error', { ids: mergedItem.sourceIds, error: err.message });
+      logger.error('shoppingList.toggleChecked.error', { ids: item.sourceIds, error: err.message });
     }
   }
 
@@ -386,7 +389,7 @@ export default function ShoppingListScreen() {
     });
 
     return (
-      <SwipeableRow onDelete={() => handleRemoveItem(item)} deleteLabel="Remove">
+      <SwipeableRow onDelete={() => handleDeleteItem(item)} deleteLabel="Remove">
         <View style={styles.itemContainer}>
           <TouchableOpacity
             style={styles.itemRow}
@@ -492,13 +495,11 @@ export default function ShoppingListScreen() {
         </Text>
       </View>
 
-      <SectionList
+      <FlatList
         style={styles.list}
-        sections={sections}
+        data={mergedItems}
         renderItem={renderItem}
-        renderSectionHeader={renderSectionHeader}
         keyExtractor={(item) => item.id}
-        stickySectionHeadersEnabled={false}
         contentContainerStyle={styles.listContent}
       />
 

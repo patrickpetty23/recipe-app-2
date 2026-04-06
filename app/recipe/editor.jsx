@@ -12,7 +12,6 @@ import {
   Platform,
   ActivityIndicator,
   Image,
-  ScrollView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Crypto from 'expo-crypto';
