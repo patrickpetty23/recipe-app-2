@@ -112,6 +112,9 @@ export default function CookingScreen() {
   // Done checkmark scale animation
   const checkScale = useRef(new Animated.Value(0)).current;
   const checkOpacity = useRef(new Animated.Value(0)).current;
+  // Refs to always-latest nav callbacks so PanResponder (created once) avoids stale closures
+  const goNextRef = useRef(null);
+  const goPrevRef = useRef(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -160,8 +163,25 @@ export default function CookingScreen() {
   function toggleTts() {
     const next = !ttsEnabled;
     setTtsEnabled(next);
-    if (!next) Speech.stop();
-    else if (steps[currentIndex]) speakStep(steps[currentIndex]);
+    if (!next) {
+      Speech.stop();
+    } else {
+      // speakStep reads ttsEnabled from closure which is still the old value here,
+      // so we speak directly using the already-computed `next = true`
+      const step = steps[currentIndex];
+      if (step) {
+        try {
+          Speech.stop();
+          Speech.speak(`Step ${step.stepNumber}. ${step.instruction}`, {
+            language: 'en-US',
+            rate: Platform.OS === 'android' ? 0.85 : 0.9,
+            pitch: 1.0,
+          });
+        } catch (err) {
+          logger.error('cooking.tts.error', { error: err.message });
+        }
+      }
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
 
@@ -236,6 +256,10 @@ export default function CookingScreen() {
 
   // ── Swipe gesture ─────────────────────────────────────────────────────────────
 
+  // Keep refs current on every render so PanResponder always calls the latest version
+  goNextRef.current = goNext;
+  goPrevRef.current = goPrev;
+
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gs) =>
@@ -243,9 +267,13 @@ export default function CookingScreen() {
       onPanResponderMove: (_, gs) => { slideAnim.setValue(gs.dx * 0.12); },
       onPanResponderRelease: (_, gs) => {
         if (gs.dx < -SWIPE_THRESHOLD) {
-          Animated.timing(slideAnim, { toValue: 0, duration: 80, useNativeDriver: true }).start(goNext);
+          Animated.timing(slideAnim, { toValue: 0, duration: 80, useNativeDriver: true }).start(
+            () => goNextRef.current?.()
+          );
         } else if (gs.dx > SWIPE_THRESHOLD) {
-          Animated.timing(slideAnim, { toValue: 0, duration: 80, useNativeDriver: true }).start(goPrev);
+          Animated.timing(slideAnim, { toValue: 0, duration: 80, useNativeDriver: true }).start(
+            () => goPrevRef.current?.()
+          );
         } else {
           Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true }).start();
         }

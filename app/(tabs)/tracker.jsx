@@ -9,7 +9,6 @@ import {
   Alert,
   TextInput,
   Modal,
-  Animated,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';

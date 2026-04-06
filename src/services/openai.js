@@ -72,9 +72,11 @@ async function callOpenAI(messages, { jsonMode = false, timeoutMs = TIMEOUT_MS }
     }
 
     const data = await response.json();
-    const content = data.choices[0].message.content;
+    const choice = data?.choices?.[0];
+    if (!choice) throw new Error('OpenAI returned no choices in response');
+    const content = choice.message?.content;
     if (!content) {
-      const refusal = data.choices[0].message.refusal;
+      const refusal = choice.message?.refusal;
       throw new Error(refusal || 'OpenAI returned empty response');
     }
     return content;
@@ -389,7 +391,8 @@ export async function generateStepIllustration(stepText, recipeTitle) {
     }
 
     const data = await response.json();
-    const url = data.data[0].url;
+    const url = data?.data?.[0]?.url;
+    if (!url) throw new Error('DALL-E returned no image URL');
     logger.info('openai.generateStepIllustration.success', { recipeTitle });
     return url;
   } catch (err) {
