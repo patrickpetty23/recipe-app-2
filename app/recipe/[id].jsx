@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -85,10 +85,17 @@ export default function RecipeDetailScreen() {
 
   // Animated values for checked items
   const checkAnims = useRef(new Map()).current;
+  const pollRef = useRef(null);
 
   useFocusEffect(
     useCallback(() => {
       loadRecipe();
+      return () => {
+        if (pollRef.current) {
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+        }
+      };
     }, [id])
   );
 
@@ -118,25 +125,22 @@ export default function RecipeDetailScreen() {
         ingredientCount: (data.ingredients || []).length,
         stepCount: loadedSteps.length,
       });
-      // Auto-generate illustrations for any steps that don't have one yet
-      const stepsNeedingIllustration = loadedSteps.filter((s) => !s.illustrationUrl);
-      if (stepsNeedingIllustration.length > 0) {
+      // If any steps are missing illustrations, poll DB until they're all ready
+      // (editor fires generation in the background on save)
+      if (loadedSteps.length > 0 && loadedSteps.some((s) => !s.illustrationUrl)) {
         setAutoGenerating(true);
-        generateAllStepIllustrations(stepsNeedingIllustration, data.title)
-          .then((fulfilled) => {
-            fulfilled.forEach(({ stepId, url }) => updateStepIllustration(stepId, url));
-            setSteps((prev) =>
-              prev.map((s) => {
-                const hit = fulfilled.find((f) => f.stepId === s.id);
-                return hit ? { ...s, illustrationUrl: hit.url } : s;
-              })
-            );
-            logger.info('recipeDetail.autoIllustrate.done', { count: fulfilled.length });
-          })
-          .catch((err) =>
-            logger.error('recipeDetail.autoIllustrate.error', { error: err.message })
-          )
-          .finally(() => setAutoGenerating(false));
+        if (pollRef.current) clearInterval(pollRef.current);
+        pollRef.current = setInterval(() => {
+          const fresh = getRecipeById(id);
+          if (!fresh) return;
+          const freshSteps = fresh.steps || [];
+          setSteps(freshSteps);
+          if (freshSteps.every((s) => s.illustrationUrl)) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+            setAutoGenerating(false);
+          }
+        }, 5000);
       }
     } catch (err) {
       logger.error('recipeDetail.load.error', { id, error: err.message });
@@ -241,7 +245,7 @@ export default function RecipeDetailScreen() {
     if (generatingStep) return;
     setGeneratingStep(step.id);
     try {
-      const url = await generateStepIllustration(step.instruction, recipe.title);
+      const url = await generateStepIllustration(step.instruction, recipe.title, steps, ingredients);
       updateStepIllustration(step.id, url);
       setSteps((prev) =>
         prev.map((s) => (s.id === step.id ? { ...s, illustrationUrl: url } : s))
@@ -754,6 +758,14 @@ export default function RecipeDetailScreen() {
         {/* ── Steps tab ── */}
         {activeTab === 'steps' && (
           <View style={styles.tabContent}>
+            {autoGenerating && (
+              <View style={styles.generatingBanner}>
+                <ActivityIndicator size="small" color="#FF6B35" />
+                <Text style={styles.generatingBannerText}>
+                  Generating illustrations, est. 1 min…
+                </Text>
+              </View>
+            )}
             {steps.length === 0 ? (
               <View style={styles.emptySteps}>
                 <Ionicons name="list-outline" size={40} color="#C7C7CC" />
@@ -1189,6 +1201,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     flexDirection: 'row',
+  },
+  generatingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#FFF0E8',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  generatingBannerText: {
+    fontSize: 14,
+    color: '#FF6B35',
+    fontWeight: '500',
+    flexShrink: 1,
   },
   generateBtn: {
     flexDirection: 'row',

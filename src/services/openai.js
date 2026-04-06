@@ -390,17 +390,31 @@ export async function lightenRecipe(recipe) {
   }
 }
 
-// Generates a minimalist flat cookbook illustration for a recipe step via fal.ai FLUX.
-export async function generateStepIllustration(stepText, recipeTitle) {
+function buildIllustrationPrompt(stepText, stepNumber, totalSteps, recipeTitle, ingredients) {
+  const ingredientList = (ingredients || [])
+    .slice(0, 8)
+    .map((i) => i.name)
+    .join(', ');
+  return (
+    `Cookbook illustration. Absolutely no text, no words, no letters, no labels, no writing of any kind anywhere in the image. ` +
+    `Recipe: "${recipeTitle}". ` +
+    (ingredientList ? `Key ingredients: ${ingredientList}. ` : '') +
+    `Illustrating step ${stepNumber} of ${totalSteps}: "${stepText}". ` +
+    `Style: clean flat 2D illustration, soft muted pastel colors, simple clear shapes, white background, ` +
+    `shows the cooking action or result clearly and accurately, ` +
+    `professional cookbook aesthetic — the viewer should immediately understand what is happening in this step.`
+  );
+}
+
+// Generates a cookbook illustration for a single recipe step via fal.ai FLUX.
+export async function generateStepIllustration(stepText, recipeTitle, allSteps, ingredients) {
   logger.info('openai.generateStepIllustration', {
     recipeTitle,
     stepPreview: stepText.slice(0, 60),
   });
-  const prompt =
-    `Minimalist flat 2D cookbook illustration. Recipe: "${recipeTitle}". ` +
-    `Step: "${stepText}". ` +
-    `Style: clean line art, soft pastel colors, simple geometric shapes, ` +
-    `no text or labels, white background, professional cookbook aesthetic.`;
+  const stepNumber = (allSteps || []).findIndex((s) => s.instruction === stepText) + 1 || 1;
+  const totalSteps = (allSteps || []).length || 1;
+  const prompt = buildIllustrationPrompt(stepText, stepNumber, totalSteps, recipeTitle, ingredients);
   try {
     const url = await falGenerateImage(prompt, 'square_hd');
     logger.info('openai.generateStepIllustration.success', { recipeTitle });
@@ -413,21 +427,24 @@ export async function generateStepIllustration(stepText, recipeTitle) {
 
 // Fires all step illustrations in parallel via fal.ai FLUX.
 // Returns [{stepId, url}] for every step that succeeded; failures are silently skipped.
-export async function generateAllStepIllustrations(steps, recipeTitle) {
+export async function generateAllStepIllustrations(steps, recipeTitle, ingredients) {
   logger.info('openai.generateAllStepIllustrations', { recipeTitle, stepCount: steps.length });
+  const total = steps.length;
   const settled = await Promise.allSettled(
-    steps.map((step) => {
-      const prompt =
-        `Minimalist flat 2D cookbook illustration. Recipe: "${recipeTitle}". ` +
-        `Step: "${step.instruction}". ` +
-        `Style: clean line art, soft pastel colors, simple geometric shapes, ` +
-        `no text or labels, white background, professional cookbook aesthetic.`;
+    steps.map((step, idx) => {
+      const prompt = buildIllustrationPrompt(
+        step.instruction,
+        (step.stepNumber ?? idx + 1),
+        total,
+        recipeTitle,
+        ingredients
+      );
       return falGenerateImage(prompt, 'square_hd').then((url) => ({ stepId: step.id, url }));
     })
   );
   const fulfilled = settled.filter((r) => r.status === 'fulfilled').map((r) => r.value);
   logger.info('openai.generateAllStepIllustrations.done', {
-    total: steps.length,
+    total,
     succeeded: fulfilled.length,
   });
   return fulfilled;

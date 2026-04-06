@@ -231,11 +231,10 @@ export default function EditorScreen() {
           logger.error('editor.thumbnailGeneration.error', { recipeId, error: err.message });
         });
 
-      // 3. Auto-illustrate steps in parallel (DALL-E 2 — fast) — skip any step
-      //    the user already illustrated manually in the editor
+      // 3. Auto-illustrate steps in parallel — skip any step already illustrated
       const stepsNeedingIllustration = stepsToSave.filter((s) => !s.illustrationUrl);
       if (stepsNeedingIllustration.length > 0) {
-        generateAllStepIllustrations(stepsNeedingIllustration, recipe.title)
+        generateAllStepIllustrations(stepsNeedingIllustration, recipe.title, ingredientsToSave)
           .then((fulfilled) => {
             fulfilled.forEach(({ stepId, url }) => updateStepIllustration(stepId, url));
             logger.info('editor.illustrationsGenerated', { recipeId, count: fulfilled.length });
