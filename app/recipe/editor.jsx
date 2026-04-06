@@ -19,8 +19,14 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 
 import { scaleIngredients } from '../../src/utils/scaler';
-import { saveRecipe, saveIngredients, saveRecipeSteps, saveNutrition } from '../../src/db/queries';
-import { generateStepIllustration, estimateNutrition } from '../../src/services/openai';
+import {
+  saveRecipe, saveIngredients, saveRecipeSteps, saveNutrition, updateRecipeImageUri,
+  updateStepIllustration,
+} from '../../src/db/queries';
+import {
+  generateStepIllustration, estimateNutrition,
+  generateRecipeThumbnail, generateAllStepIllustrations,
+} from '../../src/services/openai';
 import { logger } from '../../src/utils/logger';
 
 // ── Warm theme ────────────────────────────────────────────────────────────────
@@ -200,7 +206,9 @@ export default function EditorScreen() {
         stepCount: stepsToSave.length,
       });
 
-      // Estimate nutrition in the background — don't block navigation
+      // ── Background AI tasks (non-blocking — navigate immediately) ────────────
+
+      // 1. Estimate nutrition
       if (ingredientsToSave.length > 0) {
         estimateNutrition(ingredientsToSave, servings)
           .then((ntr) => {
@@ -209,6 +217,31 @@ export default function EditorScreen() {
           })
           .catch((err) => {
             logger.error('editor.nutritionEstimation.error', { recipeId, error: err.message });
+          });
+      }
+
+      // 2. Generate hero thumbnail (DALL-E 3 landscape) — always generate so every
+      //    recipe card has a beautiful food photo, even for text/URL imports
+      generateRecipeThumbnail(recipe.title, recipe.cuisine, ingredientsToSave)
+        .then((url) => {
+          updateRecipeImageUri(recipeId, url);
+          logger.info('editor.thumbnailGenerated', { recipeId });
+        })
+        .catch((err) => {
+          logger.error('editor.thumbnailGeneration.error', { recipeId, error: err.message });
+        });
+
+      // 3. Auto-illustrate steps in parallel (DALL-E 2 — fast) — skip any step
+      //    the user already illustrated manually in the editor
+      const stepsNeedingIllustration = stepsToSave.filter((s) => !s.illustrationUrl);
+      if (stepsNeedingIllustration.length > 0) {
+        generateAllStepIllustrations(stepsNeedingIllustration, recipe.title)
+          .then((fulfilled) => {
+            fulfilled.forEach(({ stepId, url }) => updateStepIllustration(stepId, url));
+            logger.info('editor.illustrationsGenerated', { recipeId, count: fulfilled.length });
+          })
+          .catch((err) => {
+            logger.error('editor.illustrationsGeneration.error', { recipeId, error: err.message });
           });
       }
 

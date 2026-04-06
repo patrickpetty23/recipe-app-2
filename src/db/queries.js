@@ -133,6 +133,23 @@ export function updateRecipe(id, fields) {
   }
 }
 
+export function updateRecipeImageUri(id, imageUri) {
+  logger.info('queries.updateRecipeImageUri', { id });
+  try {
+    const db = getDatabase();
+    db.runSync(
+      'UPDATE recipes SET image_uri = ?, updated_at = ? WHERE id = ?',
+      imageUri,
+      new Date().toISOString(),
+      id
+    );
+    logger.info('queries.updateRecipeImageUri.success', { id });
+  } catch (err) {
+    logger.error('queries.updateRecipeImageUri.error', { id, error: err.message });
+    throw err;
+  }
+}
+
 export function deleteRecipe(id) {
   logger.info('queries.deleteRecipe', { id });
   try {

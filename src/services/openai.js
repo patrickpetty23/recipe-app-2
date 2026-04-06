@@ -406,3 +406,121 @@ export async function generateStepIllustration(stepText, recipeTitle) {
     clearTimeout(timer);
   }
 }
+
+// ── Fast DALL-E 2 step illustration (used for parallel auto-generation) ────────
+
+async function generateStepIllustrationFast(stepText, recipeTitle) {
+  const prompt =
+    `Minimalist flat 2D cookbook illustration. Recipe: "${recipeTitle}". ` +
+    `Step: "${stepText}". ` +
+    `Style: clean line art, soft pastel colors, simple geometric shapes, ` +
+    `no text or labels, white background, professional cookbook aesthetic.`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ILLUSTRATION_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(IMAGE_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getApiKey()}` },
+      body: JSON.stringify({
+        model: 'dall-e-2',
+        prompt,
+        n: 1,
+        size: '1024x1024',
+        response_format: 'url',
+      }),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const errBody = await response.text();
+      throw new Error(`DALL-E API error ${response.status}: ${errBody}`);
+    }
+    const data = await response.json();
+    const url = data?.data?.[0]?.url;
+    if (!url) throw new Error('DALL-E returned no image URL');
+    return url;
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error('Illustration timed out.');
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Fires all step illustrations in parallel (DALL-E 2 for speed + higher rate limits).
+// Returns [{stepId, url}] for every step that succeeded; failures are silently skipped.
+export async function generateAllStepIllustrations(steps, recipeTitle) {
+  logger.info('openai.generateAllStepIllustrations', { recipeTitle, stepCount: steps.length });
+  const settled = await Promise.allSettled(
+    steps.map((step) =>
+      generateStepIllustrationFast(step.instruction, recipeTitle).then((url) => ({
+        stepId: step.id,
+        url,
+      }))
+    )
+  );
+  const fulfilled = settled.filter((r) => r.status === 'fulfilled').map((r) => r.value);
+  logger.info('openai.generateAllStepIllustrations.done', {
+    total: steps.length,
+    succeeded: fulfilled.length,
+  });
+  return fulfilled;
+}
+
+// ── Recipe thumbnail (DALL-E 3, landscape) ────────────────────────────────────
+
+// Generates a food-photography-style hero thumbnail for a recipe.
+// Returns the hosted image URL from OpenAI's CDN.
+export async function generateRecipeThumbnail(title, cuisine, ingredients) {
+  logger.info('openai.generateRecipeThumbnail', { title });
+
+  const ingredientSnippet = (ingredients ?? [])
+    .slice(0, 5)
+    .map((i) => i.name)
+    .join(', ');
+
+  const prompt =
+    `Beautifully plated, professionally photographed dish of "${title}". ` +
+    (cuisine ? `${cuisine} cuisine. ` : '') +
+    (ingredientSnippet ? `Key ingredients: ${ingredientSnippet}. ` : '') +
+    `Warm studio lighting, shallow depth of field, clean white plate or rustic wooden surface, ` +
+    `restaurant-quality presentation. No text, no watermarks.`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ILLUSTRATION_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(IMAGE_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getApiKey()}` },
+      body: JSON.stringify({
+        model: 'dall-e-3',
+        prompt,
+        n: 1,
+        size: '1792x1024',
+        style: 'natural',
+        response_format: 'url',
+      }),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const errBody = await response.text();
+      throw new Error(`DALL-E API error ${response.status}: ${errBody}`);
+    }
+    const data = await response.json();
+    const url = data?.data?.[0]?.url;
+    if (!url) throw new Error('DALL-E returned no image URL');
+    logger.info('openai.generateRecipeThumbnail.success', { title });
+    return url;
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      logger.error('openai.generateRecipeThumbnail.timeout', {});
+      throw new Error('Thumbnail request timed out.');
+    }
+    logger.error('openai.generateRecipeThumbnail.error', { error: err.message });
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
