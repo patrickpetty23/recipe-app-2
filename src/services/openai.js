@@ -2,7 +2,7 @@ import { logger } from '../utils/logger';
 import * as FileSystem from 'expo-file-system';
 
 const CHAT_API_URL = 'https://api.openai.com/v1/chat/completions';
-const GEMINI_IMAGE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent';
+const HF_IMAGE_URL = 'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell';
 const MODEL = 'gpt-4o';
 const TIMEOUT_MS = 45000;
 const ILLUSTRATION_TIMEOUT_MS = 60000;
@@ -46,46 +46,46 @@ function getApiKey() {
   return key;
 }
 
-function getGeminiApiKey() {
-  const key = process.env.EXPO_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-  if (!key) throw new Error('GEMINI_API_KEY is not set');
+function getHfApiKey() {
+  const key = process.env.EXPO_PUBLIC_HF_API_KEY || process.env.HF_API_KEY;
+  if (!key) throw new Error('HF_API_KEY is not set');
   return key;
 }
 
 const ILLUSTRATIONS_DIR = FileSystem.documentDirectory + 'illustrations/';
 
-async function geminiGenerateImage(prompt) {
+async function hfGenerateImage(prompt) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ILLUSTRATION_TIMEOUT_MS);
   try {
-    const response = await fetch(`${GEMINI_IMAGE_URL}?key=${getGeminiApiKey()}`, {
+    const response = await fetch(HF_IMAGE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseModalities: ['IMAGE'] },
-      }),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getHfApiKey()}`,
+      },
+      body: JSON.stringify({ inputs: prompt }),
       signal: controller.signal,
     });
     if (!response.ok) {
       const errBody = await response.text();
-      throw new Error(`Gemini API error ${response.status}: ${errBody}`);
+      throw new Error(`HuggingFace API error ${response.status}: ${errBody}`);
     }
-    const data = await response.json();
-    const parts = data?.candidates?.[0]?.content?.parts || [];
-    const imagePart = parts.find((p) => p.inlineData?.data);
-    if (!imagePart) throw new Error('Gemini returned no image data');
 
-    const base64 = imagePart.inlineData.data;
-    const mimeType = imagePart.inlineData.mimeType || 'image/png';
-    const ext = mimeType.includes('jpeg') ? 'jpg' : 'png';
+    const blob = await response.blob();
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
 
     const dirInfo = await FileSystem.getInfoAsync(ILLUSTRATIONS_DIR);
     if (!dirInfo.exists) {
       await FileSystem.makeDirectoryAsync(ILLUSTRATIONS_DIR, { intermediates: true });
     }
 
-    const localUri = ILLUSTRATIONS_DIR + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
+    const localUri = ILLUSTRATIONS_DIR + Date.now() + '_' + Math.random().toString(36).slice(2) + '.jpg';
     await FileSystem.writeAsStringAsync(localUri, base64, { encoding: FileSystem.EncodingType.Base64 });
     return localUri;
   } catch (err) {
@@ -427,7 +427,7 @@ export async function generateStepIllustration(stepText, recipeTitle, allSteps, 
   const totalSteps = (allSteps || []).length || 1;
   const prompt = buildIllustrationPrompt(stepText, stepNumber, totalSteps, recipeTitle, ingredients);
   try {
-    const url = await geminiGenerateImage(prompt);
+    const url = await hfGenerateImage(prompt);
     logger.info('openai.generateStepIllustration.success', { recipeTitle });
     return url;
   } catch (err) {
@@ -450,7 +450,7 @@ export async function generateAllStepIllustrations(steps, recipeTitle, ingredien
         recipeTitle,
         ingredients
       );
-      return geminiGenerateImage(prompt).then((url) => ({ stepId: step.id, url }));
+      return hfGenerateImage(prompt).then((url) => ({ stepId: step.id, url }));
     })
   );
   const fulfilled = settled.filter((r) => r.status === 'fulfilled').map((r) => r.value);
@@ -480,7 +480,7 @@ export async function generateRecipeThumbnail(title, cuisine, ingredients) {
     `restaurant-quality presentation. No text, no watermarks.`;
 
   try {
-    const url = await geminiGenerateImage(prompt);
+    const url = await hfGenerateImage(prompt);
     logger.info('openai.generateRecipeThumbnail.success', { title });
     return url;
   } catch (err) {
