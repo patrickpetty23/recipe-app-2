@@ -7,11 +7,59 @@
 
 ---
 
+## Day 9 — Final Rubric Compliance + Docs (Phase 9 continued)
+- Updated all aiDocs to reflect current project state (context.md, architecture.md, prd.md)
+- Added version history to PRD with three tracked revisions and updated success metrics from measured results
+- Created ai/plans/ folder with 8 per-phase plan documents (phase1 through phase8)
+- Created presentation/ folder: 17-slide HTML deck, demo script with timing, executive summary, feature map
+- Added system architecture diagram to presentation materials
+- Created product-research.md documenting customer research, competitive analysis, success metrics, and feedback loop
+- Fixed .gitignore to properly exclude .env files (previous entry had typo: .testEnvVars vs .envTestVars)
+- Resolved 4 bugs found in static analysis: PanResponder stale closure in cooking mode, TTS re-enable bug, OpenAI null-safety, unused import
+- Added auto-generation pipeline: DALL-E 3 thumbnail + DALL-E 2 parallel step illustrations fire on every recipe save
+- Tagged release: git tag v1.0-demo
+
+---
+
+## Day 8 — Android Polish (feature/android-polish branch)
+
+### Milestone 5 — Nutrition Tracking + Voice Cooking + Timers
+- Added recipe_nutrition and cook_log tables to SQLite schema; added nutrition and cook-log queries
+- Implemented GPT-4o nutrition estimation (estimateNutrition) and recipe lightening (lightenRecipe) in openai.js
+- Recipe detail: AI nutrition panel with calorie number, animated macro bars (Protein/Carbs/Fat), "Log Meal" button, "Make it Lighter" button
+- Editor: auto-estimates nutrition in background (non-blocking) on every save
+- Cooking mode: TTS step narration via expo-speech (rate 0.85 Android), in-app countdown timer with MM:SS ring, voice alert on timer completion
+- New Tracker tab: daily calorie ring, macro progress bars vs goals, today's meals log with delete, recent history, editable goals modal
+- Registered Tracker as 4th tab with fitness icon
+
+### Milestone 4 — Editor Redesign + Collections + Warm Theme
+- Editor: image preview at top, editable step cards, per-step illustration button, "Generate All Illustrations" batch action
+- Library: horizontal Collections row (emoji + name cards), "Create Collection" modal, long-press recipe to add to collection
+- Warm colour theme applied across all screens: #FF6B35 orange, #FFF8F0 cream, consistent throughout
+
+### Milestone 3 — Recipe Detail Redesign + Cooking Mode
+- Recipe detail: hero image with LinearGradient overlay, sticky metadata bar, ingredient/steps tabs, portion scaler
+- Cooking mode: full-screen dark UI, swipe gesture navigation, progress dots, screen-stays-on (expo-keep-awake)
+- Per-step illustration generation button (DALL-E 3)
+
+### Milestone 1–2 — Schema + Chat Tab
+- Replaced original Scan tab with iMessage-style chat interface (Chat tab)
+- GPT-4o routing: recipe type → save to library; answer type → show as message
+- Extended schema: image_uri, source_url, prep_time, cook_time, cuisine, recipe_steps, collections, chat_messages, app_settings
+
+---
+
 ## Day 7 — Rubric Audit + Process Artifacts (Phase 9)
 - Ran full rubric audit against Casey's and Jason's grading criteria — identified 5 critical gaps
 - Removed `ai/` from `.gitignore` so graders can see roadmaps, plans, and changelogs
 - Updated changelog to reflect all post-Phase 7 work that was missing
 - Added Phase 9 rubric-crushing checklist to roadmap covering all remaining deliverables
+
+### Bug Found via Logs and Fixed (test-log-fix loop)
+- **Bug**: Walmart "Send to Cart" opened cart page but items were not added.
+- **How found**: `logger.info('walmart.buildCartLink', { url })` showed the URL being generated as `walmart.com/cart?items=ID` — search confirmed this format only navigates to cart, does not add items.
+- **Fix**: Changed to `affil.walmart.com/cart/addToCart?items=ID|1` format per Walmart Affiliate API docs.
+- **Validation**: Re-tested with flour and eggs; both appeared pre-added in Walmart cart. Log showed `{"action":"walmart.buildCartLink","url":"https://affil.walmart.com/cart/addToCart?items=..."}` ✅
 
 ---
 

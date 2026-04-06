@@ -11,29 +11,33 @@ recipe-scanner/
 │   ├── architecture.md
 │   ├── coding-style.md
 │   └── changelog.md
-├── ai/                            # ← GITIGNORED
+├── ai/                            # ← TRACKED in git
 │   ├── roadmaps/
-│   └── notes/
+│   └── plans/
 ├── scripts/                       # CLI testing scripts
 │   ├── build.sh
 │   ├── test.sh
 │   └── run.sh
 ├── app/                           # Expo Router pages
 │   ├── (tabs)/
-│   │   ├── index.jsx              # Scan / Home tab
-│   │   ├── library.jsx            # Saved recipes tab
-│   │   └── list.jsx               # Shopping list tab
+│   │   ├── _layout.jsx            # Tab bar config (Chat, Recipes, Shopping, Tracker)
+│   │   ├── index.jsx              # Chat tab — iMessage-style AI cooking assistant
+│   │   ├── library.jsx            # Recipes tab — library + collections
+│   │   ├── list.jsx               # Shopping list tab — check-off + Walmart
+│   │   └── tracker.jsx            # Nutrition Tracker tab — daily macros + cook log
 │   ├── recipe/
-│   │   └── [id].jsx               # Recipe detail / edit
+│   │   ├── [id].jsx               # Recipe detail — hero, nutrition, tabs, cooking
+│   │   ├── cooking.jsx            # Cooking mode — TTS, swipe steps, timers
+│   │   └── editor.jsx             # Recipe editor — ingredients, steps, illustrations
 │   └── _layout.jsx
 ├── src/
 │   ├── services/
-│   │   ├── openai.js              # GPT-4o calls (image + text parsing)
+│   │   ├── openai.js              # GPT-4o (chat, extraction, nutrition, lighten) + DALL-E
 │   │   ├── walmart.js             # Walmart API search + cart link
 │   │   ├── scraper.js             # URL recipe scraping
 │   │   └── fileParser.js          # PDF / DOCX text extraction
 │   ├── db/
-│   │   ├── schema.js              # SQLite table definitions
+│   │   ├── schema.js              # SQLite schema + migrations (10 tables)
 │   │   └── queries.js             # All DB read/write functions
 │   ├── utils/
 │   │   ├── logger.js              # Structured JSON logger
@@ -41,7 +45,15 @@ recipe-scanner/
 │   └── components/
 │       ├── IngredientRow.jsx
 │       ├── RecipeCard.jsx
-│       └── ShoppingItem.jsx
+│       ├── ShoppingItem.jsx
+│       ├── EmptyState.jsx
+│       ├── SkeletonLoader.jsx
+│       └── WalmartProductCard.jsx
+├── presentation/                  # Capstone presentation materials
+│   ├── slides.html                # 17-slide HTML deck
+│   ├── demo-script.md
+│   ├── executive-summary.md
+│   └── feature-map.md
 ├── .testEnvVars                   # ← GITIGNORED — API keys for testing
 ├── CLAUDE.md                      # ← GITIGNORED — AI tool instructions
 ├── .cursorrules                   # ← GITIGNORED — Cursor instructions
@@ -99,7 +111,13 @@ CREATE TABLE recipes (
   title TEXT NOT NULL,
   source_type TEXT NOT NULL,
   source_uri TEXT,
+  source_url TEXT,
+  image_uri TEXT,                  -- AI-generated food photo (DALL-E 3)
   servings INTEGER NOT NULL DEFAULT 1,
+  instructions TEXT,
+  prep_time TEXT,
+  cook_time TEXT,
+  cuisine TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -113,7 +131,70 @@ CREATE TABLE ingredients (
   notes TEXT,
   checked INTEGER NOT NULL DEFAULT 0,
   sort_order INTEGER NOT NULL DEFAULT 0,
+  in_list INTEGER NOT NULL DEFAULT 0,
   FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+);
+
+CREATE TABLE recipe_steps (
+  id TEXT PRIMARY KEY,
+  recipe_id TEXT NOT NULL,
+  step_number INTEGER NOT NULL,
+  instruction TEXT NOT NULL,
+  illustration_url TEXT,           -- DALL-E 2 generated step illustration
+  FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+);
+
+CREATE TABLE recipe_nutrition (
+  recipe_id TEXT PRIMARY KEY,
+  calories_per_serving REAL,
+  protein_g REAL,
+  carbs_g REAL,
+  fat_g REAL,
+  fiber_g REAL,
+  estimated_at TEXT,
+  FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+);
+
+CREATE TABLE cook_log (
+  id TEXT PRIMARY KEY,
+  recipe_id TEXT,
+  recipe_title TEXT NOT NULL,
+  servings REAL,
+  calories REAL,
+  protein_g REAL,
+  carbs_g REAL,
+  fat_g REAL,
+  cooked_at TEXT NOT NULL,
+  FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE SET NULL
+);
+
+CREATE TABLE collections (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  emoji TEXT NOT NULL DEFAULT '📁',
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE recipe_collections (
+  recipe_id TEXT NOT NULL,
+  collection_id TEXT NOT NULL,
+  PRIMARY KEY (recipe_id, collection_id),
+  FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE,
+  FOREIGN KEY (collection_id) REFERENCES collections(id) ON DELETE CASCADE
+);
+
+CREATE TABLE chat_messages (
+  id TEXT PRIMARY KEY,
+  role TEXT NOT NULL,
+  content TEXT NOT NULL,
+  image_uri TEXT,
+  created_at TEXT NOT NULL,
+  recipe_id TEXT
+);
+
+CREATE TABLE app_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
 );
 ```
 
@@ -240,11 +321,32 @@ Tab: Shopping List
   └─ Combined ingredients → Check off items → Walmart search → Open cart link
 ```
 
+## Navigation Flow (current)
+```
+Tab: Chat
+  └─ iMessage UI → camera/URL/text → GPT-4o → recipe card → Save → Library
+
+Tab: Recipes (Library)
+  └─ Recipe grid (AI thumbnails) → Recipe Detail → Cooking Mode
+                                 → Editor (edit/illustrate steps)
+                                 → Log Meal → Tracker
+
+Tab: Shopping List
+  └─ Combined ingredients → check off → Walmart search → Open cart link
+
+Tab: Tracker
+  └─ Calorie ring + macros → Today's meals → Recent history → Edit goals
+```
+
 ## Key Technical Decisions
 | Decision | Choice | Reason |
 |----------|--------|--------|
 | OCR method | GPT-4o Vision directly | Eliminates separate OCR step, handles messy cookbook typography |
-| Storage | SQLite via expo-sqlite | Relational structure, better than AsyncStorage for recipes+ingredients |
-| Navigation | Expo Router | File-based, simpler than React Navigation for this scope |
-| Language | JavaScript (not TS) | Faster to write and debug in a 6-day sprint |
-| Logging | Custom JSON logger | Structured output AI can parse; zero dependencies |
+| Storage | SQLite via expo-sqlite v16 | Relational structure, offline-first, WAL mode for performance |
+| Navigation | Expo Router v6 | File-based, works across all 6 screens without extra config |
+| Language | JavaScript (not TS) | Faster to write and debug in sprint conditions |
+| Logging | Custom JSON logger | Structured output, zero dependencies, AI-parseable |
+| AI pipeline | Non-blocking background | Save is instant; nutrition/thumbnail/illustrations complete async |
+| Image generation | DALL-E 3 thumbnail + DALL-E 2 steps | DALL-E 3 quality for hero; DALL-E 2 speed + parallel for steps |
+| TTS | expo-speech | Native platform TTS, no API cost, works offline |
+| Cross-platform | React Native + Expo | Single codebase verified on both iOS and Android |
