@@ -19,8 +19,8 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 
 import { scaleIngredients } from '../../src/utils/scaler';
-import { saveRecipe, saveIngredients, saveRecipeSteps } from '../../src/db/queries';
-import { generateStepIllustration } from '../../src/services/openai';
+import { saveRecipe, saveIngredients, saveRecipeSteps, saveNutrition } from '../../src/db/queries';
+import { generateStepIllustration, estimateNutrition } from '../../src/services/openai';
 import { logger } from '../../src/utils/logger';
 
 // ── Warm theme ────────────────────────────────────────────────────────────────
@@ -199,6 +199,19 @@ export default function EditorScreen() {
         ingredientCount: ingredientsToSave.length,
         stepCount: stepsToSave.length,
       });
+
+      // Estimate nutrition in the background — don't block navigation
+      if (ingredientsToSave.length > 0) {
+        estimateNutrition(ingredientsToSave, servings)
+          .then((ntr) => {
+            saveNutrition(recipeId, ntr);
+            logger.info('editor.nutritionEstimated', { recipeId, calories: ntr.calories });
+          })
+          .catch((err) => {
+            logger.error('editor.nutritionEstimation.error', { recipeId, error: err.message });
+          });
+      }
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace(`/recipe/${recipeId}`);
     } catch (err) {

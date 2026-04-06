@@ -144,6 +144,38 @@ export function getDatabase() {
     )
   `);
 
+  // ── Nutrition ─────────────────────────────────────────────────────────────────
+
+  db.execSync(`
+    CREATE TABLE IF NOT EXISTS recipe_nutrition (
+      recipe_id TEXT PRIMARY KEY,
+      calories_per_serving INTEGER,
+      protein_g REAL,
+      carbs_g REAL,
+      fat_g REAL,
+      fiber_g REAL,
+      estimated_at TEXT NOT NULL,
+      FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
+    )
+  `);
+
+  // ── Cook log ──────────────────────────────────────────────────────────────────
+
+  db.execSync(`
+    CREATE TABLE IF NOT EXISTS cook_log (
+      id TEXT PRIMARY KEY,
+      recipe_id TEXT,
+      recipe_title TEXT NOT NULL,
+      servings REAL NOT NULL DEFAULT 1,
+      calories INTEGER,
+      protein_g REAL,
+      carbs_g REAL,
+      fat_g REAL,
+      cooked_at TEXT NOT NULL,
+      FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE SET NULL
+    )
+  `);
+
   // ── Migrations for existing installs ─────────────────────────────────────────
 
   migrateAddInList(db);
@@ -155,6 +187,7 @@ export function getDatabase() {
   db.execSync(`CREATE INDEX IF NOT EXISTS idx_ingredients_in_list ON ingredients(in_list)`);
   db.execSync(`CREATE INDEX IF NOT EXISTS idx_recipe_steps_recipe ON recipe_steps(recipe_id)`);
   db.execSync(`CREATE INDEX IF NOT EXISTS idx_chat_messages_recipe ON chat_messages(recipe_id)`);
+  db.execSync(`CREATE INDEX IF NOT EXISTS idx_cook_log_cooked_at ON cook_log(cooked_at)`);
 
   logger.info('schema.getDatabase.success', { status: 'ready' });
   return db;

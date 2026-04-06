@@ -66,6 +66,16 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="tracker"
+        options={{
+          title: 'Tracker',
+          headerShown: false,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'fitness' : 'fitness-outline'} size={24} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

@@ -243,6 +243,111 @@ export async function processChat(messages, imageBase64 = null) {
   }
 }
 
+// ── Nutrition estimation ──────────────────────────────────────────────────────
+
+const NUTRITION_SYSTEM_PROMPT = `You are a professional nutritionist. Given a list of recipe ingredients and the number of servings, estimate the nutritional content per serving. Return ONLY a JSON object — no markdown, no explanation.
+
+Required format:
+{
+  "calories": <integer per serving>,
+  "protein": <grams per serving, number>,
+  "carbs": <grams per serving, number>,
+  "fat": <grams per serving, number>,
+  "fiber": <grams per serving, number>
+}
+
+Be realistic. Use standard USDA nutritional values as a reference. Round to the nearest whole number for calories and one decimal place for macros.`;
+
+export async function estimateNutrition(ingredients, servings) {
+  logger.info('openai.estimateNutrition', { ingredientCount: ingredients.length, servings });
+  try {
+    const ingredientList = ingredients
+      .map((i) => {
+        const qty = i.quantity != null ? String(i.quantity) : '';
+        const unit = i.unit ? ` ${i.unit}` : '';
+        return `- ${qty}${unit} ${i.name}`.trim();
+      })
+      .join('\n');
+
+    const raw = await callOpenAI(
+      [
+        { role: 'system', content: NUTRITION_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: `Recipe makes ${servings} serving${servings !== 1 ? 's' : ''}.\n\nIngredients:\n${ingredientList}`,
+        },
+      ],
+      { jsonMode: true }
+    );
+
+    let text = raw.trim();
+    const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fence) text = fence[1].trim();
+    const parsed = JSON.parse(text);
+
+    const result = {
+      calories: typeof parsed.calories === 'number' ? Math.round(parsed.calories) : null,
+      protein: typeof parsed.protein === 'number' ? Math.round(parsed.protein * 10) / 10 : null,
+      carbs: typeof parsed.carbs === 'number' ? Math.round(parsed.carbs * 10) / 10 : null,
+      fat: typeof parsed.fat === 'number' ? Math.round(parsed.fat * 10) / 10 : null,
+      fiber: typeof parsed.fiber === 'number' ? Math.round(parsed.fiber * 10) / 10 : null,
+    };
+    logger.info('openai.estimateNutrition.success', { calories: result.calories });
+    return result;
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      logger.error('openai.estimateNutrition.timeout', {});
+      throw new Error('Nutrition estimation timed out.');
+    }
+    logger.error('openai.estimateNutrition.error', { error: err.message });
+    throw err;
+  }
+}
+
+// ── Recipe lightener ──────────────────────────────────────────────────────────
+
+const LIGHTEN_SYSTEM_PROMPT = `You are a culinary nutritionist who specialises in making recipes healthier while preserving their flavour and character. Given a recipe, suggest ingredient substitutions that reduce calories and fat without sacrificing taste.
+
+Return ONLY a JSON object — no markdown, no explanation:
+{
+  "recipe": { <same full recipe structure as input, with substitutions applied> },
+  "changes": [ "Replaced sour cream with Greek yogurt (-120 cal)", "Reduced butter from 4 tbsp to 1 tbsp (-300 cal)" ],
+  "originalCalories": <estimated original calories per serving>,
+  "lightenedCalories": <estimated lightened calories per serving>
+}`;
+
+export async function lightenRecipe(recipe) {
+  logger.info('openai.lightenRecipe', { title: recipe.title });
+  try {
+    const raw = await callOpenAI(
+      [
+        { role: 'system', content: LIGHTEN_SYSTEM_PROMPT },
+        { role: 'user', content: JSON.stringify(recipe) },
+      ],
+      { jsonMode: true, timeoutMs: TIMEOUT_MS }
+    );
+
+    let text = raw.trim();
+    const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fence) text = fence[1].trim();
+    const parsed = JSON.parse(text);
+
+    logger.info('openai.lightenRecipe.success', {
+      title: recipe.title,
+      changes: parsed.changes?.length ?? 0,
+      calorieDelta: (parsed.originalCalories ?? 0) - (parsed.lightenedCalories ?? 0),
+    });
+    return parsed;
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      logger.error('openai.lightenRecipe.timeout', {});
+      throw new Error('Request timed out. Please try again.');
+    }
+    logger.error('openai.lightenRecipe.error', { error: err.message });
+    throw err;
+  }
+}
+
 // Calls DALL-E 3 to generate a minimalist flat cookbook illustration for a
 // recipe step. Returns the hosted image URL from OpenAI's CDN.
 export async function generateStepIllustration(stepText, recipeTitle) {

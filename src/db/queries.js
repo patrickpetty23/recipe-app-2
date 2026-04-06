@@ -630,6 +630,130 @@ export function setSetting(key, value) {
   }
 }
 
+// ── Nutrition ─────────────────────────────────────────────────────────────────
+
+export function saveNutrition(recipeId, nutrition) {
+  logger.info('queries.saveNutrition', { recipeId });
+  try {
+    const db = getDatabase();
+    db.runSync(
+      `INSERT OR REPLACE INTO recipe_nutrition
+         (recipe_id, calories_per_serving, protein_g, carbs_g, fat_g, fiber_g, estimated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      recipeId,
+      nutrition.calories ?? null,
+      nutrition.protein ?? null,
+      nutrition.carbs ?? null,
+      nutrition.fat ?? null,
+      nutrition.fiber ?? null,
+      new Date().toISOString()
+    );
+    logger.info('queries.saveNutrition.success', { recipeId });
+  } catch (err) {
+    logger.error('queries.saveNutrition.error', { recipeId, error: err.message });
+    throw err;
+  }
+}
+
+export function getNutrition(recipeId) {
+  logger.info('queries.getNutrition', { recipeId });
+  try {
+    const db = getDatabase();
+    const row = db.getFirstSync(
+      `SELECT recipe_id, calories_per_serving, protein_g, carbs_g, fat_g, fiber_g, estimated_at
+       FROM recipe_nutrition WHERE recipe_id = ?`,
+      recipeId
+    );
+    if (!row) return null;
+    return {
+      recipeId: row.recipe_id,
+      calories: row.calories_per_serving,
+      protein: row.protein_g,
+      carbs: row.carbs_g,
+      fat: row.fat_g,
+      fiber: row.fiber_g,
+      estimatedAt: row.estimated_at,
+    };
+  } catch (err) {
+    logger.error('queries.getNutrition.error', { recipeId, error: err.message });
+    return null;
+  }
+}
+
+// ── Cook log ──────────────────────────────────────────────────────────────────
+
+export function logCook(entry) {
+  logger.info('queries.logCook', { id: entry.id, recipeId: entry.recipeId });
+  try {
+    const db = getDatabase();
+    db.runSync(
+      `INSERT INTO cook_log
+         (id, recipe_id, recipe_title, servings, calories, protein_g, carbs_g, fat_g, cooked_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      entry.id,
+      entry.recipeId ?? null,
+      entry.recipeTitle,
+      entry.servings,
+      entry.calories ?? null,
+      entry.protein ?? null,
+      entry.carbs ?? null,
+      entry.fat ?? null,
+      entry.cookedAt
+    );
+    logger.info('queries.logCook.success', { id: entry.id });
+  } catch (err) {
+    logger.error('queries.logCook.error', { id: entry.id, error: err.message });
+    throw err;
+  }
+}
+
+export function getCookLogForDate(dateStr) {
+  // dateStr: 'YYYY-MM-DD'
+  logger.info('queries.getCookLogForDate', { dateStr });
+  try {
+    const db = getDatabase();
+    const rows = db.getAllSync(
+      `SELECT id, recipe_id, recipe_title, servings, calories, protein_g, carbs_g, fat_g, cooked_at
+       FROM cook_log
+       WHERE date(cooked_at) = ?
+       ORDER BY cooked_at ASC`,
+      dateStr
+    );
+    return rows.map(mapCookLogRow);
+  } catch (err) {
+    logger.error('queries.getCookLogForDate.error', { dateStr, error: err.message });
+    return [];
+  }
+}
+
+export function getRecentCookLog(limit = 20) {
+  logger.info('queries.getRecentCookLog', { limit });
+  try {
+    const db = getDatabase();
+    const rows = db.getAllSync(
+      `SELECT id, recipe_id, recipe_title, servings, calories, protein_g, carbs_g, fat_g, cooked_at
+       FROM cook_log ORDER BY cooked_at DESC LIMIT ?`,
+      limit
+    );
+    return rows.map(mapCookLogRow);
+  } catch (err) {
+    logger.error('queries.getRecentCookLog.error', { error: err.message });
+    return [];
+  }
+}
+
+export function deleteCookLogEntry(id) {
+  logger.info('queries.deleteCookLogEntry', { id });
+  try {
+    const db = getDatabase();
+    db.runSync('DELETE FROM cook_log WHERE id = ?', id);
+    logger.info('queries.deleteCookLogEntry.success', { id });
+  } catch (err) {
+    logger.error('queries.deleteCookLogEntry.error', { id, error: err.message });
+    throw err;
+  }
+}
+
 // ── Row mappers ───────────────────────────────────────────────────────────────
 
 function mapRecipeRow(row) {
@@ -693,5 +817,19 @@ function mapChatMessageRow(row) {
     imageUri: row.image_uri ?? null,
     createdAt: row.created_at,
     recipeId: row.recipe_id ?? null,
+  };
+}
+
+function mapCookLogRow(row) {
+  return {
+    id: row.id,
+    recipeId: row.recipe_id ?? null,
+    recipeTitle: row.recipe_title,
+    servings: row.servings,
+    calories: row.calories ?? null,
+    protein: row.protein_g ?? null,
+    carbs: row.carbs_g ?? null,
+    fat: row.fat_g ?? null,
+    cookedAt: row.cooked_at,
   };
 }

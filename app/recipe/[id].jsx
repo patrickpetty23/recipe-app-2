@@ -26,12 +26,38 @@ import {
   deleteRecipe,
   addRecipeToList,
   updateStepIllustration,
+  getNutrition,
+  saveNutrition,
+  logCook,
 } from '../../src/db/queries';
 import { scaleIngredients } from '../../src/utils/scaler';
-import { generateStepIllustration } from '../../src/services/openai';
+import { generateStepIllustration, estimateNutrition, lightenRecipe } from '../../src/services/openai';
 import { logger } from '../../src/utils/logger';
+import * as Crypto from 'expo-crypto';
 
 const HERO_HEIGHT = 250;
+
+function MacroBar({ label, grams, color, max }) {
+  if (grams == null) return null;
+  const pct = Math.min(1, grams / max);
+  return (
+    <View style={macroStyles.row}>
+      <Text style={macroStyles.label}>{label}</Text>
+      <View style={macroStyles.track}>
+        <View style={[macroStyles.fill, { width: `${Math.round(pct * 100)}%`, backgroundColor: color }]} />
+      </View>
+      <Text style={macroStyles.value}>{grams}g</Text>
+    </View>
+  );
+}
+
+const macroStyles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  label: { width: 52, fontSize: 12, fontWeight: '600', color: '#6B4C2A' },
+  track: { flex: 1, height: 7, borderRadius: 4, backgroundColor: '#F0E0D0', overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 4 },
+  value: { width: 36, fontSize: 12, color: '#B38B6D', textAlign: 'right' },
+});
 
 export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -50,6 +76,11 @@ export default function RecipeDetailScreen() {
   const [checked, setChecked] = useState({});
   // per-step illustration loading
   const [generatingStep, setGeneratingStep] = useState(null);
+  // nutrition
+  const [nutrition, setNutrition] = useState(null);
+  const [estimatingNutrition, setEstimatingNutrition] = useState(false);
+  // lightening
+  const [lightening, setLightening] = useState(false);
 
   // Animated values for checked items
   const checkAnims = useRef(new Map()).current;
@@ -77,6 +108,9 @@ export default function RecipeDetailScreen() {
       setLastServings(data.servings || 1);
       setCurrentServings(data.servings || 1);
       setChecked({});
+      // Load nutrition
+      const ntr = getNutrition(id);
+      setNutrition(ntr);
       logger.info('recipeDetail.load', {
         id,
         ingredientCount: (data.ingredients || []).length,
@@ -197,6 +231,111 @@ export default function RecipeDetailScreen() {
       Alert.alert('Generation Failed', err.message);
     } finally {
       setGeneratingStep(null);
+    }
+  }
+
+  // ── Nutrition estimation ──────────────────────────────────────────────────────
+
+  async function handleEstimateNutrition() {
+    if (estimatingNutrition || ingredients.length === 0) return;
+    setEstimatingNutrition(true);
+    try {
+      const result = await estimateNutrition(ingredients, currentServings);
+      saveNutrition(id, result);
+      setNutrition({ ...result, recipeId: id });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      logger.info('recipeDetail.estimateNutrition.success', { id });
+    } catch (err) {
+      logger.error('recipeDetail.estimateNutrition.error', { id, error: err.message });
+      Alert.alert('Estimation Failed', err.message);
+    } finally {
+      setEstimatingNutrition(false);
+    }
+  }
+
+  // ── Log meal ──────────────────────────────────────────────────────────────────
+
+  function handleLogMeal() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const scaledCalories = nutrition
+      ? Math.round(nutrition.calories * currentServings)
+      : null;
+    Alert.alert(
+      'Log Meal',
+      `Log ${currentServings} serving${currentServings !== 1 ? 's' : ''} of ${recipe.title}?${scaledCalories ? `\n${scaledCalories} kcal` : ''}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Log It',
+          onPress: () => {
+            try {
+              logCook({
+                id: Crypto.randomUUID(),
+                recipeId: id,
+                recipeTitle: recipe.title,
+                servings: currentServings,
+                calories: nutrition ? Math.round(nutrition.calories * currentServings) : null,
+                protein: nutrition ? Math.round(nutrition.protein * currentServings * 10) / 10 : null,
+                carbs: nutrition ? Math.round(nutrition.carbs * currentServings * 10) / 10 : null,
+                fat: nutrition ? Math.round(nutrition.fat * currentServings * 10) / 10 : null,
+                cookedAt: new Date().toISOString(),
+              });
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              Alert.alert('Logged!', 'Added to your nutrition tracker.');
+              logger.info('recipeDetail.logMeal', { id });
+            } catch (err) {
+              logger.error('recipeDetail.logMeal.error', { id, error: err.message });
+            }
+          },
+        },
+      ]
+    );
+  }
+
+  // ── Make it lighter ───────────────────────────────────────────────────────────
+
+  async function handleLighten() {
+    if (lightening) return;
+    setLightening(true);
+    try {
+      const result = await lightenRecipe({
+        title: recipe.title,
+        servings: currentServings,
+        cuisine: recipe.cuisine,
+        prepTime: recipe.prepTime,
+        cookTime: recipe.cookTime,
+        ingredients,
+        steps,
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // Show the changes summary then navigate to editor with lightened recipe
+      const changesSummary = (result.changes ?? []).slice(0, 3).join('\n');
+      const calDelta = (result.originalCalories ?? 0) - (result.lightenedCalories ?? 0);
+      Alert.alert(
+        `Save ${calDelta > 0 ? `−${calDelta} kcal` : 'lighter'} version?`,
+        changesSummary || 'Ingredient substitutions applied.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Open in Editor',
+            onPress: () =>
+              router.push({
+                pathname: '/recipe/editor',
+                params: {
+                  recipeData: JSON.stringify({ ...result.recipe, title: `${result.recipe.title ?? recipe.title} (Lighter)` }),
+                  sourceType: recipe.sourceType ?? 'chat',
+                  imageUri: recipe.imageUri ?? '',
+                },
+              }),
+          },
+        ]
+      );
+      logger.info('recipeDetail.lighten.success', { id, calDelta });
+    } catch (err) {
+      logger.error('recipeDetail.lighten.error', { id, error: err.message });
+      Alert.alert('Failed', err.message);
+    } finally {
+      setLightening(false);
     }
   }
 
@@ -405,6 +544,60 @@ export default function RecipeDetailScreen() {
               <Text style={styles.cuisineBadgeText}>{recipe.cuisine}</Text>
             </View>
           ) : null}
+        </View>
+
+        {/* ── Nutrition panel ── */}
+        <View style={styles.nutritionCard}>
+          <View style={styles.nutritionHeader}>
+            <Text style={styles.nutritionTitle}>Nutrition</Text>
+            <Text style={styles.nutritionSub}>per serving · {currentServings} serving{currentServings !== 1 ? 's' : ''}</Text>
+          </View>
+
+          {nutrition ? (
+            <>
+              <Text style={styles.calorieNumber}>{nutrition.calories ?? '—'} <Text style={styles.calorieUnit}>kcal</Text></Text>
+              <View style={styles.macroRows}>
+                <MacroBar label="Protein" grams={nutrition.protein} color="#FF6B35" max={50} />
+                <MacroBar label="Carbs" grams={nutrition.carbs} color="#F59E0B" max={100} />
+                <MacroBar label="Fat" grams={nutrition.fat} color="#6B4C2A" max={40} />
+                {nutrition.fiber != null && <MacroBar label="Fiber" grams={nutrition.fiber} color="#34C759" max={15} />}
+              </View>
+              <View style={styles.nutritionActions}>
+                <TouchableOpacity style={styles.logMealBtn} onPress={handleLogMeal} activeOpacity={0.85}>
+                  <Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
+                  <Text style={styles.logMealText}>Log Meal</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.lightenBtn, lightening && styles.lightenBtnBusy]}
+                  onPress={handleLighten}
+                  disabled={lightening}
+                  activeOpacity={0.85}
+                >
+                  {lightening
+                    ? <ActivityIndicator size="small" color="#FF6B35" />
+                    : <><Ionicons name="leaf-outline" size={16} color="#FF6B35" /><Text style={styles.lightenText}>Make it Lighter</Text></>
+                  }
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
+            <View style={styles.nutritionEmpty}>
+              {estimatingNutrition ? (
+                <>
+                  <ActivityIndicator size="small" color="#FF6B35" />
+                  <Text style={styles.nutritionEmptyText}>Estimating nutrition…</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.nutritionEmptyText}>Nutrition not estimated yet</Text>
+                  <TouchableOpacity style={styles.estimateBtn} onPress={handleEstimateNutrition}>
+                    <Ionicons name="sparkles-outline" size={14} color="#FF6B35" />
+                    <Text style={styles.estimateBtnText}>Estimate with AI</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          )}
         </View>
 
         {/* ── Tabs ── */}
@@ -986,6 +1179,113 @@ const styles = StyleSheet.create({
   },
   generateBtnText: {
     fontSize: 13,
+    fontWeight: '600',
+    color: '#FF6B35',
+  },
+
+  // ── Nutrition card ────────────────────────────────────────────────────────────
+  nutritionCard: {
+    backgroundColor: '#fff',
+    marginHorizontal: 0,
+    padding: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#F0E0D0',
+  },
+  nutritionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginBottom: 10,
+  },
+  nutritionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2D1B00',
+  },
+  nutritionSub: {
+    fontSize: 11,
+    color: '#B38B6D',
+  },
+  calorieNumber: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: '#2D1B00',
+    marginBottom: 12,
+  },
+  calorieUnit: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#B38B6D',
+  },
+  macroRows: {
+    marginBottom: 14,
+  },
+  nutritionActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  logMealBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#FF6B35',
+    borderRadius: 12,
+    paddingVertical: 10,
+    elevation: 2,
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  logMealText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  lightenBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#FFF0E8',
+    borderRadius: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#F0E0D0',
+  },
+  lightenBtnBusy: { opacity: 0.6 },
+  lightenText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FF6B35',
+  },
+  nutritionEmpty: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 8,
+  },
+  nutritionEmptyText: {
+    fontSize: 13,
+    color: '#B38B6D',
+    flex: 1,
+  },
+  estimateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFF0E8',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#F0E0D0',
+  },
+  estimateBtnText: {
+    fontSize: 12,
     fontWeight: '600',
     color: '#FF6B35',
   },
