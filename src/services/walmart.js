@@ -7,11 +7,13 @@ const searchCache = {};
 
 function getCredentials() {
   const consumerId = process.env.EXPO_PUBLIC_WALMART_CLIENT_ID || process.env.WALMART_CLIENT_ID;
-  const privateKeyPem = process.env.EXPO_PUBLIC_WALMART_PRIVATE_KEY || process.env.WALMART_PRIVATE_KEY;
+  const rawPem = process.env.EXPO_PUBLIC_WALMART_PRIVATE_KEY || process.env.WALMART_PRIVATE_KEY;
   const keyVersion = process.env.EXPO_PUBLIC_WALMART_KEY_VERSION || process.env.WALMART_KEY_VERSION || '1';
-  if (!consumerId || !privateKeyPem) {
+  if (!consumerId || !rawPem) {
     return null;
   }
+  // .env stores multiline PEM as a single line with literal \n escapes — restore real newlines
+  const privateKeyPem = rawPem.replace(/\\n/g, '\n');
   return { consumerId, privateKeyPem, keyVersion };
 }
 
@@ -21,14 +23,37 @@ export function isWalmartConfigured() {
 
 async function generateAuthHeaders(consumerId, privateKeyPem, keyVersion) {
   const timestamp = Date.now().toString();
-  const sortedHashString = `${consumerId}\n${timestamp}\n${keyVersion}\n`;
+  const message = `${consumerId}\n${timestamp}\n${keyVersion}\n`;
 
-  const forge = require('node-forge');
-  const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
-  const md = forge.md.sha256.create();
-  md.update(sortedHashString, 'utf8');
-  const signatureBytes = privateKey.sign(md);
-  const signature = forge.util.encode64(signatureBytes);
+  // Strip PEM headers/footers and whitespace, leaving raw base64
+  const b64 = privateKeyPem
+    .replace(/-----BEGIN PRIVATE KEY-----/, '')
+    .replace(/-----END PRIVATE KEY-----/, '')
+    .replace(/\s+/g, '');
+
+  // Decode base64 → ArrayBuffer (PKCS#8 DER)
+  const binaryStr = atob(b64);
+  const keyBytes = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) keyBytes[i] = binaryStr.charCodeAt(i);
+
+  // Import key using native WebCrypto (available on RN 0.72+ / Hermes)
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8',
+    keyBytes.buffer,
+    { name: 'RSASSA-PKCS1-v1_5', hash: { name: 'SHA-256' } },
+    false,
+    ['sign']
+  );
+
+  // Sign
+  const msgBytes = new TextEncoder().encode(message);
+  const sigBuffer = await crypto.subtle.sign({ name: 'RSASSA-PKCS1-v1_5' }, cryptoKey, msgBytes);
+
+  // Encode signature as base64
+  const sigBytes = new Uint8Array(sigBuffer);
+  let binary = '';
+  for (let i = 0; i < sigBytes.length; i++) binary += String.fromCharCode(sigBytes[i]);
+  const signature = btoa(binary);
 
   return {
     'WM_SEC.AUTH_SIGNATURE': signature,
