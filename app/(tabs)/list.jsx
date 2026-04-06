@@ -105,6 +105,7 @@ export default function ShoppingListScreen() {
   function handleRemoveItem(item) {
     try {
       removeIngredientFromList(item.id);
+      delete checkAnimations[item.id];
       setItems((prev) => prev.filter((i) => i.id !== item.id));
       setWalmartResults((prev) => {
         const next = { ...prev };
@@ -244,6 +245,9 @@ export default function ShoppingListScreen() {
           onPress: () => {
             try {
               clearShoppingList();
+              for (const item of items) {
+                delete checkAnimations[item.id];
+              }
               setItems([]);
               setWalmartResults({});
               logger.info('shoppingList.clearList', {});
