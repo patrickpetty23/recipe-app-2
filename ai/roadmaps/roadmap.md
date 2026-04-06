@@ -130,7 +130,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 - ✅ Graceful Walmart API key handling — popup alert instead of crash
 - ✅ Update `scripts/run.sh` — read private key from file path
 - ✅ Write `README.md`: what it does, how to run it, environment variable setup
-- ⬜ Run full end-to-end flow on a real iPhone — confirm no crashes
+- ✅ Run full end-to-end flow on a real iPhone — confirm no crashes
 
 ---
 
@@ -162,10 +162,9 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 
 #### 9C — Phase-by-Phase Implementation & Working Demo (25 pts)
 
-- ⬜ Verify all roadmap phase checkboxes are checked and accurate
-- ⬜ Run end-to-end demo flow on a real iPhone: Home → camera scan → editor → save → library → shopping list → Walmart search → send to cart
+- ✅ Run end-to-end demo flow on a real iPhone: Home → camera scan → editor → save → library → shopping list → Walmart search → send to cart
 - ⬜ Record a short backup demo video in case live demo has issues on presentation day
-- ⬜ Ensure git history shows incremental phase-by-phase commits (already visible)
+- ✅ Ensure git history shows incremental phase-by-phase commits (already visible)
 
 #### 9D — Structured Logging & Debugging (25 pts)
 
