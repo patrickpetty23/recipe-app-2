@@ -29,6 +29,7 @@ recipe-scanner/
 │   │   ├── [id].jsx               # Recipe detail — hero, nutrition, tabs, cooking
 │   │   ├── cooking.jsx            # Cooking mode — TTS, swipe steps, timers
 │   │   └── editor.jsx             # Recipe editor — ingredients, steps, illustrations
+│   ├── onboarding.jsx             # First-launch onboarding screen (sets hasSeenOnboarding)
 │   └── _layout.jsx
 ├── src/
 │   ├── services/
@@ -43,11 +44,9 @@ recipe-scanner/
 │   │   ├── logger.js              # Structured JSON logger
 │   │   └── scaler.js              # Serving size scaling math
 │   └── components/
-│       ├── IngredientRow.jsx
-│       ├── RecipeCard.jsx
-│       ├── ShoppingItem.jsx
 │       ├── EmptyState.jsx
 │       ├── SkeletonLoader.jsx
+│       ├── SwipeableRow.jsx
 │       └── WalmartProductCard.jsx
 ├── presentation/                  # Capstone presentation materials
 │   ├── slides.html                # 17-slide HTML deck
@@ -302,26 +301,18 @@ npx expo start --ios
 
 ## Environment Variables (.testEnvVars)
 ```bash
-export OPENAI_API_KEY="sk-..."
-export WALMART_CLIENT_ID="..."
-export WALMART_CLIENT_SECRET="..."
+export EXPO_PUBLIC_OPENAI_API_KEY="sk-..."
+export EXPO_PUBLIC_WALMART_CLIENT_ID="..."
+export EXPO_PUBLIC_WALMART_KEY_VERSION="1"
+export EXPO_PUBLIC_WALMART_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n..."
 export LOG_LEVEL="debug"
 ```
 
 ## Navigation Flow
 ```
-Tab: Home
-  └─ "Add Recipe" button → Modal (Camera / Photos / URL / PDF) → Processing → Ingredient Editor → Save → Library
+Onboarding (first launch only)
+  └─ Welcome → finish → Home tab
 
-Tab: Library
-  └─ Recipe list → Recipe detail → Edit ingredients → Add to shopping list
-
-Tab: Shopping List
-  └─ Combined ingredients → Check off items → Walmart search per ingredient → Send to Walmart cart
-```
-
-## Navigation Flow (current)
-```
 Tab: Chat
   └─ iMessage UI → camera/URL/text → GPT-4o → recipe card → Save → Library
 
@@ -331,7 +322,7 @@ Tab: Recipes (Library)
                                  → Log Meal → Tracker
 
 Tab: Shopping List
-  └─ Combined ingredients → check off → Walmart search → Open cart link
+  └─ Combined ingredients (merged by name+unit) → check off → Walmart search → Open cart link
 
 Tab: Tracker
   └─ Calorie ring + macros → Today's meals → Recent history → Edit goals

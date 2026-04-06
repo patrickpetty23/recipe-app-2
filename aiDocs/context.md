@@ -10,7 +10,7 @@ An iOS mobile app (React Native + Expo) that lets users scan physical cookbook r
 - **Coding Style**: `aiDocs/coding-style.md` — conventions AI must follow (logging rules, error handling, file naming)
 - **Changelog**: `aiDocs/changelog.md` — day-by-day record of what changed and why
 - **Roadmap**: `ai/roadmaps/roadmap.md` — phase-by-phase checklist with completion tracking
-- **Plans**: `ai/plans/phase1-plan.md` through `phase8-plan.md` — intent, approach, and key decisions for each phase before implementation
+- **Plans**: `ai/plans/phase1-plan.md` through `phase9-plan.md` — intent, approach, and key decisions for each phase before implementation
 
 ## Tech Stack
 - **Framework**: React Native (Expo SDK 54)
@@ -31,7 +31,7 @@ An iOS mobile app (React Native + Expo) that lets users scan physical cookbook r
 - **GPT-4o Vision handles OCR.** No separate OCR library — image goes straight to GPT-4o.
 - **All scripts return JSON to stdout.** Errors go to stderr. Exit codes are mandatory.
 - **Structured logging** is used throughout — never console.log in production code.
-- **Secrets live in `.env`** (gitignored). API key is `EXPO_PUBLIC_OPENAI_API_KEY`.
+- **Secrets live in `.testEnvVars`** (gitignored). Use `source .testEnvVars` before running scripts. All keys use the `EXPO_PUBLIC_` prefix so they're accessible in React Native.
 - **AI tasks are non-blocking.** Nutrition estimation, thumbnail generation, and step illustrations all fire in the background after save — user navigates immediately.
 
 ## Current Focus

@@ -5,6 +5,8 @@ A working iOS app that demonstrates the full core loop: **scan or import a recip
 
 The MVP exists to prove the concept works and deliver a compelling demo within 6 days.
 
+> **Note (v1.3):** The delivered app significantly exceeds this MVP scope. The `feature/android-polish` branch added: iMessage-style chat tab, AI recipe thumbnails (DALL-E 3), step illustrations (DALL-E 2), cooking mode with TTS and timers, nutrition tracking (GPT-4o macros + cook log), Tracker tab, Collections, onboarding screen, and Android support. The MVP definition below reflects the original scoped deliverable; `aiDocs/prd.md` documents the full current product.
+
 ## What IS in the MVP
 
 ### Input Methods
@@ -33,11 +35,11 @@ The MVP exists to prove the concept works and deliver a compelling demo within 6
 |---------|-----------|
 | User accounts / cloud sync | Out of scope, adds complexity |
 | Unit conversion | Rabbit hole, not core to the demo |
-| Duplicate ingredient merging | P1, not blocking |
+| ~~Duplicate ingredient merging~~ | ~~P1, not blocking~~ — shipped: shopping list now merges identical ingredients by name+unit and sums quantities |
 | Aisle/category grouping | P2 |
 | Recipe notes or ratings | P2 |
 | Share list via share sheet | P2 |
-| Android testing | Time constraint |
+| ~~Android testing~~ | ~~Time constraint~~ — Android verified working via Expo Go |
 | Instacart / Amazon integration | Walmart is the differentiator |
 
 ## MVP Success Criteria

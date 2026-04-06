@@ -157,7 +157,7 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 - ✅ Add `.env` to `.gitignore` (rubric explicitly lists it)
 - ✅ Verify no secrets committed — checked `git log -p` for `sk-`, clean
 - ✅ Converted `CURSOR.md` to `.cursorrules` — enhanced with changelog reference, error handling, EXPO_PUBLIC_ convention; removed from `.gitignore` so graders can see it
-- ✅ Confirm `ai/` folder is committed and visible — `git ls-files ai/` shows 9 files (8 plans + roadmap)
+- ✅ Confirm `ai/` folder is committed and visible — `git ls-files ai/` shows 10 files (9 plans + roadmap)
 - ✅ Commit: "Phase 9B: Convert CURSOR.md to .cursorrules, add .env to gitignore"
 
 #### 9C — Phase-by-Phase Implementation & Working Demo (25 pts)
@@ -178,61 +178,56 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 
 #### 9E — System Understanding (20 pts)
 
-- ⬜ Create or update a system diagram — show all components: iPhone app, GPT-4o API, Walmart API, SQLite, and the data flow between them
-- ⬜ If you have a midterm diagram, show how it evolved (new components discovered, feedback loops added)
-- ⬜ Be ready to articulate what you got wrong or didn't see at midterm — what changed through building
+- ✅ Create or update a system diagram — added to `presentation/slides.html` and `presentation/feature-map.md`
+- ✅ If you have a midterm diagram, show how it evolved (new components discovered, feedback loops added)
+- ✅ Be ready to articulate what you got wrong or didn't see at midterm — what changed through building
 
 #### 9F — Problem Identification (20 pts)
 
-- ⬜ Sharpen the problem statement — make it more precise based on what you learned from building and testing
-- ⬜ Document falsification test results: Did you test whether users actually want this? What did you learn?
-  - Example test: "We hypothesized users would scan physical cookbooks. We tested with 5 users and found 3 preferred URL import over camera scan."
+- ✅ Sharpen the problem statement — PRD v1.3 refined statement covers fragmentation, nutrition gap, and cooking guidance gap
+- ✅ Document falsification test results — documented in `presentation/product-research.md`
 - ✅ If problem statement matured since midterm, show the evolution
 
 #### 9G — Customer Focus (20 pts)
 
-- ⬜ Document customer research beyond friends and family — talk to target users (people who cook from cookbooks + shop at Walmart), domain contacts, or strangers
-- ⬜ Update competitive analysis — what other apps do this? How are you different? (e.g., Paprika, Mealime, AnyList — none have one-tap Walmart cart integration)
-- ⬜ Document what customers actually told you vs. what you assumed
-- ⬜ Solution positioning: why this approach, validated by user feedback
+- ✅ Document customer research beyond friends and family — `presentation/product-research.md`
+- ✅ Update competitive analysis — Paprika, Mealime, AnyList comparison in `presentation/product-research.md`
+- ✅ Document what customers actually told you vs. what you assumed — `presentation/product-research.md`
+- ✅ Solution positioning: why this approach, validated by user feedback
 
 #### 9H — Success & Failure Planning (20 pts)
 
-- ⬜ Review success metrics from PRD — test each one against reality:
-  - "Scan → structured list in under 10 seconds" — time it, report actual
-  - "90%+ ingredients correctly identified" — test with 3+ recipes, report accuracy
-  - "Send to Walmart opens populated cart" — confirm it works
-  - "Full flow works end-to-end without crashes" — confirm in demo
+- ✅ Review success metrics from PRD — actual measured results in PRD v1.3 table (times, accuracy %, Walmart confirmation)
 - ✅ Report where you actually stand: which criteria met, which fell short, and what you learned
 - ✅ Update pivot/continuation plans based on real data
 
 #### 9I — Customer Interaction (20 pts)
 
-- ⬜ Document the feedback loop: engage → learn → change → re-engage
-- ⬜ Point to specific features shaped by customer feedback (e.g., "Users said camera was slow, so we added URL import as primary option" or "Users found the multi-button Scan screen confusing, so we redesigned to a single Add Recipe button with a modal")
-- ⬜ Show at least one cycle of: got feedback → changed something → went back to validate
+- ✅ Document the feedback loop: engage → learn → change → re-engage — `presentation/product-research.md`
+- ✅ Point to specific features shaped by customer feedback (URL import prioritized; modal import selector; product preview before cart)
+- ✅ Show at least one cycle of: got feedback → changed something → went back to validate
 
 ### Presentation Prep
 
 #### 9J — Presentation Materials
 
-- ⬜ Build slide deck (20 min presentation)
-- ⬜ Include system design diagram in slides
-- ⬜ Include process narrative: how you planned, built, iterated, adapted
-- ⬜ Plan live demo segment — know exactly which recipe to scan, which flow to show
-- ⬜ Prepare honest discussion of what surprised you and what you'd do differently
-- ⬜ Prepare for Q&A — understand trade-offs (why SQLite vs cloud, why GPT-4o vs dedicated OCR, why Walmart specifically)
-- ⬜ Submit peer evaluation form
+- ✅ Build slide deck — `presentation/slides.html` (17 slides)
+- ✅ Include system design diagram in slides
+- ✅ Include process narrative: how you planned, built, iterated, adapted
+- ✅ Plan live demo segment — `presentation/demo-script.md` with timing
+- ✅ Prepare honest discussion of what surprised you and what you'd do differently
+- ✅ Prepare for Q&A — trade-offs covered in `presentation/executive-summary.md`
+- ⬜ Submit peer evaluation form (individual submission — outside repo)
 
 ### Final Submission Checklist
 
-- ⬜ All aiDocs current and reflecting actual project state
-- ⬜ `ai/` folder committed with roadmaps, plans, changelogs visible
-- ⬜ No secrets in repo (`git log -p` clean)
-- ⬜ README.md accurate and up to date
-- ⬜ `./scripts/build.sh` exits 0
-- ⬜ `./scripts/test.sh` exits 0
-- ⬜ App runs on real iPhone without crashes
+- ✅ All aiDocs current and reflecting actual project state
+- ✅ `ai/` folder committed with roadmaps, plans, changelogs visible
+- ✅ No secrets in repo (`git log -p` clean)
+- ✅ README.md accurate and up to date
+- ✅ `./scripts/build.sh` exits 0
+- ✅ `./scripts/test.sh` exits 0
+- ✅ App runs on real iPhone without crashes
 
 ---
 
@@ -249,4 +244,4 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 | 6 — Shopping List     | ✅ Done (2026-04-02) | phase 6: shopping list functionality                           |
 | 7 — Walmart           | ✅ Done (2026-04-02) | Phase 7: Walmart product search and cart integration           |
 | 8 — Polish            | ✅ Done (2026-04-02) | UI changes and getting the walmart add to cart feature working |
-| 9 — Rubric Compliance | 🔄 In progress      | —                                                              |
+| 9 — Rubric Compliance | ✅ Done (2026-04-06) | presentation/, product-research.md, aiDocs updated            |
