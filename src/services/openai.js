@@ -1,8 +1,7 @@
 import { logger } from '../utils/logger';
-import * as FileSystem from 'expo-file-system';
 
 const CHAT_API_URL = 'https://api.openai.com/v1/chat/completions';
-const HF_IMAGE_URL = 'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell';
+const IMAGE_API_URL = 'https://api.openai.com/v1/images/generations';
 const MODEL = 'gpt-4o';
 const TIMEOUT_MS = 45000;
 const ILLUSTRATION_TIMEOUT_MS = 60000;
@@ -46,48 +45,34 @@ function getApiKey() {
   return key;
 }
 
-function getHfApiKey() {
-  const key = process.env.EXPO_PUBLIC_HF_API_KEY || process.env.HF_API_KEY;
-  if (!key) throw new Error('HF_API_KEY is not set');
-  return key;
-}
-
-const ILLUSTRATIONS_DIR = FileSystem.documentDirectory + 'illustrations/';
-
-async function hfGenerateImage(prompt) {
+async function dalleGenerateImage(prompt, size = '1024x1024') {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ILLUSTRATION_TIMEOUT_MS);
   try {
-    const response = await fetch(HF_IMAGE_URL, {
+    const response = await fetch(IMAGE_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${getHfApiKey()}`,
+        Authorization: `Bearer ${getApiKey()}`,
       },
-      body: JSON.stringify({ inputs: prompt }),
+      body: JSON.stringify({
+        model: 'dall-e-3',
+        prompt,
+        n: 1,
+        size,
+        style: 'natural',
+        response_format: 'url',
+      }),
       signal: controller.signal,
     });
     if (!response.ok) {
       const errBody = await response.text();
-      throw new Error(`HuggingFace API error ${response.status}: ${errBody}`);
+      throw new Error(`DALL-E API error ${response.status}: ${errBody}`);
     }
-
-    const blob = await response.blob();
-    const base64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-
-    const dirInfo = await FileSystem.getInfoAsync(ILLUSTRATIONS_DIR);
-    if (!dirInfo.exists) {
-      await FileSystem.makeDirectoryAsync(ILLUSTRATIONS_DIR, { intermediates: true });
-    }
-
-    const localUri = ILLUSTRATIONS_DIR + Date.now() + '_' + Math.random().toString(36).slice(2) + '.jpg';
-    await FileSystem.writeAsStringAsync(localUri, base64, { encoding: FileSystem.EncodingType.Base64 });
-    return localUri;
+    const data = await response.json();
+    const url = data?.data?.[0]?.url;
+    if (!url) throw new Error('DALL-E returned no image URL');
+    return url;
   } catch (err) {
     if (err.name === 'AbortError') throw new Error('Image generation timed out.');
     throw err;
@@ -427,7 +412,7 @@ export async function generateStepIllustration(stepText, recipeTitle, allSteps, 
   const totalSteps = (allSteps || []).length || 1;
   const prompt = buildIllustrationPrompt(stepText, stepNumber, totalSteps, recipeTitle, ingredients);
   try {
-    const url = await hfGenerateImage(prompt);
+    const url = await dalleGenerateImage(prompt);
     logger.info('openai.generateStepIllustration.success', { recipeTitle });
     return url;
   } catch (err) {
@@ -450,7 +435,7 @@ export async function generateAllStepIllustrations(steps, recipeTitle, ingredien
         recipeTitle,
         ingredients
       );
-      return hfGenerateImage(prompt).then((url) => ({ stepId: step.id, url }));
+      return dalleGenerateImage(prompt).then((url) => ({ stepId: step.id, url }));
     })
   );
   const fulfilled = settled.filter((r) => r.status === 'fulfilled').map((r) => r.value);
@@ -480,7 +465,7 @@ export async function generateRecipeThumbnail(title, cuisine, ingredients) {
     `restaurant-quality presentation. No text, no watermarks.`;
 
   try {
-    const url = await hfGenerateImage(prompt);
+    const url = await dalleGenerateImage(prompt, '1792x1024');
     logger.info('openai.generateRecipeThumbnail.success', { title });
     return url;
   } catch (err) {
