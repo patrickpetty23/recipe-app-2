@@ -14,6 +14,7 @@ import {
   Image,
   Modal,
   Pressable,
+  Linking,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -337,12 +338,28 @@ export default function ChatScreen() {
   async function handleCameraAttach() {
     setShowAttachSheet(false);
     try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      const { status, canAskAgain } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Camera access is needed to attach photos.');
+        if (!canAskAgain) {
+          Alert.alert(
+            'Camera Access Blocked',
+            'Enable camera access in your device Settings to attach photos.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Open Settings', onPress: () => Linking.openSettings() },
+            ]
+          );
+        } else {
+          Alert.alert('Permission Required', 'Camera access is needed to attach photos.');
+        }
         return;
       }
-      const result = await ImagePicker.launchCameraAsync({ base64: true, quality: 0.7 });
+      const result = await ImagePicker.launchCameraAsync({
+        base64: true,
+        quality: 0.6,
+        maxWidth: 1280,
+        maxHeight: 1280,
+      });
       if (!result.canceled) {
         setAttachedImage({ uri: result.assets[0].uri, base64: result.assets[0].base64 });
       }
@@ -357,7 +374,9 @@ export default function ChatScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         base64: true,
-        quality: 0.7,
+        quality: 0.6,
+        maxWidth: 1280,
+        maxHeight: 1280,
       });
       if (!result.canceled) {
         setAttachedImage({ uri: result.assets[0].uri, base64: result.assets[0].base64 });

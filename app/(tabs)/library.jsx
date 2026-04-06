@@ -97,6 +97,7 @@ export default function LibraryScreen() {
       });
     } catch (err) {
       logger.error('library.loadAll.error', { error: err.message });
+      Alert.alert('Error', 'Could not load your recipes. Please restart the app.');
     } finally {
       setLoading(false);
       setRefreshing(false);

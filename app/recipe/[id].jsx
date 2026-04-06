@@ -13,6 +13,7 @@ import {
   Platform,
   ActivityIndicator,
   Animated,
+  Linking,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -571,6 +572,15 @@ export default function RecipeDetailScreen() {
               <Text style={styles.cuisineBadgeText}>{recipe.cuisine}</Text>
             </View>
           ) : null}
+          {recipe.sourceUrl ? (
+            <TouchableOpacity
+              style={styles.sourceBtn}
+              onPress={() => Linking.openURL(recipe.sourceUrl)}
+            >
+              <Ionicons name="link-outline" size={13} color="#007AFF" />
+              <Text style={styles.sourceBtnText}>View Source</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {/* ── Nutrition panel ── */}
@@ -1005,6 +1015,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#FF6B35',
+  },
+  sourceBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
+  sourceBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#007AFF',
   },
 
   // ── Tabs ──────────────────────────────────────────────────────────────────────

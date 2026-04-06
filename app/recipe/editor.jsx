@@ -155,6 +155,12 @@ export default function EditorScreen() {
 
   async function handleSave() {
     if (saving) return;
+    const trimmedTitle = title.trim();
+    const validIngredients = ingredients.filter((ing) => ing.name && ing.name.trim().length > 0);
+    if (!trimmedTitle && validIngredients.length === 0) {
+      Alert.alert('Nothing to Save', 'Add a title or at least one ingredient before saving.');
+      return;
+    }
     setSaving(true);
     try {
       const recipeId = Crypto.randomUUID();
@@ -163,7 +169,7 @@ export default function EditorScreen() {
 
       const recipe = {
         id: recipeId,
-        title: title.trim() || 'New Recipe',
+        title: trimmedTitle || 'New Recipe',
         sourceType: sourceType || 'camera',
         sourceUri: null,
         sourceUrl: parsed.sourceUrl ?? null,
@@ -177,7 +183,7 @@ export default function EditorScreen() {
         updatedAt: now,
       };
 
-      const ingredientsToSave = ingredients.map((ing, i) => ({
+      const ingredientsToSave = validIngredients.map((ing, i) => ({
         id: Crypto.randomUUID(),
         recipeId,
         name: ing.name,

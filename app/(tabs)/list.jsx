@@ -155,25 +155,31 @@ export default function ShoppingListScreen() {
     setBulkSearching(true);
     const unsearched = items.filter((i) => !walmartResults[i.id]);
     logger.info('shoppingList.bulkSearch', { count: unsearched.length });
-    for (const item of unsearched) {
-      setSearchingIds((prev) => ({ ...prev, [item.id]: true }));
-      try {
-        const product = await searchProduct(item.name);
-        setWalmartResults((prev) => ({
-          ...prev,
-          [item.id]: product || { noMatch: true },
-        }));
-      } catch (err) {
-        if (err.code === 'WALMART_NOT_CONFIGURED') {
-          showNotConfiguredAlert();
-          break;
+    setSearchingIds((prev) => {
+      const next = { ...prev };
+      unsearched.forEach((i) => { next[i.id] = true; });
+      return next;
+    });
+    await Promise.allSettled(
+      unsearched.map(async (item) => {
+        try {
+          const product = await searchProduct(item.name);
+          setWalmartResults((prev) => ({
+            ...prev,
+            [item.id]: product || { noMatch: true },
+          }));
+        } catch (err) {
+          if (err.code === 'WALMART_NOT_CONFIGURED') {
+            showNotConfiguredAlert();
+            return;
+          }
+          logger.error('shoppingList.bulkSearch.error', { id: item.id, error: err.message });
+          setWalmartResults((prev) => ({ ...prev, [item.id]: { noMatch: true } }));
+        } finally {
+          setSearchingIds((prev) => ({ ...prev, [item.id]: false }));
         }
-        logger.error('shoppingList.bulkSearch.error', { id: item.id, error: err.message });
-        setWalmartResults((prev) => ({ ...prev, [item.id]: { noMatch: true } }));
-      } finally {
-        setSearchingIds((prev) => ({ ...prev, [item.id]: false }));
-      }
-    }
+      })
+    );
     setBulkSearching(false);
   }
 
