@@ -1,22 +1,22 @@
 # Phase 3 Plan — GPT-4o Integration
 
-## Intent
-Build a reliable, error-tolerant OpenAI service layer that converts both images and raw text into structured ingredient arrays. This is the core intelligence of the app — everything else is UI around it.
+## Goal
+App can take a base64 image or raw text, send it to GPT-4o, and return a clean `Ingredient[]` array.
 
 ## Approach
-Two entry points: `parseImageIngredients(base64Image)` for Vision and `parseTextIngredients(rawText)` for scraped/extracted content. Both funnel into the same response parser so formatting inconsistencies are handled once.
+- Implement `src/services/openai.js` with two functions: `parseImageIngredients` (Vision API) and `parseTextIngredients` (text completion)
+- Both use the same system prompt from architecture.md that instructs GPT-4o to return only a JSON array
+- Handle all error cases: timeout (AbortController at 30s), auth errors (401), malformed JSON (strip markdown fences), and generic API failures
+- Every call logs entry, exit, and errors — this is critical for debugging prompt issues
+- Write a CLI test that sends a known 7-ingredient sample recipe and validates the response
 
-The system prompt is the most important decision in this phase. It must instruct GPT-4o to return only valid JSON with no markdown fences, no explanation, and a specific schema. Tested against 5 real recipes before moving on.
+## Key Decisions
+- **GPT-4o Vision directly for OCR** — no separate OCR library. GPT-4o handles messy cookbook typography, handwriting, and varied layouts in one step. Eliminates a dependency and a processing stage.
+- **Strict JSON-only system prompt** — instruct GPT-4o to return "ONLY a JSON array with no markdown, no explanation." This makes parsing reliable. If it still wraps in markdown fences, we strip them.
+- **AbortController at 30 seconds** — prevents hanging on slow API responses during demo
+- **No streaming** — we need the full JSON response at once to parse it; streaming would complicate parsing for no UX benefit in this context
 
-Use `AbortController` with a 30-second timeout on all calls. GPT-4o can occasionally take 20+ seconds — without a timeout, users would wait indefinitely with no feedback.
-
-## Key Decisions Made
-- **GPT-4o Vision directly for OCR**: Considered using a dedicated OCR library (Tesseract, expo-camera text recognition) first, then sending text to GPT-4o. Rejected this approach because: (1) cookbook fonts and layouts are highly varied, (2) a two-step pipeline doubles the failure surface, (3) GPT-4o Vision handles context that OCR misses (e.g., recognising "1½" as a fraction, inferring units from context).
-- **JSON mode not enforced at API level**: GPT-4o's `response_format: { type: "json_object" }` helps but doesn't guarantee the schema matches. Added a post-parse validation step that strips markdown fences and re-parses if the model wraps output in backticks.
-- **Errors logged before re-throwing**: Callers don't need to know about the logger — they just catch errors. But every error produces a structured log entry so we can diagnose failures in the field.
-- **Single system prompt for both paths**: Image and text extraction use the same prompt structure. Reduces surface area for prompt divergence.
-
-## Risks Identified
-- GPT-4o may return extra fields or nest ingredients inside a wrapper object. Mitigation: defensive parsing that walks the response looking for the array.
-- Rate limits: GPT-4o has per-minute token limits. For a demo with one user this is not a concern, but noted for scale.
-- Cost: each Vision call with a cookbook photo is approximately $0.03. Acceptable for demo volume.
+## Success Criteria
+- `node scripts/test-openai.js` exits 0
+- Returns valid `Ingredient[]` with name, quantity, unit, notes for all 7 sample ingredients
+- Errors are caught and logged, not swallowed

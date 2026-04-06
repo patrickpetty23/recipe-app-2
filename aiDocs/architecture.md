@@ -55,8 +55,7 @@ recipe-scanner/
 │   ├── executive-summary.md
 │   └── feature-map.md
 ├── .testEnvVars                   # ← GITIGNORED — API keys for testing
-├── CLAUDE.md                      # ← GITIGNORED — AI tool instructions
-├── .cursorrules                   # ← GITIGNORED — Cursor instructions
+├── .cursorrules                   # ← TRACKED in git — Cursor behavioral guidance
 ├── .gitignore
 ├── app.json
 ├── package.json
@@ -311,14 +310,14 @@ export LOG_LEVEL="debug"
 
 ## Navigation Flow
 ```
-Tab: Scan
-  └─ Camera view → Capture → Processing → Ingredient Editor → Save → Library
+Tab: Home
+  └─ "Add Recipe" button → Modal (Camera / Photos / URL / PDF) → Processing → Ingredient Editor → Save → Library
 
 Tab: Library
   └─ Recipe list → Recipe detail → Edit ingredients → Add to shopping list
 
 Tab: Shopping List
-  └─ Combined ingredients → Check off items → Walmart search → Open cart link
+  └─ Combined ingredients → Check off items → Walmart search per ingredient → Send to Walmart cart
 ```
 
 ## Navigation Flow (current)

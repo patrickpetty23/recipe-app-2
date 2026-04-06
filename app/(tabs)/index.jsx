@@ -371,6 +371,12 @@ export default function ChatScreen() {
   async function handlePhotoAttach() {
     setShowAttachSheet(false);
     try {
+      const perms = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      logger.info('scan.handlePickPhoto', { step: 'permissions', granted: perms.granted, status: perms.status });
+      if (!perms.granted) {
+        Alert.alert('Permission Required', 'Photo library access is needed to pick recipe images.');
+        return;
+      }
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         base64: true,

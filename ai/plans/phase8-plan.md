@@ -1,20 +1,24 @@
 # Phase 8 Plan — Polish + Demo Prep
 
-## Intent
-Make the app presentable, fix the remaining UX bugs found during integration testing, and ensure the demo flow works end-to-end without intervention. A buggy demo loses the audience even if the underlying technology is excellent.
+## Goal
+App is stable, looks presentable, and the demo flow works end-to-end without intervention.
 
 ## Approach
-Focus on the three places where the demo is most likely to fail: the home screen entry point (first impression), the shopping list layout (found to be broken during testing), and the Walmart cart URL (found to be incorrect during testing).
+- Redesign Home screen: replace the four-button Scan tab with a clean Home page featuring a single "Add Recipe" button that opens a modal for import method selection — addresses UX feedback that four buttons confused first-time users
+- Fix Shopping List UI: replace absolute positioning with flexbox layout, remove duplicate header from Expo Router
+- Fix Walmart cart URL: discovered `walmart.com/cart?items=` doesn't actually add items; switch to `affil.walmart.com/cart/addToCart?items=ID|QTY` format
+- Fix `crypto` module error: remove Node.js `crypto` fallback entirely, rely on `node-forge` exclusively
+- Update `scripts/run.sh` to support reading Walmart private key from a file path (multi-line PEM keys are unwieldy inline in `.testEnvVars`)
+- Write README with setup instructions
+- Test full end-to-end flow on real iPhone
 
-Redesign the home/scan tab: instead of four separate import buttons (confusing for first-time users), use a hero card with a single "Add Recipe" button that reveals an action sheet. Cleaner, more modern, matches the mental model of "there's one thing I want to do here."
+## Key Decisions
+- **Modal over separate screen for import selection** — keeps the user on the Home tab, feels lighter than navigating to a new screen. The modal slides up from the bottom with clear icons for each import method.
+- **Flexbox over absolute positioning for Shopping List** — the original layout used hardcoded `bottom` values that broke when the Walmart bar was hidden. Flexbox makes the layout responsive to content.
+- **`affil.walmart.com` cart URL** — the standard `walmart.com/cart?items=` URL just navigates to the cart page without adding items. The affiliate URL format with `|QTY` suffix per item actually triggers the add-to-cart action.
+- **Private key file path** — storing a multi-line RSA private key inline in a shell env file is fragile. Reading from a file path at runtime is cleaner.
 
-## Key Decisions Made
-- **Single "Add Recipe" button with modal**: User testing (informal, with teammates) found that four buttons on the Scan screen caused hesitation — "which one do I use?" One button with an action sheet eliminates the decision.
-- **Flexbox refactor for Shopping List**: The original layout used absolute positioning, which broke on different screen sizes and created a duplicate header (Expo Router's default header overlapping the custom one). Full flexbox column layout with `headerShown: false` on the tab fixes both issues.
-- **Walmart cart URL fix**: The bug was found by reading the logger output. The generated URL (`walmart.com/cart?items=ID`) opened the cart but didn't add items. After consulting Walmart Affiliate docs, the correct format is `affil.walmart.com/cart/addToCart?items=ID|1`. This is a good example of the test-log-fix loop the rubric requires.
-- **`scripts/run.sh` reads key from file path**: The Walmart private key was previously required inline in `.testEnvVars` as a PEM string. This is unwieldy. Changed to `WALMART_PRIVATE_KEY_PATH` pointing to a file, which is more secure and readable.
-- **Demo prep**: Saved a recipe before the demo so the Library is not empty. Pre-matched Walmart products for that recipe. Documented the exact demo flow in `presentation/demo-script.md`.
-
-## Risks Identified
-- Live network dependency: both GPT-4o and Walmart API require internet. Demo environment may have restricted Wi-Fi. Mitigation: have a pre-saved recipe with matched products ready; demo flow can pivot to show the library/shopping list without a live API call.
-- App cold start time: Expo Go can take 10–15 seconds on first load. Always have the app open and on the correct screen before walking to the front of the room.
+## Success Criteria
+- Full flow on real iPhone: Home → Add Recipe → camera/URL → editor → save → library → shopping list → Walmart → no crashes
+- README accurate and complete
+- All existing test scripts still pass

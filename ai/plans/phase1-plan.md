@@ -1,22 +1,24 @@
 # Phase 1 Plan — Project Setup
 
-## Intent
-Establish a working Expo project with the correct folder structure, dependencies, logging infrastructure, and CI scripts before writing any product code. A clean foundation prevents structural debt from accumulating across the sprint.
+## Goal
+Get a runnable Expo app with the full folder structure, dependencies, logging, and CLI scripts in place before writing any feature code.
 
 ## Approach
-Use `npx create-expo-app` with the blank template, then immediately restructure folders to match the architecture defined in `aiDocs/architecture.md`. Install all dependencies upfront so we don't interrupt flow mid-phase to add packages.
+- Use `create-expo-app` for scaffolding — gives us a working app shell immediately
+- Set up Expo Router with three tabs matching the PRD navigation: Scan, Library, Shopping List
+- Create the `src/` folder hierarchy (services, db, utils, components) so every future phase has a clear home
+- Implement the structured JSON logger first — every subsequent phase will import it from day one
+- Write the three shell scripts (`build.sh`, `test.sh`, `run.sh`) with proper JSON output and exit codes so we have a consistent test harness from the start
+- Set up `.gitignore` to cover secrets (`.testEnvVars`, `.env`) and library folders (`node_modules/`)
+- Create `CURSOR.md` with behavioral guidelines so AI sessions stay consistent
 
-Three-tab structure chosen at setup time (Scan, Library, Shopping List) because we know the full navigation graph from the PRD. Expo Router's file-based routing makes tab setup near-zero cost.
+## Key Decisions
+- **JavaScript, not TypeScript** — faster to write and debug in a short sprint; PRD explicitly scopes this as MVP
+- **Expo Router over React Navigation** — file-based routing is simpler for three tabs + one detail screen
+- **Custom logger over a logging library** — zero dependencies, structured JSON that AI can parse, stderr/stdout separation built in
+- **SQLite over AsyncStorage** — relational structure needed for recipes + ingredients with foreign keys; decided early so the schema drives everything
 
-Logger is implemented first (before any service code) because every subsequent service function will need it. A structured JSON logger that outputs to stdout/stderr lets us grep logs programmatically and keeps the format consistent for the rubric requirement.
-
-## Key Decisions Made
-- **Expo Router over React Navigation**: File-based routing eliminates a separate navigator config file. Tab screens are just files in `app/(tabs)/`. Much less boilerplate for a 6-day sprint.
-- **JavaScript not TypeScript**: Type annotations slow down rapid iteration and the AI pair-programming tools generate cleaner JS without TS noise. Not a long-term decision — this is MVP scope.
-- **Custom logger over a library**: `console.log` is the default but produces unstructured output. A 20-line custom logger that wraps it with level/timestamp/action is zero-dependency and satisfies the rubric's structured-logging requirement.
-- **Scripts committed to repo**: `build.sh`, `test.sh`, `run.sh` — these make the grader's job easy and demonstrate DevOps awareness. They must exit 0/1 with JSON output.
-- **`ai/` folder tracked, not gitignored**: Planning artifacts (roadmaps, plans, changelogs) are part of the deliverable and should be visible to graders.
-
-## Risks Identified
-- Expo SDK version compatibility: using the latest SDK risks breaking changes. Mitigation: use the specific SDK version recommended by the rubric environment.
-- `.gitignore` setup: must ensure `.env` and `.testEnvVars` are excluded from day one to prevent accidental key commits.
+## Success Criteria
+- `./scripts/build.sh` exits 0
+- App launches in iOS simulator with three empty tabs
+- Logger works: `logger.info('test', { foo: 'bar' })` outputs valid JSON

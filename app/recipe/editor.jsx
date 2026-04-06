@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   StyleSheet,
-  FlatList,
+  ScrollView,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
@@ -166,6 +166,7 @@ export default function EditorScreen() {
       const recipeId = Crypto.randomUUID();
       const now = new Date().toISOString();
       const servings = parseFloat(currentServings) || 1;
+      const cleanedSteps = instructions.filter((s) => s.trim());
 
       const recipe = {
         id: recipeId,
@@ -765,5 +766,60 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 17,
     fontWeight: '700',
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E8E8E8',
+    gap: 8,
+  },
+  stepNumber: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#007AFF',
+    marginTop: 8,
+    width: 24,
+  },
+  stepInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 15,
+    minHeight: 40,
+  },
+  removeStepButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFE5E5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 6,
+  },
+  removeStepText: {
+    color: '#FF3B30',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  addStepButton: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    paddingVertical: 10,
+    borderWidth: 1.5,
+    borderColor: '#007AFF',
+    borderRadius: 8,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+  },
+  addStepText: {
+    color: '#007AFF',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

@@ -78,7 +78,7 @@ export function getDatabase() {
       id TEXT PRIMARY KEY,
       recipe_id TEXT NOT NULL,
       name TEXT NOT NULL,
-      quantity REAL,
+      quantity TEXT,
       unit TEXT,
       notes TEXT,
       checked INTEGER NOT NULL DEFAULT 0,

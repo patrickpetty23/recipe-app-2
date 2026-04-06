@@ -1,20 +1,21 @@
 # Phase 6 Plan — Shopping List
 
-## Intent
-Turn saved recipes into an actionable shopping list. This is the first feature where multiple recipes interact — the shopping list is the aggregate of ingredients across everything the user wants to cook this week.
+## Goal
+Combined shopping list from selected recipes with tap-to-check functionality.
 
 ## Approach
-Add an `in_list` boolean column to ingredients (with a migration for existing rows). "Add to Shopping List" from any recipe detail toggles all its ingredients into the list view. The shopping list tab pulls all `in_list = 1` ingredients grouped by recipe.
+- Add `in_list` column to ingredients table (migration for existing databases) to track which ingredients are on the shopping list
+- Add 5 new query functions: `getShoppingListIngredients`, `addRecipeToList`, `removeRecipeFromList`, `clearCheckedItems`, `clearShoppingList`
+- Wire up "Add to Shopping List" / "Remove from Shopping List" toggle on Recipe Detail screen
+- Build Shopping List tab (`app/(tabs)/list.jsx`): `SectionList` grouped by recipe title, tap-to-check with strikethrough + gray styling, "Clear Checked" and "Clear List" buttons, empty state
+- Write a CLI test covering add to list, check toggle, clear checked, clear list
 
-Check-off state is stored in the existing `checked` column. Checking off an item visually crosses it out and dims it. "Clear Checked" resets all checked items. "Clear List" removes everything.
+## Key Decisions
+- **`in_list` flag on ingredients, not a separate join table** — simpler schema, fewer queries. Each ingredient either is or isn't on the shopping list.
+- **SectionList over FlatList** — groups ingredients by recipe title, so the user knows which recipe each ingredient came from
+- **Checked = strikethrough + gray** — visual feedback that's immediately obvious while shopping in a store
+- **"Clear Checked" vs "Clear List"** — two separate actions. "Clear Checked" resets check marks (for re-shopping). "Clear List" removes everything (start fresh).
 
-## Key Decisions Made
-- **Per-ingredient `in_list` flag over a separate shopping_list table**: A separate table would require syncing when recipes are edited. An `in_list` column on the ingredient stays in sync automatically — editing an ingredient name is immediately reflected in the shopping list.
-- **Grouped by recipe (SectionList) over flat list**: When shopping, users think in terms of "what do I need for the pasta" vs "what do I need for the cake." Grouping by recipe is more useful than alphabetical.
-- **Check-off state not synced back to recipe**: Checking off "flour" in the shopping list doesn't affect the ingredient in the recipe detail. They're separate concerns — the recipe is a template, the list is an instance.
-- **"Clear Checked" separate from "Clear List"**: Users may want to reset their shopping trip (uncheck everything) vs. clear the whole list for next week. Both operations are one tap.
-- **Migration guard for `in_list` column**: `ALTER TABLE ingredients ADD COLUMN in_list INTEGER NOT NULL DEFAULT 0` must be wrapped in a try/catch — if the column already exists, SQLite throws. Use `IF NOT EXISTS` semantics by catching the error.
-
-## Risks Identified
-- An ingredient added to the list from a recipe, then the recipe deleted: the `ON DELETE CASCADE` handles this — the ingredient row is deleted and disappears from the list automatically.
-- Long shopping lists from multiple recipes may scroll slowly. Use FlatList inside each SectionList section.
+## Success Criteria
+- `node scripts/test-shopping-list.js` exits 0 with all 13 assertions passing
+- Add recipe to list → items appear → check items → clear checked → clear list

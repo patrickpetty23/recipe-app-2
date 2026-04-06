@@ -296,6 +296,20 @@ export function addRecipeToList(recipeId) {
   }
 }
 
+export function addIngredientsToList(ingredientIds) {
+  logger.info('queries.addIngredientsToList', { count: ingredientIds.length });
+  try {
+    const db = getDatabase();
+    for (const id of ingredientIds) {
+      db.runSync('UPDATE ingredients SET in_list = 1 WHERE id = ?', id);
+    }
+    logger.info('queries.addIngredientsToList.success', { count: ingredientIds.length });
+  } catch (err) {
+    logger.error('queries.addIngredientsToList.error', { error: err.message });
+    throw err;
+  }
+}
+
 export function removeRecipeFromList(recipeId) {
   logger.info('queries.removeRecipeFromList', { recipeId });
   try {
@@ -774,6 +788,10 @@ export function deleteCookLogEntry(id) {
 // ── Row mappers ───────────────────────────────────────────────────────────────
 
 function mapRecipeRow(row) {
+  let instructions = [];
+  if (row.instructions) {
+    try { instructions = JSON.parse(row.instructions); } catch { instructions = []; }
+  }
   return {
     id: row.id,
     title: row.title,

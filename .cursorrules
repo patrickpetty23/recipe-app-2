@@ -8,6 +8,7 @@ Read the project context file first: aiDocs/context.md
 - `aiDocs/prd.md` — what we're building and why
 - `aiDocs/architecture.md` — file structure, data models, logging
 - `aiDocs/coding-style.md` — conventions you must follow
+- `aiDocs/changelog.md` — recent changes and decisions
 
 ## Behavioral Guidelines
 - Ask for opinion before making architectural decisions or changes not in the roadmap
@@ -16,17 +17,28 @@ Read the project context file first: aiDocs/context.md
 - Do not over-engineer — we can add complexity later
 - Change code as if it was always this way — no compatibility layers, no legacy comments
 - Do not add TODO comments to committed code — put them in the roadmap instead
+- Check `ai/roadmaps/roadmap.md` for current phase and task status before starting work
 
 ## Testing
 - After implementing any phase, run `./scripts/test.sh`
 - If tests fail, analyze the JSON output, fix the issue, and run again
 - Continue the fix loop until exit code is 0
+- Each phase has a dedicated test script in `scripts/` (e.g., `test-db.js`, `test-openai.js`)
 
 ## Logging
 - Never use `console.log` in production code
 - Always use the structured logger: `import { logger } from '../utils/logger'`
 - Log entry and exit for every service function
+- Log format: `'service.functionName'` as the action string
+- Include relevant context in the data object (IDs, counts, sizes, error messages)
+
+## Error Handling
+- All API calls wrapped in try/catch
+- User-facing errors shown with `Alert.alert()`
+- Log the error with `logger.error()` before showing the alert or re-throwing
+- Never swallow errors silently
 
 ## Secrets
 - API keys are in `.testEnvVars` — source it with `source .testEnvVars` before testing
 - Never hardcode API keys or commit them
+- Use `EXPO_PUBLIC_*` prefix for environment variables that need to be available in React Native

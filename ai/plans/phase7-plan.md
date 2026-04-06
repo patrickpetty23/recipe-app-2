@@ -1,22 +1,25 @@
 # Phase 7 Plan — Walmart Integration
 
-## Intent
-Complete the original core loop: shopping list → Walmart cart. This is the differentiating feature of the product and the reason Walmart was chosen as the integration target over generic grocery apps.
+## Goal
+Each ingredient on the shopping list can be searched on Walmart. Matched products show name + price. A "Send to Walmart" button opens a cart with all matched items.
 
 ## Approach
-The Walmart Affiliate API v2 requires RSA-signed auth headers — more complex than a simple API key. Use `node-forge` for RSA signing in React Native (the Node.js `crypto` module is not available in the RN runtime).
+- Implement `src/services/walmart.js`:
+  - `searchProduct(ingredientName)` — hits Walmart Affiliate Product API v2 with RSA-SHA256 signed auth headers, returns top match as `WalmartProduct`
+  - `buildCartLink(itemIds[])` — generates Walmart affiliate cart URL from item IDs
+  - `isWalmartConfigured()` — checks if API credentials are present
+  - In-memory cache to avoid duplicate API calls for the same ingredient per session
+- Use `node-forge` for RSA signing since Node.js `crypto` module is unavailable in React Native
+- Shopping List screen gets per-ingredient "Find on Walmart" button, inline product match display, and "Send to Walmart" bottom bar
+- Write a CLI test that searches for real ingredients and builds a cart URL
 
-Two-step integration: (1) per-ingredient search to find the matching Walmart product ID, then (2) a single "Send to Cart" action that builds the cart URL from all matched IDs.
+## Key Decisions
+- **`node-forge` over `crypto`** — React Native doesn't bundle Node.js built-in modules. `node-forge` provides RSA-SHA256 signing that works in the React Native JavaScript runtime.
+- **Affiliate Product API v2** — requires consumer ID + RSA-signed headers (timestamp, consumer ID, key version). More complex auth than a simple API key, but it's what Walmart provides for product search.
+- **In-memory cache** — if the user taps "Find on Walmart" for flour, then navigates away and back, we don't re-hit the API. Cache resets on app restart, which is fine for a session.
+- **Graceful degradation** — if Walmart API credentials aren't configured, buttons remain visible but show a popup alert explaining the key is needed. App doesn't crash.
 
-Cache search results in memory per session. The same ingredient appears in multiple recipes — hitting the API for "flour" three times is wasteful and slow.
-
-## Key Decisions Made
-- **Walmart over Instacart/Amazon**: Walmart has a public affiliate API with documented cart URL format. Instacart and Amazon's integrations are either gated or deprecated. Walmart is also a mass-market choice aligned with the target user demographic.
-- **`affil.walmart.com/cart/addToCart?items=ID|1` URL format**: The initial implementation used `walmart.com/cart?items=ID` which opened the cart but did NOT add items. Found this bug via the logger (seeing the URL being generated) and fixed after reading Walmart's affiliate docs. The correct format appends `|quantity` to each item ID.
-- **Graceful degradation without API key**: If credentials aren't set, the Walmart buttons are still visible but show an alert when tapped. The app doesn't crash. This is important for demo resilience.
-- **`node-forge` for RSA signing**: The Walmart API requires RSA-SHA256 signing. React Native doesn't have the Node.js `crypto` module. `node-forge` is a pure JS implementation that works in RN and is already bundled with many Expo projects.
-- **Search result is "first match"**: No ranking or relevance scoring. The top Walmart result for "all-purpose flour" is almost always the right product. Acceptable for MVP.
-
-## Risks Identified
-- Walmart API auth tokens expire. The current implementation generates a new signature per request. If this causes issues, tokens can be cached with a TTL.
-- Some ingredient names are too generic ("salt", "water") and return irrelevant Walmart products. Mitigation: show the matched product name to the user so they can see what will be added before committing.
+## Success Criteria
+- `node scripts/test-walmart.js` exits 0 (requires valid Walmart API credentials)
+- Per-ingredient Walmart search shows product name + price
+- "Send to Walmart" opens browser with items in cart

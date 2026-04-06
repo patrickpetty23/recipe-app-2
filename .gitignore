@@ -16,13 +16,16 @@ android/
 .envTestVars
 .testEnvVars
 
+# MCP configs (may contain API keys)
+.cursor/mcp.json
+mcp.json
+
 # Test artifacts
 .test-recipe-scanner.db*
 /build/
 
 # AI tool instructions (local only)
 CLAUDE.md
-.cursorrules
 
 # OS
 .DS_Store

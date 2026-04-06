@@ -1,22 +1,21 @@
 # Phase 5 Plan — Ingredient Editor + Recipe Save
 
-## Intent
-Give users the ability to review, correct, and save what the AI extracted. The editor is the moment of truth — if the AI got something wrong, this is where the user fixes it. The save flow must be fast and reliable.
+## Goal
+User can review, edit, scale, and save a recipe from any import method. Saved recipes appear in a library and can be reopened.
 
 ## Approach
-The editor displays parsed ingredients in editable rows. Each row shows quantity, unit, and name — the three fields users most commonly need to correct. Tap a row to edit inline. No modal, no separate edit screen — inline editing is faster.
+- Wire up the editor screen (`app/recipe/editor.jsx`): editable rows for each ingredient (qty, unit, name), editable recipe title, serving size scaler using `scaler.js`
+- "Save Recipe" generates a UUID, calls `saveRecipe()` + `saveIngredients()`, shows loading state, navigates to Library on success
+- Build Library tab (`app/(tabs)/library.jsx`): FlatList of saved recipes loaded via `getAllRecipes()` on screen focus, empty state when no recipes
+- Build Recipe Detail screen (`app/recipe/[id].jsx`): loads recipe by ID, shows editable ingredient rows, serving size scaler, "Add to Shopping List" button (stub for Phase 6), "Delete Recipe" with confirmation dialog
+- Write a CLI test that creates a recipe, reads it back, updates an ingredient, deletes the recipe, and verifies cleanup
 
-The serving size scaler multiplies all quantities by `currentServings / originalServings`. It uses `scaler.js` from Phase 2. Update is instant — no save required.
+## Key Decisions
+- **Inline editing over a separate edit modal** — tap a field to edit it directly in the row. Faster for the user, simpler to implement.
+- **useFocusEffect for library refresh** — reload the recipe list every time the Library tab gains focus, so new saves appear immediately without manual refresh
+- **UUID generation at save time** — not at import time. The editor is a transient state; the recipe only gets an ID when the user commits to saving.
+- **Cascade delete** — deleting a recipe deletes its ingredients. The foreign key constraint handles this in SQLite.
 
-Save generates a UUID for the recipe, writes to SQLite, and navigates to the Library. The UUID is generated at save time (not earlier) so we don't persist partial recipes.
-
-## Key Decisions Made
-- **Inline editing over modal**: Modals add taps. Users making small corrections (changing "2 cups" to "1.5 cups") want to tap the field, type, and move on. A full edit modal is overkill.
-- **Serving scaler in editor, not separate screen**: Scaling before saving means the saved recipe reflects the user's actual serving preference. Re-scaling after save is also supported in the detail screen.
-- **Navigate to Library on save, not back to Home**: The user just created a recipe. The logical next step is to see it in their library, not to be dropped back at the scan screen.
-- **Error handling on save**: If SQLite write fails, show an Alert with the error. Don't lose the data — the editor state is still populated and the user can retry.
-- **Auto-populate recipe title from GPT-4o**: The title field is pre-filled from parsing. User can edit it. This is better than "Untitled Recipe #3" as the default.
-
-## Risks Identified
-- Long ingredient lists (20+ items) on a small screen need good scroll performance. FlatList is the right choice over ScrollView + map.
-- Serving scaler with null quantities: some ingredients don't have quantities (e.g., "salt to taste"). `scaler.js` must handle nulls gracefully — return null, not NaN.
+## Success Criteria
+- `node scripts/test-save-flow.js` exits 0 with all 15 assertions passing
+- Full flow: import → edit → save → appears in library → open detail → edit ingredient → delete recipe

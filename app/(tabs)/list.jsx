@@ -6,11 +6,15 @@ import {
   Alert,
   StyleSheet,
   SectionList,
+  FlatList,
+  Modal,
   ActivityIndicator,
   Linking,
   Animated,
   Platform,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -21,6 +25,9 @@ import {
   removeIngredientFromList,
   clearCheckedItems,
   clearShoppingList,
+  addIngredientsToList,
+  getAllRecipes,
+  getRecipeById,
 } from '../../src/db/queries';
 import { searchProduct, buildCartLink, isWalmartConfigured } from '../../src/services/walmart';
 import { logger } from '../../src/utils/logger';
@@ -45,6 +52,12 @@ export default function ShoppingListScreen() {
   const [searchingIds, setSearchingIds] = useState({});
   const [bulkSearching, setBulkSearching] = useState(false);
 
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [addStep, setAddStep] = useState('recipes');
+  const [allRecipes, setAllRecipes] = useState([]);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [selectedIngredientIds, setSelectedIngredientIds] = useState({});
+
   useFocusEffect(
     useCallback(() => {
       loadList();
@@ -66,14 +79,38 @@ export default function ShoppingListScreen() {
     }
   }
 
-  const sections = useMemo(() => {
-    const grouped = {};
+  const mergedItems = useMemo(() => {
+    const groups = {};
     for (const item of items) {
-      const key = item.recipeTitle || 'Unknown Recipe';
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(item);
+      const nameKey = (item.name || '').toLowerCase().trim();
+      const unitKey = (item.unit || '').toLowerCase().trim();
+      const key = `${nameKey}||${unitKey}`;
+      if (!groups[key]) {
+        groups[key] = {
+          id: key,
+          name: item.name,
+          unit: item.unit,
+          quantity: null,
+          checked: true,
+          sourceIds: [],
+          recipeNames: [],
+        };
+      }
+      const group = groups[key];
+      group.sourceIds.push(item.id);
+      if (!item.checked) group.checked = false;
+      const recipeName = item.recipeTitle || 'Unknown';
+      if (!group.recipeNames.includes(recipeName)) group.recipeNames.push(recipeName);
+
+      const existingQty = parseFraction(group.quantity);
+      const newQty = parseFraction(item.quantity);
+      if (existingQty != null && newQty != null) {
+        group.quantity = toFractionString(existingQty + newQty);
+      } else if (newQty != null) {
+        group.quantity = toFractionString(newQty);
+      }
     }
-    return Object.entries(grouped).map(([title, data]) => ({ title, data }));
+    return Object.values(groups);
   }, [items]);
 
   const totalEstimated = useMemo(() => {
@@ -93,12 +130,18 @@ export default function ShoppingListScreen() {
       friction: 8,
     }).start();
     try {
-      toggleIngredientChecked(item.id);
+      const newChecked = !mergedItem.checked;
+      for (const sourceId of mergedItem.sourceIds) {
+        const original = items.find((i) => i.id === sourceId);
+        if (original && original.checked !== newChecked) {
+          toggleIngredientChecked(sourceId);
+        }
+      }
       setItems((prev) =>
         prev.map((i) => (i.id === item.id ? { ...i, checked: nowChecked } : i))
       );
     } catch (err) {
-      logger.error('shoppingList.toggleChecked.error', { id: item.id, error: err.message });
+      logger.error('shoppingList.toggleChecked.error', { ids: mergedItem.sourceIds, error: err.message });
     }
   }
 
@@ -130,7 +173,8 @@ export default function ShoppingListScreen() {
     if (searchingIds[item.id]) return;
     setSearchingIds((prev) => ({ ...prev, [item.id]: true }));
     try {
-      const product = await searchProduct(item.name);
+      const searchQuery = [item.quantity, item.unit, item.name].filter(Boolean).join(' ');
+      const product = await searchProduct(searchQuery);
       setWalmartResults((prev) => ({
         ...prev,
         [item.id]: product || { noMatch: true },
@@ -154,7 +198,7 @@ export default function ShoppingListScreen() {
       return;
     }
     setBulkSearching(true);
-    const unsearched = items.filter((i) => !walmartResults[i.id]);
+    const unsearched = mergedItems.filter((i) => !walmartResults[i.id]);
     logger.info('shoppingList.bulkSearch', { count: unsearched.length });
     setSearchingIds((prev) => {
       const next = { ...prev };
@@ -219,6 +263,23 @@ export default function ShoppingListScreen() {
     );
   }
 
+  function handleDeleteItem(mergedItem) {
+    try {
+      for (const sourceId of mergedItem.sourceIds) {
+        deleteIngredient(sourceId);
+      }
+      setItems((prev) => prev.filter((i) => !mergedItem.sourceIds.includes(i.id)));
+      setWalmartResults((prev) => {
+        const next = { ...prev };
+        delete next[mergedItem.id];
+        return next;
+      });
+      logger.info('shoppingList.deleteItem', { ids: mergedItem.sourceIds });
+    } catch (err) {
+      logger.error('shoppingList.deleteItem.error', { ids: mergedItem.sourceIds, error: err.message });
+    }
+  }
+
   function handleClearChecked() {
     try {
       clearCheckedItems();
@@ -260,9 +321,55 @@ export default function ShoppingListScreen() {
     );
   }
 
+  function openAddModal() {
+    try {
+      const recipes = getAllRecipes();
+      setAllRecipes(recipes);
+      setAddStep('recipes');
+      setSelectedRecipe(null);
+      setSelectedIngredientIds({});
+      setAddModalVisible(true);
+    } catch (err) {
+      logger.error('shoppingList.openAddModal.error', { error: err.message });
+    }
+  }
+
+  function handleSelectRecipe(recipe) {
+    try {
+      const full = getRecipeById(recipe.id);
+      setSelectedRecipe(full);
+      setSelectedIngredientIds({});
+      setAddStep('ingredients');
+    } catch (err) {
+      logger.error('shoppingList.selectRecipe.error', { error: err.message });
+    }
+  }
+
+  function handleToggleIngredient(id) {
+    setSelectedIngredientIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  }
+
+  function handleConfirmAdd() {
+    const ids = Object.entries(selectedIngredientIds)
+      .filter(([, selected]) => selected)
+      .map(([id]) => id);
+    if (ids.length === 0) {
+      Alert.alert('No Items Selected', 'Tap ingredients to select them first.');
+      return;
+    }
+    try {
+      addIngredientsToList(ids);
+      loadList();
+      setAddModalVisible(false);
+      logger.info('shoppingList.addIngredients', { count: ids.length });
+    } catch (err) {
+      logger.error('shoppingList.addIngredients.error', { error: err.message });
+    }
+  }
+
   function formatQuantity(qty) {
     if (qty == null) return '';
-    return String(Math.round(qty * 100) / 100);
+    return String(qty);
   }
 
   function renderItem({ item }) {
@@ -372,16 +479,16 @@ export default function ShoppingListScreen() {
     );
   }
 
-  const checkedCount = items.filter((i) => i.checked).length;
+  const checkedCount = mergedItems.filter((i) => i.checked).length;
   const matchedCount = Object.values(walmartResults).filter((r) => r && r.itemId).length;
-  const unsearchedCount = items.filter((i) => !walmartResults[i.id]).length;
+  const unsearchedCount = mergedItems.filter((i) => !walmartResults[i.id]).length;
 
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Text style={styles.headerTitle}>Shopping List</Text>
         <Text style={styles.headerCount}>
-          {checkedCount}/{items.length} checked
+          {checkedCount}/{mergedItems.length} checked
         </Text>
       </View>
 
@@ -443,6 +550,75 @@ export default function ShoppingListScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      <Modal visible={addModalVisible} animationType="slide" presentationStyle="pageSheet">
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            {addStep === 'ingredients' ? (
+              <TouchableOpacity onPress={() => setAddStep('recipes')}>
+                <Text style={styles.modalBack}>‹ Back</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={{ width: 60 }} />
+            )}
+            <Text style={styles.modalTitle}>
+              {addStep === 'recipes' ? 'Select Recipe' : selectedRecipe?.title}
+            </Text>
+            <TouchableOpacity onPress={() => setAddModalVisible(false)}>
+              <Text style={styles.modalClose}>Done</Text>
+            </TouchableOpacity>
+          </View>
+
+          {addStep === 'recipes' ? (
+            <FlatList
+              data={allRecipes}
+              keyExtractor={(r) => r.id}
+              renderItem={({ item: recipe }) => (
+                <TouchableOpacity
+                  style={styles.modalRecipeRow}
+                  onPress={() => handleSelectRecipe(recipe)}
+                >
+                  <Text style={styles.modalRecipeName}>{recipe.title}</Text>
+                  <Text style={styles.modalRecipeChevron}>›</Text>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={styles.modalEmpty}>No recipes saved yet.</Text>
+              }
+            />
+          ) : (
+            <>
+              <FlatList
+                data={selectedRecipe?.ingredients ?? []}
+                keyExtractor={(i) => i.id}
+                renderItem={({ item: ing }) => {
+                  const selected = !!selectedIngredientIds[ing.id];
+                  const qtyUnit = [ing.quantity, ing.unit].filter(Boolean).join(' ');
+                  return (
+                    <TouchableOpacity
+                      style={[styles.modalIngredientRow, selected && styles.modalIngredientSelected]}
+                      onPress={() => handleToggleIngredient(ing.id)}
+                    >
+                      <View style={[styles.modalCheckbox, selected && styles.modalCheckboxChecked]}>
+                        {selected && <Text style={styles.modalCheckmark}>✓</Text>}
+                      </View>
+                      <Text style={styles.modalIngredientName}>{ing.name}</Text>
+                      {qtyUnit ? <Text style={styles.modalIngredientQty}>{qtyUnit}</Text> : null}
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+              <View style={styles.modalFooter}>
+                <TouchableOpacity style={styles.modalConfirmButton} onPress={handleConfirmAdd}>
+                  <Text style={styles.modalConfirmText}>
+                    Add {Object.values(selectedIngredientIds).filter(Boolean).length} Items to List
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 }
@@ -560,6 +736,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0071DC',
   },
+  mergedHint: {
+    fontSize: 11,
+    color: '#999',
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
   walmartSearchButton: {
     marginLeft: 54,
     marginRight: 16,
@@ -636,6 +818,10 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#D0E2F5',
   },
+  walmartTopRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   walmartSearchAllButton: {
     backgroundColor: '#FFF8F0',
     borderWidth: 1.5,
@@ -653,6 +839,128 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  addItemsButton: {
+    flex: 1,
+    backgroundColor: '#34C759',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addItemsText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E0E0E0',
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
+  },
+  modalBack: {
+    fontSize: 17,
+    color: '#007AFF',
+    width: 60,
+  },
+  modalClose: {
+    fontSize: 17,
+    color: '#007AFF',
+    fontWeight: '600',
+    width: 60,
+    textAlign: 'right',
+  },
+  modalRecipeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E8E8E8',
+  },
+  modalRecipeName: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+  },
+  modalRecipeChevron: {
+    fontSize: 20,
+    color: '#C7C7CC',
+  },
+  modalEmpty: {
+    textAlign: 'center',
+    color: '#999',
+    marginTop: 40,
+    fontSize: 15,
+  },
+  modalIngredientRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E8E8E8',
+    gap: 12,
+  },
+  modalIngredientSelected: {
+    backgroundColor: '#F0FFF4',
+  },
+  modalCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#CCC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCheckboxChecked: {
+    backgroundColor: '#34C759',
+    borderColor: '#34C759',
+  },
+  modalCheckmark: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  modalIngredientName: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+  },
+  modalIngredientQty: {
+    fontSize: 14,
+    color: '#888',
+  },
+  modalFooter: {
+    padding: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E0E0E0',
+  },
+  modalConfirmButton: {
+    backgroundColor: '#34C759',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  modalConfirmText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
   },
   walmartCartButton: {
     backgroundColor: '#0071DC',

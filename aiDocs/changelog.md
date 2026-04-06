@@ -63,6 +63,33 @@
 
 ---
 
+## Test-Log-Fix Loops
+
+These are concrete examples of the test → read logs → diagnose → fix cycle used throughout development.
+
+### Loop 1: `Can't resolve 'crypto'` (Phase 7 → Phase 8)
+- **Test:** App crashed on launch after implementing Walmart integration
+- **Log/Error:** Metro bundler error: `Can't resolve 'crypto' in src/services/walmart.js` — React Native cannot bundle Node.js built-in modules
+- **Diagnosis:** `walmart.js` had a conditional branch `if (typeof window === 'undefined') { const crypto = require('crypto'); ... }` for Node.js environments. Even though the code path was guarded, Metro's static analysis still tried to resolve the `require('crypto')` call.
+- **Fix:** Removed the Node.js `crypto` branch entirely. Made `node-forge` the sole RSA signing implementation for React Native. CLI test scripts (`scripts/test-walmart.js`) continue to use Node.js `crypto` directly since they run in Node, not React Native.
+- **Verification:** App launches cleanly; `./scripts/test.sh` exits 0
+
+### Loop 2: Walmart cart URL doesn't add items (Phase 7 → Phase 8)
+- **Test:** User tapped "Send to Walmart" — browser opened Walmart.com but cart was empty
+- **Log:** `logger.info('walmart.buildCartLink.success', { url })` showed the generated URL was `https://www.walmart.com/cart?items=ID1,ID2`
+- **Diagnosis:** The `walmart.com/cart?items=` URL format only navigates to the cart page — it does not trigger an add-to-cart action. Walmart's actual add-to-cart URL uses a different domain and format.
+- **Fix:** Changed `buildCartLink` to generate `https://affil.walmart.com/cart/addToCart?items=ID|1,ID|1` — the affiliate URL format with `|QTY` suffix per item that actually adds items to the cart.
+- **Verification:** Tapping "Send to Walmart" now opens browser with items in the cart
+
+### Loop 3: `better-sqlite3` version mismatch (Phase 2)
+- **Test:** `./scripts/test.sh` failed during CI test run
+- **Log/Error:** `ERR_DLOPEN_FAILED` — native module compiled against a different Node.js version
+- **Diagnosis:** `better-sqlite3` is a native C++ addon that must be compiled for the specific Node.js version. Switching Node versions (e.g., via nvm) invalidates the compiled binary.
+- **Fix:** Ran `npm rebuild better-sqlite3` to recompile against the current Node.js version
+- **Verification:** `node scripts/test-db.js` exits 0 with all 27 assertions passing
+
+---
+
 ## Day 6 — Home Page Redesign + Polish (Phase 8)
 - Redesigned Scan tab into a Home page with hero section, recipe count stat card, and a single "Add Recipe" button — cleaner entry point for new users
 - Added modal popup for import method selection (camera, photos, URL, PDF/DOCX) — replaces the four separate buttons that cluttered the old Scan screen

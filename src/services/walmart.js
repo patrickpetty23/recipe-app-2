@@ -7,7 +7,7 @@ const searchCache = {};
 
 function getCredentials() {
   const consumerId = process.env.EXPO_PUBLIC_WALMART_CLIENT_ID || process.env.WALMART_CLIENT_ID;
-  const rawPem = process.env.EXPO_PUBLIC_WALMART_PRIVATE_KEY || process.env.WALMART_PRIVATE_KEY;
+  const privateKeyPem = (process.env.EXPO_PUBLIC_WALMART_PRIVATE_KEY || process.env.WALMART_PRIVATE_KEY || '').replace(/\\n/g, '\n');
   const keyVersion = process.env.EXPO_PUBLIC_WALMART_KEY_VERSION || process.env.WALMART_KEY_VERSION || '1';
   if (!consumerId || !rawPem) {
     return null;

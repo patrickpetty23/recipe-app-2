@@ -1,23 +1,26 @@
 # Phase 4 Plan — Import Methods
 
-## Intent
-Wire all four recipe import paths (camera, photo library, URL, file) to the GPT-4o service and land them on a unified editor screen. Users should have the same experience regardless of how they got their recipe into the app.
+## Goal
+All four input methods (camera, photo library, URL, file) work and produce a structured ingredient list that lands on the same editor screen.
 
 ## Approach
-All four methods produce a raw input (image base64 or text string), pass it to the appropriate openai.js function, and navigate to `app/recipe/editor.jsx` with the structured result as Expo Router params. The editor is the single destination — import method is irrelevant once parsing is done.
+- Build all four import paths in `app/(tabs)/index.jsx` (the Scan tab):
+  1. **Camera**: `expo-camera` to capture → convert to base64 → `parseImageIngredients`
+  2. **Photo library**: `expo-image-picker` → base64 → `parseImageIngredients`
+  3. **URL**: text input → `src/services/scraper.js` fetches and strips HTML → `parseTextIngredients`
+  4. **PDF/DOCX**: `expo-document-picker` → `src/services/fileParser.js` extracts text → `parseTextIngredients`
+- Implement `scraper.js` — fetch URL, strip `<script>`, `<style>`, `<nav>`, `<header>`, `<footer>` tags via regex, return cleaned text
+- Implement `fileParser.js` — PDF text extraction via parenthesis-operator regex on binary; DOCX via JSZip to extract `word/document.xml`
+- Create `app/recipe/editor.jsx` — the shared destination for all import paths. Receives ingredients via Expo Router params (JSON-serialized).
+- Show loading spinners during processing; show error alerts on failure
 
-URL scraping requires stripping HTML noise before sending to GPT-4o. A lightweight regex-based approach strips `<script>`, `<style>`, `<nav>`, `<header>`, `<footer>` tags. The GPT-4o prompt handles any remaining noise gracefully.
+## Key Decisions
+- **Regex-based HTML stripping over a full DOM parser** — lighter weight, no extra dependency. GPT-4o can handle imperfect text cleanup.
+- **JSZip for DOCX** — DOCX files are ZIP archives. Extract `word/document.xml` and strip XML tags for raw text.
+- **All four paths converge on one editor screen** — avoids building separate flows. The editor doesn't care how the ingredients arrived.
+- **JSON-serialized params via Expo Router** — pass the full ingredient array as a URL param. Works within Expo Router's string-based param system.
 
-PDF/DOCX parsing uses `expo-document-picker` + `expo-file-system` to get the file, then extracts text. PDFs are notoriously inconsistent — the approach is "extract whatever text is there and let GPT-4o clean it up."
-
-## Key Decisions Made
-- **Single editor screen for all methods**: Considered having method-specific screens but rejected it. Code duplication grows fast and testing becomes harder. One editor, four entry points.
-- **URL as primary method**: After initial testing, URL import was faster and more reliable than camera scan for modern recipes. Camera scan is still important for cookbooks. Both are first-class.
-- **No preview step between capture and editor**: Considered showing a raw ingredient list for confirmation before editing. Rejected — adds a tap and a screen. Users can edit directly in the editor.
-- **Loading spinner during GPT-4o call**: The 5–15 second wait needs visual feedback. Simple ActivityIndicator with a label ("Reading recipe...") is sufficient.
-- **Error handling with retry**: If GPT-4o fails, show an Alert with the error message and offer to try again. Don't drop the user back to the home screen without context.
-
-## Risks Identified
-- Some recipe URLs use heavy JavaScript rendering (React, Next.js) that `fetch()` can't execute. Mitigation: if scraping returns empty/short text, fall back to showing a text input for manual paste.
-- PDF text extraction via regex is fragile. Mitigation: GPT-4o is tolerant of messy input — "Do your best" is a valid fallback.
-- Camera permissions: must request at runtime on both platforms with a clear explanation of why.
+## Success Criteria
+- Each import method reaches the editor screen with a parsed ingredient list
+- Loading spinner visible during GPT-4o processing
+- Errors show user-facing alerts (not silent failures)
