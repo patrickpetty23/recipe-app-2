@@ -1,7 +1,8 @@
 import { logger } from '../utils/logger';
+import * as FileSystem from 'expo-file-system';
 
 const CHAT_API_URL = 'https://api.openai.com/v1/chat/completions';
-const FAL_IMAGE_URL = 'https://fal.run/fal-ai/flux/schnell';
+const GEMINI_IMAGE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent';
 const MODEL = 'gpt-4o';
 const TIMEOUT_MS = 45000;
 const ILLUSTRATION_TIMEOUT_MS = 60000;
@@ -45,38 +46,48 @@ function getApiKey() {
   return key;
 }
 
-function getFalApiKey() {
-  const key = process.env.EXPO_PUBLIC_FAL_API_KEY || process.env.FAL_API_KEY;
-  if (!key) throw new Error('FAL_API_KEY is not set');
+function getGeminiApiKey() {
+  const key = process.env.EXPO_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  if (!key) throw new Error('GEMINI_API_KEY is not set');
   return key;
 }
 
-async function falGenerateImage(prompt, imageSize = 'square_hd') {
+const ILLUSTRATIONS_DIR = FileSystem.documentDirectory + 'illustrations/';
+
+async function geminiGenerateImage(prompt) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ILLUSTRATION_TIMEOUT_MS);
   try {
-    const response = await fetch(FAL_IMAGE_URL, {
+    const response = await fetch(`${GEMINI_IMAGE_URL}?key=${getGeminiApiKey()}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Key ${getFalApiKey()}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        prompt,
-        image_size: imageSize,
-        num_inference_steps: 4,
-        num_images: 1,
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseModalities: ['IMAGE'] },
       }),
       signal: controller.signal,
     });
     if (!response.ok) {
       const errBody = await response.text();
-      throw new Error(`fal.ai API error ${response.status}: ${errBody}`);
+      throw new Error(`Gemini API error ${response.status}: ${errBody}`);
     }
     const data = await response.json();
-    const url = data?.images?.[0]?.url;
-    if (!url) throw new Error('fal.ai returned no image URL');
-    return url;
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    const imagePart = parts.find((p) => p.inlineData?.data);
+    if (!imagePart) throw new Error('Gemini returned no image data');
+
+    const base64 = imagePart.inlineData.data;
+    const mimeType = imagePart.inlineData.mimeType || 'image/png';
+    const ext = mimeType.includes('jpeg') ? 'jpg' : 'png';
+
+    const dirInfo = await FileSystem.getInfoAsync(ILLUSTRATIONS_DIR);
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(ILLUSTRATIONS_DIR, { intermediates: true });
+    }
+
+    const localUri = ILLUSTRATIONS_DIR + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
+    await FileSystem.writeAsStringAsync(localUri, base64, { encoding: FileSystem.EncodingType.Base64 });
+    return localUri;
   } catch (err) {
     if (err.name === 'AbortError') throw new Error('Image generation timed out.');
     throw err;
@@ -416,7 +427,7 @@ export async function generateStepIllustration(stepText, recipeTitle, allSteps, 
   const totalSteps = (allSteps || []).length || 1;
   const prompt = buildIllustrationPrompt(stepText, stepNumber, totalSteps, recipeTitle, ingredients);
   try {
-    const url = await falGenerateImage(prompt, 'square_hd');
+    const url = await geminiGenerateImage(prompt);
     logger.info('openai.generateStepIllustration.success', { recipeTitle });
     return url;
   } catch (err) {
@@ -439,7 +450,7 @@ export async function generateAllStepIllustrations(steps, recipeTitle, ingredien
         recipeTitle,
         ingredients
       );
-      return falGenerateImage(prompt, 'square_hd').then((url) => ({ stepId: step.id, url }));
+      return geminiGenerateImage(prompt).then((url) => ({ stepId: step.id, url }));
     })
   );
   const fulfilled = settled.filter((r) => r.status === 'fulfilled').map((r) => r.value);
@@ -469,7 +480,7 @@ export async function generateRecipeThumbnail(title, cuisine, ingredients) {
     `restaurant-quality presentation. No text, no watermarks.`;
 
   try {
-    const url = await falGenerateImage(prompt, 'landscape_16_9');
+    const url = await geminiGenerateImage(prompt);
     logger.info('openai.generateRecipeThumbnail.success', { title });
     return url;
   } catch (err) {
