@@ -2,7 +2,7 @@ import { logger } from '../utils/logger';
 import * as FileSystem from 'expo-file-system';
 
 const CHAT_API_URL = 'https://api.openai.com/v1/chat/completions';
-const GEMINI_IMAGE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent';
+const GEMINI_IMAGE_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent';
 const MODEL = 'gpt-4o';
 const TIMEOUT_MS = 45000;
 const ILLUSTRATION_TIMEOUT_MS = 60000;
