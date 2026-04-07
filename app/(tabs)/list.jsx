@@ -13,6 +13,7 @@ import {
   Animated,
   Platform,
   SafeAreaView,
+  Image,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
@@ -471,7 +472,13 @@ export default function ShoppingListScreen() {
     return (
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-          <Text style={styles.headerTitle}>Shopping List</Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.headerTitle}>Shopping List</Text>
+            <TouchableOpacity style={styles.addBtn} onPress={openAddModal} activeOpacity={0.8}>
+              <Ionicons name="add" size={16} color="#fff" />
+              <Text style={styles.addBtnText}>Add</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         <EmptyState
           iconName="cart-outline"
@@ -489,7 +496,13 @@ export default function ShoppingListScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Text style={styles.headerTitle}>Shopping List</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.headerTitle}>Shopping List</Text>
+          <TouchableOpacity style={styles.addBtn} onPress={openAddModal} activeOpacity={0.8}>
+            <Ionicons name="add" size={16} color="#fff" />
+            <Text style={styles.addBtnText}>Add</Text>
+          </TouchableOpacity>
+        </View>
         <Text style={styles.headerCount}>
           {checkedCount}/{mergedItems.length} checked
         </Text>
@@ -554,19 +567,23 @@ export default function ShoppingListScreen() {
 
       <Modal visible={addModalVisible} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView style={styles.modalContainer}>
+          {/* Modal handle */}
+          <View style={styles.modalHandle} />
+
           <View style={styles.modalHeader}>
             {addStep === 'ingredients' ? (
-              <TouchableOpacity onPress={() => setAddStep('recipes')}>
-                <Text style={styles.modalBack}>‹ Back</Text>
+              <TouchableOpacity style={styles.modalBackBtn} onPress={() => setAddStep('recipes')}>
+                <Ionicons name="chevron-back" size={18} color="#FF6B35" />
+                <Text style={styles.modalBack}>Recipes</Text>
               </TouchableOpacity>
             ) : (
-              <View style={{ width: 60 }} />
+              <View style={styles.modalNavPlaceholder} />
             )}
-            <Text style={styles.modalTitle}>
-              {addStep === 'recipes' ? 'Select Recipe' : selectedRecipe?.title}
+            <Text style={styles.modalTitle} numberOfLines={1}>
+              {addStep === 'recipes' ? 'Add to List' : selectedRecipe?.title}
             </Text>
-            <TouchableOpacity onPress={() => setAddModalVisible(false)}>
-              <Text style={styles.modalClose}>Done</Text>
+            <TouchableOpacity style={styles.modalNavPlaceholder} onPress={() => setAddModalVisible(false)}>
+              <Ionicons name="close" size={22} color="#B38B6D" />
             </TouchableOpacity>
           </View>
 
@@ -574,17 +591,36 @@ export default function ShoppingListScreen() {
             <FlatList
               data={allRecipes}
               keyExtractor={(r) => r.id}
+              contentContainerStyle={styles.modalListContent}
               renderItem={({ item: recipe }) => (
                 <TouchableOpacity
                   style={styles.modalRecipeRow}
                   onPress={() => handleSelectRecipe(recipe)}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.modalRecipeName}>{recipe.title}</Text>
-                  <Text style={styles.modalRecipeChevron}>›</Text>
+                  {recipe.imageUri ? (
+                    <Image source={{ uri: recipe.imageUri }} style={styles.modalRecipeThumb} />
+                  ) : (
+                    <View style={styles.modalRecipeThumbPlaceholder}>
+                      <Ionicons name="restaurant" size={22} color="#FF6B35" />
+                    </View>
+                  )}
+                  <View style={styles.modalRecipeInfo}>
+                    <Text style={styles.modalRecipeName} numberOfLines={2}>{recipe.title}</Text>
+                    {recipe.ingredientCount > 0 && (
+                      <Text style={styles.modalRecipeMeta}>
+                        {recipe.ingredientCount} ingredient{recipe.ingredientCount !== 1 ? 's' : ''}
+                      </Text>
+                    )}
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="#F0E0D0" />
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
-                <Text style={styles.modalEmpty}>No recipes saved yet.</Text>
+                <View style={styles.modalEmptyBox}>
+                  <Ionicons name="book-outline" size={36} color="#F0E0D0" />
+                  <Text style={styles.modalEmpty}>No recipes saved yet.</Text>
+                </View>
               }
             />
           ) : (
@@ -592,27 +628,67 @@ export default function ShoppingListScreen() {
               <FlatList
                 data={selectedRecipe?.ingredients ?? []}
                 keyExtractor={(i) => i.id}
+                contentContainerStyle={styles.modalListContent}
+                ListHeaderComponent={
+                  <TouchableOpacity
+                    style={styles.modalSelectAll}
+                    onPress={() => {
+                      const allSelected = (selectedRecipe?.ingredients ?? []).every(
+                        (i) => selectedIngredientIds[i.id]
+                      );
+                      const next = {};
+                      (selectedRecipe?.ingredients ?? []).forEach((i) => {
+                        next[i.id] = !allSelected;
+                      });
+                      setSelectedIngredientIds(next);
+                    }}
+                  >
+                    <Text style={styles.modalSelectAllText}>
+                      {(selectedRecipe?.ingredients ?? []).every((i) => selectedIngredientIds[i.id])
+                        ? 'Deselect All'
+                        : 'Select All'}
+                    </Text>
+                  </TouchableOpacity>
+                }
                 renderItem={({ item: ing }) => {
                   const selected = !!selectedIngredientIds[ing.id];
-                  const qtyUnit = [ing.quantity, ing.unit].filter(Boolean).join(' ');
+                  const qtyUnit = [ing.quantity != null ? String(ing.quantity) : '', ing.unit]
+                    .filter(Boolean)
+                    .join(' ');
                   return (
                     <TouchableOpacity
                       style={[styles.modalIngredientRow, selected && styles.modalIngredientSelected]}
                       onPress={() => handleToggleIngredient(ing.id)}
+                      activeOpacity={0.7}
                     >
                       <View style={[styles.modalCheckbox, selected && styles.modalCheckboxChecked]}>
-                        {selected && <Text style={styles.modalCheckmark}>✓</Text>}
+                        {selected && <Ionicons name="checkmark" size={14} color="#fff" />}
                       </View>
-                      <Text style={styles.modalIngredientName}>{ing.name}</Text>
-                      {qtyUnit ? <Text style={styles.modalIngredientQty}>{qtyUnit}</Text> : null}
+                      <Text style={[styles.modalIngredientName, selected && styles.modalIngredientNameSelected]}>
+                        {ing.name}
+                      </Text>
+                      {qtyUnit ? (
+                        <Text style={[styles.modalIngredientQty, selected && styles.modalIngredientQtySelected]}>
+                          {qtyUnit}
+                        </Text>
+                      ) : null}
                     </TouchableOpacity>
                   );
                 }}
               />
               <View style={styles.modalFooter}>
-                <TouchableOpacity style={styles.modalConfirmButton} onPress={handleConfirmAdd}>
+                <TouchableOpacity
+                  style={[
+                    styles.modalConfirmButton,
+                    Object.values(selectedIngredientIds).filter(Boolean).length === 0 && styles.modalConfirmButtonDisabled,
+                  ]}
+                  onPress={handleConfirmAdd}
+                  disabled={Object.values(selectedIngredientIds).filter(Boolean).length === 0}
+                >
+                  <Ionicons name="cart" size={18} color="#fff" />
                   <Text style={styles.modalConfirmText}>
-                    Add {Object.values(selectedIngredientIds).filter(Boolean).length} Items to List
+                    Add {Object.values(selectedIngredientIds).filter(Boolean).length || ''}{' '}
+                    {Object.values(selectedIngredientIds).filter(Boolean).length === 1 ? 'Item' : 'Items'} to List
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -637,6 +713,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F0E0D0',
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   headerTitle: {
     fontSize: 28,
     fontWeight: '700',
@@ -646,6 +727,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#B38B6D',
     marginTop: 2,
+  },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FF6B35',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    elevation: 2,
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  addBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#fff',
   },
   list: {
     flex: 1,
@@ -856,107 +956,182 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFF8F0',
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#F0E0D0',
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 4,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E0E0E0',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0E0D0',
+    backgroundColor: '#fff',
   },
   modalTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#2D1B00',
     flex: 1,
     textAlign: 'center',
   },
-  modalBack: {
-    fontSize: 17,
-    color: '#007AFF',
-    width: 60,
+  modalBackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    width: 80,
   },
-  modalClose: {
-    fontSize: 17,
-    color: '#007AFF',
+  modalBack: {
+    fontSize: 15,
+    color: '#FF6B35',
     fontWeight: '600',
-    width: 60,
-    textAlign: 'right',
+  },
+  modalNavPlaceholder: {
+    width: 80,
+    alignItems: 'flex-end',
+  },
+  modalListContent: {
+    paddingBottom: 16,
   },
   modalRecipeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E8E8E8',
+    borderBottomColor: '#F0E0D0',
+    gap: 12,
+  },
+  modalRecipeThumb: {
+    width: 52,
+    height: 52,
+    borderRadius: 10,
+    backgroundColor: '#FFF8F0',
+    flexShrink: 0,
+  },
+  modalRecipeThumbPlaceholder: {
+    width: 52,
+    height: 52,
+    borderRadius: 10,
+    backgroundColor: '#FFF0E8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  modalRecipeInfo: {
+    flex: 1,
+    gap: 3,
   },
   modalRecipeName: {
-    flex: 1,
     fontSize: 16,
-    color: '#333',
+    fontWeight: '700',
+    color: '#2D1B00',
+    lineHeight: 21,
   },
-  modalRecipeChevron: {
-    fontSize: 20,
-    color: '#C7C7CC',
+  modalRecipeMeta: {
+    fontSize: 12,
+    color: '#B38B6D',
+  },
+  modalEmptyBox: {
+    alignItems: 'center',
+    paddingTop: 60,
+    gap: 12,
   },
   modalEmpty: {
     textAlign: 'center',
-    color: '#999',
-    marginTop: 40,
+    color: '#B38B6D',
     fontSize: 15,
+  },
+  modalSelectAll: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#FFF0E8',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#F0E0D0',
+  },
+  modalSelectAllText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FF6B35',
   },
   modalIngredientRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
+    backgroundColor: '#fff',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E8E8E8',
+    borderBottomColor: '#F0E0D0',
     gap: 12,
   },
   modalIngredientSelected: {
-    backgroundColor: '#F0FFF4',
+    backgroundColor: '#FFF0E8',
   },
   modalCheckbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     borderWidth: 2,
-    borderColor: '#CCC',
+    borderColor: '#F0E0D0',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   modalCheckboxChecked: {
-    backgroundColor: '#34C759',
-    borderColor: '#34C759',
-  },
-  modalCheckmark: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '700',
+    backgroundColor: '#FF6B35',
+    borderColor: '#FF6B35',
   },
   modalIngredientName: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: '#2D1B00',
+  },
+  modalIngredientNameSelected: {
+    fontWeight: '600',
+    color: '#FF6B35',
   },
   modalIngredientQty: {
-    fontSize: 14,
-    color: '#888',
+    fontSize: 13,
+    color: '#B38B6D',
+    fontWeight: '500',
+  },
+  modalIngredientQtySelected: {
+    color: '#FF9A3C',
   },
   modalFooter: {
     padding: 16,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E0E0E0',
+    borderTopWidth: 1,
+    borderTopColor: '#F0E0D0',
+    backgroundColor: '#FFF8F0',
   },
   modalConfirmButton: {
-    backgroundColor: '#34C759',
-    borderRadius: 12,
-    paddingVertical: 14,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FF6B35',
+    borderRadius: 14,
+    paddingVertical: 15,
+    elevation: 3,
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  modalConfirmButtonDisabled: {
+    backgroundColor: '#F0E0D0',
+    elevation: 0,
+    shadowOpacity: 0,
   },
   modalConfirmText: {
     color: '#fff',
