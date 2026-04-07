@@ -40,7 +40,7 @@ import { generateStepIllustration, generateAllStepIllustrations, estimateNutriti
 import { logger } from '../../src/utils/logger';
 import * as Crypto from 'expo-crypto';
 
-const HERO_HEIGHT = 250;
+// Hero height is computed dynamically in render using insets.top
 
 function MacroBar({ label, grams, color, max }) {
   if (grams == null) return null;
@@ -515,93 +515,93 @@ export default function RecipeDetailScreen() {
       style={styles.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      {/* ── Hero — pinned outside ScrollView so it never scrolls away ── */}
+      <View style={[styles.hero, { height: insets.top + 92 }]}>
+        {recipe.imageUri ? (
+          <>
+            <Image
+              source={{ uri: recipe.imageUri }}
+              style={styles.heroImage}
+              resizeMode="cover"
+            />
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.72)']}
+              style={styles.heroGradient}
+            />
+          </>
+        ) : (
+          <LinearGradient
+            colors={['#FF9A3C', '#E8622A']}
+            style={styles.heroPlaceholder}
+          >
+            <Ionicons name="restaurant" size={56} color="rgba(255,255,255,0.6)" />
+          </LinearGradient>
+        )}
+
+        {/* Back button */}
+        <TouchableOpacity
+          style={[styles.backBtn, { top: insets.top + 8 }]}
+          onPress={() => router.back()}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <View style={styles.backBtnInner}>
+            <Ionicons name="chevron-back" size={22} color="#fff" />
+          </View>
+        </TouchableOpacity>
+
+        {/* Header actions */}
+        <View style={[styles.heroActions, { top: insets.top + 8 }]}>
+          <TouchableOpacity
+            style={styles.heroBtnCircle}
+            onPress={handleShare}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="share-outline" size={20} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.heroBtnCircle}
+            onPress={() => {
+              setEditMode((e) => !e);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name={editMode ? 'checkmark' : 'pencil'} size={20} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.heroBtnCircle, styles.heroBtnDelete]}
+            onPress={handleDelete}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="trash-outline" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Title overlay */}
+        <View style={styles.heroTitleContainer}>
+          {editMode ? (
+            <TextInput
+              style={styles.heroTitleInput}
+              value={title}
+              onChangeText={setTitle}
+              onBlur={() => handleTitleSave(title)}
+              returnKeyType="done"
+              blurOnSubmit
+            />
+          ) : (
+            <Text style={styles.heroTitle} numberOfLines={2}>
+              {title}
+            </Text>
+          )}
+        </View>
+      </View>
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={[1]}
+        stickyHeaderIndices={[0]}
       >
-        {/* ── Hero ── */}
-        <View style={styles.hero}>
-          {recipe.imageUri ? (
-            <>
-              <Image
-                source={{ uri: recipe.imageUri }}
-                style={styles.heroImage}
-                resizeMode="cover"
-              />
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.72)']}
-                style={styles.heroGradient}
-              />
-            </>
-          ) : (
-            <LinearGradient
-              colors={['#FF9A3C', '#E8622A']}
-              style={styles.heroPlaceholder}
-            >
-              <Ionicons name="restaurant" size={64} color="rgba(255,255,255,0.6)" />
-            </LinearGradient>
-          )}
-
-          {/* Back button */}
-          <TouchableOpacity
-            style={[styles.backBtn, { top: insets.top + 8 }]}
-            onPress={() => router.back()}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <View style={styles.backBtnInner}>
-              <Ionicons name="chevron-back" size={22} color="#fff" />
-            </View>
-          </TouchableOpacity>
-
-          {/* Header actions */}
-          <View style={[styles.heroActions, { top: insets.top + 8 }]}>
-            <TouchableOpacity
-              style={styles.heroBtnCircle}
-              onPress={handleShare}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="share-outline" size={20} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.heroBtnCircle}
-              onPress={() => {
-                setEditMode((e) => !e);
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name={editMode ? 'checkmark' : 'pencil'} size={20} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.heroBtnCircle, styles.heroBtnDelete]}
-              onPress={handleDelete}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="trash-outline" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Title overlay */}
-          <View style={styles.heroTitleContainer}>
-            {editMode ? (
-              <TextInput
-                style={styles.heroTitleInput}
-                value={title}
-                onChangeText={setTitle}
-                onBlur={() => handleTitleSave(title)}
-                multiline
-                returnKeyType="done"
-                blurOnSubmit
-              />
-            ) : (
-              <Text style={styles.heroTitle} numberOfLines={3}>
-                {title}
-              </Text>
-            )}
-          </View>
-        </View>
 
         {/* ── Metadata row (sticky) ── */}
         <View style={styles.metaBar}>
@@ -1043,7 +1043,7 @@ const styles = StyleSheet.create({
 
   // ── Hero ──────────────────────────────────────────────────────────────────────
   hero: {
-    height: HERO_HEIGHT,
+    // height is set dynamically via insets.top + 92
     backgroundColor: '#2D1B00',
     overflow: 'hidden',
   },
@@ -1055,7 +1055,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: HERO_HEIGHT * 0.65,
+    height: 120,
   },
   heroPlaceholder: {
     ...StyleSheet.absoluteFillObject,
@@ -1064,7 +1064,6 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     position: 'absolute',
-    top: 8,
     left: 16,
   },
   backBtnInner: {
@@ -1077,7 +1076,6 @@ const styles = StyleSheet.create({
   },
   heroActions: {
     position: 'absolute',
-    top: 8,
     right: 16,
     flexDirection: 'row',
     gap: 8,
@@ -1095,7 +1093,7 @@ const styles = StyleSheet.create({
   },
   heroTitleContainer: {
     position: 'absolute',
-    bottom: 14,
+    bottom: 12,
     left: 16,
     right: 16,
   },
