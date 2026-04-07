@@ -12,6 +12,7 @@ import {
   Alert,
   Modal,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -421,9 +422,17 @@ export default function LibraryScreen() {
         visible={showNewCollection}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowNewCollection(false)}
+        onRequestClose={() => { setShowNewCollection(false); setNewColName(''); }}
       >
-        <View style={styles.modalBackdrop}>
+        <KeyboardAvoidingView
+          style={styles.modalBackdrop}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <TouchableOpacity
+            style={styles.modalDismissArea}
+            activeOpacity={1}
+            onPress={() => { setShowNewCollection(false); setNewColName(''); }}
+          />
           <View style={styles.modalSheet}>
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>New Collection</Text>
@@ -437,6 +446,7 @@ export default function LibraryScreen() {
               placeholderTextColor={C.textFaint}
               autoFocus
               returnKeyType="done"
+              onSubmitEditing={handleCreateCollection}
             />
 
             <Text style={styles.modalLabel}>Emoji</Text>
@@ -470,7 +480,7 @@ export default function LibraryScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── Add to Collection Modal ── */}
@@ -528,7 +538,7 @@ export default function LibraryScreen() {
             )}
 
             <TouchableOpacity
-              style={styles.modalCancelBtn}
+              style={[styles.modalCancelBtn, { marginTop: 16 }]}
               onPress={() => setCollectionPickerRecipe(null)}
             >
               <Text style={styles.modalCancelText}>Cancel</Text>
@@ -757,6 +767,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(45,27,0,0.4)',
     justifyContent: 'flex-end',
   },
+  modalDismissArea: {
+    flex: 1,
+  },
   modalSheet: {
     backgroundColor: C.surface,
     borderTopLeftRadius: 24,
@@ -841,7 +854,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: C.border,
-    marginTop: 16,
   },
   modalCancelText: {
     fontSize: 16,
