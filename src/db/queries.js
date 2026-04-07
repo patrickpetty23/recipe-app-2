@@ -222,6 +222,34 @@ export function updateIngredient(id, fields) {
   }
 }
 
+export function addIngredient(recipeId, ingredient) {
+  logger.info('queries.addIngredient', { recipeId, id: ingredient.id });
+  try {
+    const db = getDatabase();
+    const maxRow = db.getFirstSync(
+      'SELECT COALESCE(MAX(sort_order), -1) AS max_sort FROM ingredients WHERE recipe_id = ?',
+      recipeId
+    );
+    const sortOrder = (maxRow?.max_sort ?? -1) + 1;
+    db.runSync(
+      `INSERT INTO ingredients (id, recipe_id, name, quantity, unit, notes, checked, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ingredient.id,
+      recipeId,
+      ingredient.name,
+      ingredient.quantity ?? null,
+      ingredient.unit ?? null,
+      ingredient.notes ?? null,
+      0,
+      sortOrder
+    );
+    logger.info('queries.addIngredient.success', { recipeId, id: ingredient.id });
+  } catch (err) {
+    logger.error('queries.addIngredient.error', { recipeId, id: ingredient.id, error: err.message });
+    throw err;
+  }
+}
+
 export function deleteIngredient(id) {
   logger.info('queries.deleteIngredient', { id });
   try {
@@ -384,6 +412,26 @@ export function saveRecipeSteps(recipeId, steps) {
     logger.info('queries.saveRecipeSteps.success', { recipeId, count: steps.length });
   } catch (err) {
     logger.error('queries.saveRecipeSteps.error', { recipeId, error: err.message });
+    throw err;
+  }
+}
+
+export function addRecipeStep(recipeId, step) {
+  logger.info('queries.addRecipeStep', { recipeId, id: step.id });
+  try {
+    const db = getDatabase();
+    db.runSync(
+      `INSERT INTO recipe_steps (id, recipe_id, step_number, instruction, illustration_url)
+       VALUES (?, ?, ?, ?, ?)`,
+      step.id,
+      recipeId,
+      step.stepNumber,
+      step.instruction,
+      step.illustrationUrl ?? null
+    );
+    logger.info('queries.addRecipeStep.success', { recipeId, id: step.id });
+  } catch (err) {
+    logger.error('queries.addRecipeStep.error', { recipeId, id: step.id, error: err.message });
     throw err;
   }
 }

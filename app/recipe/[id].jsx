@@ -32,6 +32,8 @@ import {
   getNutrition,
   saveNutrition,
   logCook,
+  addIngredient,
+  addRecipeStep,
 } from '../../src/db/queries';
 import { scaleIngredients } from '../../src/utils/scaler';
 import { generateStepIllustration, generateAllStepIllustrations, estimateNutrition, lightenRecipe } from '../../src/services/openai';
@@ -86,6 +88,14 @@ export default function RecipeDetailScreen() {
   const [estimatingNutrition, setEstimatingNutrition] = useState(false);
   // lightening
   const [lightening, setLightening] = useState(false);
+  // add ingredient inline form
+  const [addingIngredient, setAddingIngredient] = useState(false);
+  const [newIngName, setNewIngName] = useState('');
+  const [newIngQty, setNewIngQty] = useState('');
+  const [newIngUnit, setNewIngUnit] = useState('');
+  // add step inline form
+  const [addingStep, setAddingStep] = useState(false);
+  const [newStepText, setNewStepText] = useState('');
 
   // Animated values for checked items
   const checkAnims = useRef(new Map()).current;
@@ -218,6 +228,68 @@ export default function RecipeDetailScreen() {
       updateIngredient(ing.id, { [field]: value });
     } catch (err) {
       logger.error('recipeDetail.updateIngredient.error', { ingredientId: ing.id, error: err.message });
+    }
+  }
+
+  // ── Add individual ingredient ────────────────────────────────────────────────
+
+  function handleAddIngredient() {
+    const name = newIngName.trim();
+    if (!name) {
+      Alert.alert('Missing Name', 'Please enter an ingredient name.');
+      return;
+    }
+    try {
+      const newIng = {
+        id: Crypto.randomUUID(),
+        recipeId: id,
+        name,
+        quantity: newIngQty ? parseFloat(newIngQty) || null : null,
+        unit: newIngUnit.trim() || null,
+        notes: null,
+        checked: false,
+        inList: false,
+        sortOrder: ingredients.length,
+      };
+      addIngredient(id, newIng);
+      setIngredients((prev) => [...prev, newIng]);
+      setNewIngName('');
+      setNewIngQty('');
+      setNewIngUnit('');
+      setAddingIngredient(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      logger.info('recipeDetail.addIngredient', { id, ingredientId: newIng.id });
+    } catch (err) {
+      logger.error('recipeDetail.addIngredient.error', { id, error: err.message });
+      Alert.alert('Error', err.message);
+    }
+  }
+
+  // ── Add individual step ─────────────────────────────────────────────────────
+
+  function handleAddStep() {
+    const instruction = newStepText.trim();
+    if (!instruction) {
+      Alert.alert('Missing Instruction', 'Please enter a step instruction.');
+      return;
+    }
+    try {
+      const newStep = {
+        id: Crypto.randomUUID(),
+        recipeId: id,
+        stepNumber: steps.length + 1,
+        instruction,
+        illustrationUrl: null,
+      };
+      addRecipeStep(id, newStep);
+      setSteps((prev) => [...prev, newStep]);
+      setNewStepText('');
+      setAddingStep(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      logger.info('recipeDetail.addStep', { id, stepId: newStep.id });
+    } catch (err) {
+      logger.error('recipeDetail.addStep.error', { id, error: err.message });
+      Alert.alert('Error', err.message);
     }
   }
 
@@ -756,6 +828,67 @@ export default function RecipeDetailScreen() {
               );
             })}
 
+            {/* Add Ingredient */}
+            <View style={styles.addItemContainer}>
+              {addingIngredient ? (
+                <View style={styles.addItemForm}>
+                  <View style={styles.addIngredientInputRow}>
+                    <TextInput
+                      style={styles.addIngQtyInput}
+                      value={newIngQty}
+                      onChangeText={setNewIngQty}
+                      placeholder="Qty"
+                      placeholderTextColor="#C7C7CC"
+                      keyboardType="decimal-pad"
+                      autoFocus
+                    />
+                    <TextInput
+                      style={styles.addIngUnitInput}
+                      value={newIngUnit}
+                      onChangeText={setNewIngUnit}
+                      placeholder="Unit"
+                      placeholderTextColor="#C7C7CC"
+                    />
+                    <TextInput
+                      style={styles.addIngNameInput}
+                      value={newIngName}
+                      onChangeText={setNewIngName}
+                      placeholder="Ingredient name"
+                      placeholderTextColor="#C7C7CC"
+                      returnKeyType="done"
+                      onSubmitEditing={handleAddIngredient}
+                    />
+                  </View>
+                  <View style={styles.addItemFormActions}>
+                    <TouchableOpacity
+                      style={styles.addItemCancelBtn}
+                      onPress={() => {
+                        setAddingIngredient(false);
+                        setNewIngName('');
+                        setNewIngQty('');
+                        setNewIngUnit('');
+                      }}
+                    >
+                      <Text style={styles.addItemCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.addItemConfirmBtn} onPress={handleAddIngredient}>
+                      <Ionicons name="checkmark" size={18} color="#fff" />
+                      <Text style={styles.addItemConfirmText}>Add</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.addItemButton}
+                  onPress={() => setAddingIngredient(true)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add-circle-outline" size={20} color="#FF6B35" />
+                  <Text style={styles.addItemButtonText}>Add Ingredient</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
             {/* Add to Shopping List button */}
             <View style={styles.listButtonContainer}>
               <TouchableOpacity style={styles.listButton} onPress={handleAddToList} activeOpacity={0.85}>
@@ -821,6 +954,47 @@ export default function RecipeDetailScreen() {
                 </View>
               ))
             )}
+            {/* Add Step */}
+            <View style={styles.addItemContainer}>
+              {addingStep ? (
+                <View style={styles.addItemForm}>
+                  <TextInput
+                    style={styles.addStepInput}
+                    value={newStepText}
+                    onChangeText={setNewStepText}
+                    placeholder="Describe this step…"
+                    placeholderTextColor="#C7C7CC"
+                    multiline
+                    autoFocus
+                  />
+                  <View style={styles.addItemFormActions}>
+                    <TouchableOpacity
+                      style={styles.addItemCancelBtn}
+                      onPress={() => {
+                        setAddingStep(false);
+                        setNewStepText('');
+                      }}
+                    >
+                      <Text style={styles.addItemCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.addItemConfirmBtn} onPress={handleAddStep}>
+                      <Ionicons name="checkmark" size={18} color="#fff" />
+                      <Text style={styles.addItemConfirmText}>Add</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.addItemButton}
+                  onPress={() => setAddingStep(true)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add-circle-outline" size={20} color="#FF6B35" />
+                  <Text style={styles.addItemButtonText}>Add Step</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
             {/* Spacer for FAB */}
             <View style={{ height: 80 }} />
           </View>
@@ -1167,6 +1341,118 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+
+  // ── Add item (shared ingredient / step) ────────────────────────────────────
+  addItemContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  addItemButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#FF6B35',
+    borderStyle: 'dashed',
+    backgroundColor: '#FFF8F0',
+  },
+  addItemButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FF6B35',
+  },
+  addItemForm: {
+    backgroundColor: '#FFF8F0',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#F0E0D0',
+    gap: 10,
+  },
+  addIngredientInputRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  addIngQtyInput: {
+    width: 56,
+    borderWidth: 1,
+    borderColor: '#F0E0D0',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    fontSize: 14,
+    textAlign: 'center',
+    color: '#2D1B00',
+    backgroundColor: '#fff',
+  },
+  addIngUnitInput: {
+    width: 68,
+    borderWidth: 1,
+    borderColor: '#F0E0D0',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: '#2D1B00',
+    backgroundColor: '#fff',
+  },
+  addIngNameInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#F0E0D0',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: '#2D1B00',
+    backgroundColor: '#fff',
+  },
+  addStepInput: {
+    borderWidth: 1,
+    borderColor: '#F0E0D0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#2D1B00',
+    backgroundColor: '#fff',
+    minHeight: 60,
+    textAlignVertical: 'top',
+  },
+  addItemFormActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  addItemCancelBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#F0E0D0',
+  },
+  addItemCancelText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B4C2A',
+  },
+  addItemConfirmBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#FF6B35',
+  },
+  addItemConfirmText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#fff',
   },
 
   // ── Steps ─────────────────────────────────────────────────────────────────────
