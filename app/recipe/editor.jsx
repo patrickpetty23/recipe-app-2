@@ -26,6 +26,7 @@ import {
 import {
   estimateNutrition,
   generateRecipeThumbnail,
+  generateStepIllustration,
 } from '../../src/services/openai';
 import { logger } from '../../src/utils/logger';
 
@@ -165,7 +166,6 @@ export default function EditorScreen() {
       const recipeId = Crypto.randomUUID();
       const now = new Date().toISOString();
       const servings = parseFloat(currentServings) || 1;
-      const cleanedSteps = instructions.filter((s) => s.trim());
 
       const recipe = {
         id: recipeId,
