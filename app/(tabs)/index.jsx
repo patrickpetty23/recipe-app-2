@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View,
@@ -29,7 +29,6 @@ import { parsePdf, parseDocx } from '../../src/services/fileParser';
 import { logger } from '../../src/utils/logger';
 
 const URL_REGEX = /^https?:\/\//i;
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const WELCOME_ID = 'welcome';
 const TYPING_ID = 'typing';
@@ -168,6 +167,15 @@ export default function ChatScreen() {
   const [showAttachSheet, setShowAttachSheet] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [pendingUrl, setPendingUrl] = useState('');
+  const pendingAction = useRef(null);
+
+  // Android fallback: Modal.onDismiss only fires on iOS, so use effect + delay
+  useEffect(() => {
+    if (!showAttachSheet && pendingAction.current && Platform.OS === 'android') {
+      const timer = setTimeout(handleAttachSheetDismiss, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [showAttachSheet]);
 
   // ── Message helpers ─────────────────────────────────────────────────────────
 
@@ -337,10 +345,29 @@ export default function ChatScreen() {
   }
 
   // ── Attachment handlers ─────────────────────────────────────────────────────
+  // Each button stores which action to run, then closes the Modal.
+  // The actual picker fires from the Modal's onDismiss callback so iOS has
+  // fully torn down the native modal before a new system sheet is presented.
 
-  async function handleCameraAttach() {
+  function queueAttachAction(action) {
+    pendingAction.current = action;
     setShowAttachSheet(false);
-    await sleep(350); // wait for sheet slide-out animation before presenting system UI
+  }
+
+  function handleAttachSheetDismiss() {
+    const action = pendingAction.current;
+    pendingAction.current = null;
+    if (!action) return;
+    if (action === 'camera') launchCamera();
+    else if (action === 'photo') launchPhotoLibrary();
+    else if (action === 'file') launchFilePicker();
+    else if (action === 'url') {
+      setPendingUrl('');
+      setShowUrlInput(true);
+    }
+  }
+
+  async function launchCamera() {
     try {
       const { status, canAskAgain } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
@@ -372,9 +399,7 @@ export default function ChatScreen() {
     }
   }
 
-  async function handlePhotoAttach() {
-    setShowAttachSheet(false);
-    await sleep(350); // wait for sheet slide-out animation before presenting system UI
+  async function launchPhotoLibrary() {
     try {
       const perms = await ImagePicker.requestMediaLibraryPermissionsAsync();
       logger.info('scan.handlePickPhoto', { step: 'permissions', granted: perms.granted, status: perms.status });
@@ -397,9 +422,7 @@ export default function ChatScreen() {
     }
   }
 
-  async function handleFileAttach() {
-    setShowAttachSheet(false);
-    await sleep(350); // wait for sheet slide-out animation before presenting system UI
+  async function launchFilePicker() {
     setBusy(true);
 
     let fileName = 'Document';
@@ -421,7 +444,6 @@ export default function ChatScreen() {
       fileName = file.name ?? fileName;
       const isPdf = file.mimeType === 'application/pdf' || file.name?.endsWith('.pdf');
 
-      // Show user's file message first
       const userMsg = {
         id: Crypto.randomUUID(),
         role: 'user',
@@ -461,10 +483,8 @@ export default function ChatScreen() {
     }
   }
 
-  async function handleUrlAttach() {
-    setShowAttachSheet(false);
-    setPendingUrl('');
-    setTimeout(() => setShowUrlInput(true), 320);
+  function handleUrlAttach() {
+    queueAttachAction('url');
   }
 
   async function handleUrlImport() {
@@ -669,14 +689,15 @@ export default function ChatScreen() {
         transparent
         animationType="slide"
         onRequestClose={() => setShowAttachSheet(false)}
+        onDismiss={handleAttachSheetDismiss}
+        onShow={() => { pendingAction.current = null; }}
       >
         <Pressable style={styles.sheetBackdrop} onPress={() => setShowAttachSheet(false)}>
-          {/* Inner Pressable stops touches on the sheet from bubbling to the backdrop */}
           <Pressable style={styles.sheet} onPress={() => {}}>
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>Add to Message</Text>
 
-            <TouchableOpacity style={styles.sheetRow} onPress={handleCameraAttach}>
+            <TouchableOpacity style={styles.sheetRow} onPress={() => queueAttachAction('camera')}>
               <View style={[styles.sheetIconBox, { backgroundColor: '#EBF3FF' }]}>
                 <Ionicons name="camera" size={22} color="#007AFF" />
               </View>
@@ -686,7 +707,7 @@ export default function ChatScreen() {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.sheetRow} onPress={handlePhotoAttach}>
+            <TouchableOpacity style={styles.sheetRow} onPress={() => queueAttachAction('photo')}>
               <View style={[styles.sheetIconBox, { backgroundColor: '#F0EBFF' }]}>
                 <Ionicons name="images" size={22} color="#7C3AED" />
               </View>
@@ -696,7 +717,7 @@ export default function ChatScreen() {
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.sheetRow} onPress={handleFileAttach}>
+            <TouchableOpacity style={styles.sheetRow} onPress={() => queueAttachAction('file')}>
               <View style={[styles.sheetIconBox, { backgroundColor: '#FFF5EB' }]}>
                 <Ionicons name="document-text" size={22} color="#EA580C" />
               </View>
