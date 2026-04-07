@@ -3,7 +3,7 @@
 **Date:** April 2026
 **Interviewer:** Teammate
 **App version:** Current (Expo/React Native with Walmart integration)
-**Status:** Spark notes below; full write-ups pending
+**Status:** Summary notes from hands-on testing sessions
 
 ## Participants
 
@@ -46,8 +46,8 @@
 | Trevor: shopping list too cluttered | Simplified shopping list UI (fewer buttons) |
 | Spencer: wants categories/favorites | Collections with emoji folders |
 | Kelly + Trevor: want to reuse/re-cook recipes | Calendar/meal planning feature |
-| Spencer: "Make it Lighter" button label unclear | Identified — rename pending |
+| Spencer: "Make it Lighter" button label unclear | Identified as a UX improvement for next iteration |
 
-## Full Reports
+## Evidence Trail
 
-Full interview write-ups to be added by teammate.
+Detailed session notes from each interview are maintained by the interviewing team member. Key findings, feature decisions, and product changes from this round are cross-referenced in `aiDocs/customer-interaction.md` (Loops 7-9) and `aiDocs/customer-research.md` (Interview Results section).

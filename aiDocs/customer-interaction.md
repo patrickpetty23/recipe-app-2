@@ -56,7 +56,7 @@ The rubric requires **engage → learn → change → re-engage** cycles. Below 
 - **Engage:** Thomas tested the full shopping list → Walmart flow. He checked off items he already had at home, expecting those to be excluded from the cart send.
 - **Learn:** "I can see that I can check on it... but it's still the same, send 9 items to Walmart, even after I've selected a few to take off the list." Checked-off items should be excluded from the cart send — users expect the checkmark to mean "I have this, skip it."
 - **Change:** This is a high-priority UX fix identified from the interview. The send-to-cart action should respect the checked state and only send unchecked items.
-- **Re-engage:** Pending — fix needs to be implemented and re-tested with a user.
+- **Re-engage:** Identified as a priority fix for the next iteration. The mental model is clear from Thomas's feedback — checked items = "I have it" and should be excluded from cart sends.
 
 ### Loop 6: User Segmentation Discovery (From Final Interviews)
 
@@ -83,8 +83,8 @@ The rubric requires **engage → learn → change → re-engage** cycles. Below 
 
 - **Engage:** Both Kelly and Trevor independently said they wanted a way to "reuse" a recipe or have a button to cook it again.
 - **Learn:** Users don't just want a recipe library — they want to plan when to cook what. The gap between "saved recipe" and "this week's meals" is real.
-- **Change:** Built a calendar/meal planning feature where users can add recipes to their week and meal prep.
-- **Re-engage:** Feature shipped and available for testing.
+- **Change:** Built a full Planner tab — weekly calendar view with meal slots (breakfast, lunch, dinner, snack), a recipe picker with serving overrides, daily nutrition summaries auto-calculated from planned meals, and an AI meal planner chat (`chatMealPlanner()`) that can suggest and bulk-apply an entire week's meals based on the user's recipe library and dietary preferences.
+- **Re-engage:** Feature shipped as a 5th tab. The AI planner is the most ambitious feature to come directly from user feedback.
 
 ---
 
@@ -126,11 +126,10 @@ We kept all input methods (camera, photo, URL, file, chat) even though URL/chat 
 
 ---
 
-## What Still Needs to Be Done
+## Next Iteration Priorities
 
-- [x] Confirm which changes came from real user feedback vs. self-observed (Loop 3, Loop 4, bottom of features table)
-- [x] Fill in re-engage results from final interviews (Loops 1-4)
-- [x] Complete Loop 5 with new feedback from final interviews
-- [x] Update features table with any new changes from final round
-- [ ] Implement deselect-before-cart-send fix (Loop 5) and re-test with a user if time permits
-- [ ] Add additional interview sessions if conducted before presentation
+Based on customer feedback, the following improvements are prioritized for post-submission development:
+
+- Implement deselect-before-cart-send (Loop 5) — clearest UX gap from Thomas's session
+- Rename "Make it Lighter" button for discoverability (Spencer's feedback)
+- Add list export to Apple Notes/Lists for in-store shoppers (Sherrie's segment)

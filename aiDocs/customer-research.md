@@ -25,12 +25,12 @@
 1. **Input sources are broader than screenshots — and the interface became conversational.** We added URL import, PDF/DOCX import, and plain-text description. More importantly, all input methods converge through a **Chat tab** — a conversational AI interface where users send messages, photos, URLs, or files. This replaced the original button-driven import flow and turned out to be more natural. Users can also ask general cooking questions (e.g., substitution suggestions) in the same interface.
 2. **Walmart integration became the core differentiator.** At midterm, our differentiation was "AI parsing + editability." After building, the unique value is the full pipeline: any recipe source → structured list → Walmart cart. No competitor does this.
 3. **The app grew beyond recipe-to-list into a cooking lifecycle tool.** Users asked about calories unprompted, wanted the app to help them cook (not just plan), and expected AI-generated visuals. We added: nutrition estimation (GPT-4o auto-estimates macros on save), a Nutrition Tracker tab with daily calorie/macro tracking, a full-screen Cooking Mode with text-to-speech and countdown timers, DALL-E 3 recipe thumbnails and step illustrations, "Make it Lighter" AI substitution suggestions, meal logging, and recipe collections with emoji organization.
-4. **The customer profile needs to include "shops at Walmart" — but not exclusively.** Our midterm segment was generic "iPhone users who cook." The Walmart integration narrows this for the cart feature, but the broader cooking lifecycle features (nutrition tracking, cooking mode, recipe library) have value for all home cooks, including users like Sherrie who don't want cart integration.
+4. **The customer profile needs to include "shops at Walmart" — but not exclusively.** Our midterm segment was generic "iPhone users who cook." The Walmart integration narrows this for the cart feature, but the broader cooking lifecycle features (nutrition tracking, cooking mode, meal planning, recipe library) have value for all home cooks, including users like Sherrie who don't want cart integration.
 5. **"Offline-first" mattered less than expected.** The app requires API calls to GPT-4o, DALL-E 3, and Walmart anyway. Offline mode only applies to the library, shopping list, and cooking mode, which is useful but not the main value proposition.
 
 ### Updated customer definition
 
-**Primary segment:** iPhone users who cook from recipes 3+ times per week and do their grocery shopping at Walmart (pickup or delivery). They want a single tool that handles the full cooking lifecycle: recipe capture → structured list → Walmart cart → cooking guidance → nutrition tracking. Thomas and his wife Chris are the archetype — weekly Walmart pickup, recipe-driven cooking, currently using paper lists.
+**Primary segment:** iPhone users who cook from recipes 3+ times per week and do their grocery shopping at Walmart (pickup or delivery). They want a single tool that handles the full cooking lifecycle: recipe capture → structured list → Walmart cart → cooking guidance → nutrition tracking → weekly meal planning. Thomas and his wife Chris are the archetype — weekly Walmart pickup, recipe-driven cooking, currently using paper lists.
 
 **Secondary segment:** Home cooks who value recipe organization, cooking guidance, and nutrition tracking but don't use Walmart cart integration. They benefit from the AI extraction, recipe library with collections, cooking mode with TTS, and nutrition tracker. Sherrie represents this segment — she wants the recipe→list flow exported to her own tools, plus calorie tracking.
 
@@ -92,7 +92,7 @@ Seven interviews conducted across two team members with people outside the team'
 
 #### Interviews 4-7 — Teammate Round (Trevor, Spencer, John, Kelly)
 
-These four interviews were conducted by a teammate. All tested the current app with Walmart integration. Full write-ups pending; spark notes below. Detailed notes in `aiDocs/evidence/customer-conversation-teammate-round.md`.
+These four interviews were conducted by a teammate. All tested the current app with Walmart integration. Detailed notes in `aiDocs/evidence/customer-conversation-teammate-round.md`.
 
 - **Trevor:** Liked concept, loved Walmart integration. Found shopping list UI cluttered (too many buttons) → we simplified it. Wanted a way to re-cook recipes → drove calendar/meal planning feature.
 - **Spencer:** Liked concept, loved Walmart integration. Wanted recipe categories/favorites like "lunch" or "Italian" → directly drove the collections feature. Loved "Make it Lighter" but didn't understand what the button meant at first → rename needed.
@@ -153,10 +153,10 @@ These four interviews were conducted by a teammate. All tested the current app w
 
 ---
 
-## What Still Needs to Be Done
+## Research Summary
 
-- [x] Conduct 3-5 interviews beyond friends/family — 3 completed (Kierra, Sherrie, Thomas)
-- [x] Fill in interview results and assumptions vs. reality table
-- [x] Update competitive analysis if interviewees mention apps we missed — added Skylight
-- [x] Write "Patterns Across All Interviews" synthesis
-- [ ] Conduct additional interviews if time permits before presentation (April 7)
+- 10 total interviews conducted (3 midterm + 7 final across 2 interviewers)
+- All final participants are outside the team's immediate friend circle
+- Assumptions vs. reality table completed with evidence from all rounds
+- Competitive analysis updated with Skylight (surfaced by Thomas) and Walmart positioning
+- Cross-interview synthesis written covering patterns from all 10 sessions

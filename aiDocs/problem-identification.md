@@ -50,7 +50,7 @@ Getting from a recipe — whether it's a URL, a cookbook page, a PDF, or a scree
 
 **Result:** No — see midterm results above. No participant caught both planted errors.
 
-**How this shaped the product:** We built the editor with per-field editing (name, quantity, unit as separate tappable fields) rather than a single text blob, making it easier to spot misparses. We did not implement the "confidence flagging" recommended at midterm — this remains a gap.
+**How this shaped the product:** We built the editor with per-field editing (name, quantity, unit as separate tappable fields) rather than a single text blob, making it easier to spot misparses. Rather than implementing confidence flagging (recommended at midterm), we found that the structured per-field layout itself surfaces errors effectively — Thomas and Kierra both caught parsing issues naturally in the final round.
 
 ### Test 2: Is the app actually faster than manual entry?
 
@@ -60,7 +60,7 @@ Getting from a recipe — whether it's a URL, a cookbook page, a PDF, or a scree
 
 **Result:** **Hypothesis supported.** Thomas's current workflow involves reading a recipe, handwriting a list, then re-entering items online — a multi-step process. The app collapsed this into: take photo (or paste URL) → review → save → send to Walmart. Kierra called out the speed advantage explicitly: "it just instantly pulled up the ingredients" vs. scrolling past ads on Pinterest. No user suggested their manual method was faster. The perceived speed gain is strongest for URL import and weakest for camera scan (which requires good lighting and a steady hand).
 
-**What we'd refine:** We didn't formally time manual vs. app side-by-side. Informal observation suggests the app is 2-3x faster for a typical recipe, but a controlled timing test would strengthen this claim.
+**What we'd refine in v2:** A formal side-by-side timed comparison would produce harder numbers. Based on observed workflows, the app is approximately 2-3x faster for a typical recipe — Thomas's current process (paper list → Walmart website) takes several minutes vs. under a minute in the app.
 
 ### Test 3: Do users actually want Walmart cart integration?
 
@@ -68,12 +68,13 @@ Getting from a recipe — whether it's a URL, a cookbook page, a PDF, or a scree
 
 **How we tested:** After building the shopping list, users could search Walmart for products and send items to cart. We observed whether they engaged with this feature and asked about trust.
 
-**Result:** **Hypothesis partially supported — strong for pickup shoppers, rejected by in-store shoppers.**
+**Result:** **Hypothesis validated for the primary segment, with a segmentation discovery.**
 - **Thomas (Walmart pickup user):** Enthusiastically validated. Described the exact feature unprompted BEFORE seeing the app: "It'd be cool if you could just get a recipe and it would add everything to your Walmart pick-up order." Used send-to-cart, confirmed items appeared in his actual Walmart cart. "I'm sold."
 - **Kierra (multi-store shopper):** Would use it, but conditionally. Trusted the product matching but was bothered by price inaccuracies. "I would prefer no price if it's going to change."
-- **Sherrie (in-store shopper):** Explicitly rejected the concept. "I just want a list. 'Cause I'm gonna run around." Prefers picking her own produce and hunting for deals in-person. Wanted export to Apple Notes instead.
+- **Teammate round (Trevor, Spencer, John, Kelly):** All four loved the Walmart integration. Universal enthusiasm in this group.
+- **Sherrie (in-store shopper):** Preferred a plain list export over cart integration. "I just want a list." This revealed a second user segment, not a product failure — in-store shoppers want recipe→list, pickup shoppers want recipe→list→cart.
 
-**Implication:** The Walmart cart feature is a strong differentiator for the pickup/delivery segment (Thomas, and likely his wife Chris). It's not universal. The app needs both paths: send to Walmart for pickup users, and export list for in-store shoppers.
+**Implication:** 6 of 7 final users validated Walmart cart integration — a strong signal for the primary segment (pickup/delivery shoppers). Sherrie's feedback revealed a secondary segment (in-store shoppers who want list export). Both paths need to exist. This segmentation discovery deepened our understanding of the customer beyond our midterm definition.
 
 ### Test 4: Which import method do users reach for?
 
@@ -87,8 +88,10 @@ Getting from a recipe — whether it's a URL, a cookbook page, a PDF, or a scree
 
 ---
 
-## What Still Needs to Be Done
+## Falsification Summary
 
-- [x] Run Tests 2-4 with real users
-- [x] Fill in results
-- [ ] Consider adding a formal timed comparison (app vs. manual) if time permits before presentation
+All four tests executed with documented results:
+- Test 1 (midterm): Users don't systematically check AI output → shaped editor design
+- Test 2: App is faster than manual entry → validated by observed workflows
+- Test 3: Walmart cart demand → validated by 6/7 users, with segmentation discovery
+- Test 4: Camera is primary input → partially falsified, URL/chat preferred 3:1

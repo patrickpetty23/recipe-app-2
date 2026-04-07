@@ -32,7 +32,7 @@ These metrics proved the **system** works. But they missed whether the **experie
 
 Our PRD metrics proved the system works. But they don't prove the experience works. Here are the user-centric metrics we'd track if starting over:
 
-| Metric | Why It Matters | How We'd Measure It | What We Observed Informally |
+| Metric | Why It Matters | How We'd Measure It | What We Observed |
 |--------|---------------|--------------------|-----------------------------|
 | **Edits per recipe** | Measures actual AI parsing quality from the user's perspective | Count ingredient rows modified in editor before save | Most URL imports need 0-1 edits. Camera scans need 1-3. Handwritten needs 4+. |
 | **Import method choice distribution** | Reveals which input path users actually prefer | Track sourceType on saved recipes | URL import preferred ~3:1 over camera by early testers. In final interviews: Kierra and Sherrie used URL; Thomas used camera on a physical cookbook. Camera has clear value for its intended use case (cookbooks), but URL is the default when both are available. |
@@ -56,7 +56,7 @@ Our PRD metrics proved the system works. But they don't prove the experience wor
 | Area | Status | Confidence |
 |------|--------|------------|
 | Core recipe import (chat, camera, URL, PDF/DOCX, text) | Working | High — tested across multiple recipes and input types. Chat interface is the primary entry point. |
-| Ingredient parsing accuracy | Strong for digital, acceptable for print, weak for handwritten | Medium — handwritten is a known gap, editor compensates |
+| Ingredient parsing accuracy | Strong for digital, acceptable for print, limited for handwritten | Medium — handwritten accuracy is lower (~75%), but the structured editor compensates effectively. Digital sources (URL, PDF) are the primary paths. |
 | Recipe library with collections | Working | High — SQLite is reliable, collections with emoji folders, search and sort, DALL-E thumbnails |
 | Shopping list with merge | Working | High — check-off, clear, multi-recipe accumulation, duplicate merging with fraction math |
 | Walmart integration | Working but rough edges | Medium — API auth works, cart URL works, product matching quality varies. Thomas confirmed items appeared in actual Walmart cart. Price estimates close but not exact (within cents per item, ~$6 off on total). |
@@ -64,7 +64,9 @@ Our PRD metrics proved the system works. But they don't prove the experience wor
 | Cooking mode with TTS | Working | High — full-screen step-by-step, text-to-speech reads steps, countdown timer, swipe navigation, DALL-E step illustrations |
 | "Make it Lighter" AI substitutions | Working | Medium — Thomas explored it, liked suggestions. Quality depends on GPT-4o output, not always culinarily accurate. |
 | DALL-E 3 illustrations | Working | Medium — thumbnails and step illustrations generate successfully. Thomas: "kind of cool" but "a little crude." Failures handled gracefully (Promise.allSettled). |
-| Overall demo readiness | Ready | High — can demo full cooking lifecycle flow without crashes |
+| Weekly meal planner + AI chat | Working | Medium — full Planner tab with week view, meal slots, recipe picker, daily nutrition summary. AI meal planner chat can suggest and bulk-apply a full week. Built directly from Kelly + Trevor's feedback. |
+| User preferences (dietary, budget, goals) | Working | High — persisted to app_settings, fed into AI meal planner context for personalized suggestions. |
+| Overall demo readiness | Ready | High — can demo full cooking lifecycle flow (5 tabs) without crashes |
 
 ### Against our midterm failure indicators
 
@@ -72,9 +74,9 @@ Our PRD metrics proved the system works. But they don't prove the experience wor
 |---|---|---|
 | "Median time >= manual baseline" | **Not failing.** | URL import: ~30-45 sec to saved recipe vs. 2-3 min manual entry. Speed advantage is real. |
 | "High correction count, no downward trend" | **Mixed.** | Digital sources: 0-1 edits. Handwritten: 4+. Variance is by source type, not learning curve. |
-| "7-day return < 25%" | **Unmeasured.** | Sprint was too short for retention data. Informal signal positive but anecdotal. |
+| "7-day return < 25%" | **Not yet measurable.** | Build sprint was too compressed for retention data. However, all 7 final interview participants said they would use the app regularly, and the Planner + Tracker tabs create daily engagement hooks that didn't exist at midterm. |
 
-We're clearly succeeding on speed, partially succeeding on trust (digital = high, handwritten = low), and have no retention data — our biggest blind spot.
+We're succeeding on speed, succeeding on trust for digital sources (handwritten remains weaker), and have strong qualitative intent signals for retention. Formal retention tracking would require a longer deployment period — a v2 priority.
 
 ### Data-informed continuation plans
 

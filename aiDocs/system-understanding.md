@@ -48,7 +48,7 @@
 │                             │    └─────────────────────────────┘             │
 │                             ▼                                                │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                    SQLite (Local DB — 9 tables)                      │    │
+│  │                    SQLite (Local DB — 10 tables)                     │    │
 │  │                                                                     │    │
 │  │  recipes ─────────┬── ingredients (FK, cascade, in_list flag)       │    │
 │  │                   ├── recipe_steps (step_number, illustration_url)  │    │
@@ -56,29 +56,30 @@
 │  │                   │                     fat, fiber per serving)     │    │
 │  │                   └── recipe_collections (junction to collections)  │    │
 │  │  collections (name, emoji)                                          │    │
+│  │  meal_plan (date, meal_type, recipe_id, servings, cached nutrition) │    │
 │  │  cook_log (recipe_id, servings, calories, macros, cooked_at)       │    │
 │  │  chat_messages (role, content, image_uri)                           │    │
-│  │  app_settings (key-value: daily goals, onboarding state)           │    │
+│  │  app_settings (key-value: daily goals, prefs, onboarding state)    │    │
 │  └───────────┬──────────────┬──────────────┬──────────────┬───────────┘    │
 │              │              │              │              │                  │
 │              ▼              ▼              ▼              ▼                  │
-│  ┌───────────────┐ ┌──────────────┐ ┌────────────┐ ┌──────────────┐       │
-│  │ RECIPES TAB   │ │ SHOPPING TAB │ │ TRACKER TAB│ │ RECIPE DETAIL│       │
-│  │               │ │              │ │            │ │              │       │
-│  │ - All saved   │ │ - Merged     │ │ - Daily    │ │ - Ingredients│       │
-│  │   recipes     │ │   ingredient │ │   calorie  │ │   / Steps    │       │
-│  │ - Search +    │ │   list       │ │   ring     │ │   tabs       │       │
-│  │   sort        │ │ - Check-off  │ │ - Macro    │ │ - Servings   │       │
-│  │ - Collections │ │ - Walmart    │ │   progress │ │   scaler     │       │
-│  │   (emoji      │ │   search +   │ │   bars     │ │ - Log Meal   │       │
-│  │   folders)    │ │   prices     │ │ - Today's  │ │ - Make It    │       │
-│  │ - Swipe to    │ │ - Send to    │ │   meal log │ │   Lighter    │       │
-│  │   delete      │ │   Walmart    │ │ - Editable │ │ - DALL-E     │       │
-│  │ - DALL-E      │ │   cart       │ │   daily    │ │   step illus.│       │
-│  │   thumbnails  │ │ - Add from   │ │   goals    │ │ - Share      │       │
-│  └───────────────┘ │   recipe     │ │ - History  │ │ - Cooking    │       │
-│                     │   picker     │ └────────────┘ │   Mode ──────┤       │
-│                     └──────────────┘                └──────────────┘       │
+│  ┌─────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐ │
+│  │ RECIPES TAB │ │SHOPPING TAB│ │ TRACKER TAB│ │PLANNER TAB │ │RECIPE DETL │ │
+│  │             │ │            │ │            │ │  (NEW)     │ │            │ │
+│  │ - All saved │ │ - Merged   │ │ - Daily    │ │ - Week     │ │ - Ingrednt │ │
+│  │   recipes   │ │   ingrednt │ │   calorie  │ │   calendar │ │   / Steps  │ │
+│  │ - Search +  │ │   list     │ │   ring     │ │ - Meal     │ │   tabs     │ │
+│  │   sort      │ │ - Check-off│ │ - Macro    │ │   slots    │ │ - Servings │ │
+│  │ - Collectns │ │ - Walmart  │ │   bars     │ │   (B/L/D/S)│ │   scaler   │ │
+│  │ - DALL-E    │ │   search + │ │ - Meal log │ │ - AI meal  │ │ - Log Meal │ │
+│  │   thumbnails│ │   prices   │ │ - Editable │ │   planner  │ │ - Make It  │ │
+│  │ - Swipe     │ │ - Send to  │ │   goals    │ │   chat     │ │   Lighter  │ │
+│  │   delete    │ │   cart     │ │ - History  │ │ - Daily    │ │ - DALL-E   │ │
+│  └─────────────┘ │ - Add from │ └────────────┘ │   nutrition│ │   step ill.│ │
+│                   │   recipe   │                │   summary  │ │ - Share    │ │
+│                   │   picker   │                │ - User     │ │ - Cooking  │ │
+│                   └────────────┘                │   prefs    │ │   Mode ────┤ │
+│                                                 └────────────┘ └────────────┘ │
 │                            │                               │               │
 │                            ▼                               ▼               │
 │  ┌───────────────────────────────────┐  ┌──────────────────────────────┐  │
@@ -107,7 +108,7 @@
         │  │  - Text (chat/parse)   │  │ - RSA-signed auth   │ │
         │  │  - Nutrition estimate  │  │   (node-forge)      │ │
         │  │  - Lighten recipe      │  │ - In-memory cache   │ │
-        │  │                        │  │ - Cart deep link    │ │
+        │  │  - Meal planner chat   │  │ - Cart deep link    │ │
         │  │ DALL-E 3:              │  └─────────────────────┘ │
         │  │  - Recipe thumbnails   │                          │
         │  │  - Step illustrations  │  ┌─────────────────────┐ │
@@ -209,7 +210,7 @@ Not anticipated at midterm at all. We added AI-generated images in two places:
 
 **8. The database grew from 2 tables to 9**
 
-The midterm assumed `recipes` and `ingredients`. The final system has 9 tables: `recipes`, `ingredients`, `recipe_steps`, `recipe_nutrition`, `collections`, `recipe_collections`, `cook_log`, `chat_messages`, and `app_settings`. Each table emerged from a feature need we didn't anticipate — steps needed their own table for illustration URLs, nutrition needed per-serving storage, collections needed a junction table for many-to-many, and the tracker needed a cook log.
+The midterm assumed `recipes` and `ingredients`. The final system has 10 tables: `recipes`, `ingredients`, `recipe_steps`, `recipe_nutrition`, `collections`, `recipe_collections`, `cook_log`, `chat_messages`, and `app_settings`. Each table emerged from a feature need we didn't anticipate — steps needed their own table for illustration URLs, nutrition needed per-serving storage, collections needed a junction table for many-to-many, and the tracker needed a cook log.
 
 **9. The "User Outcomes Loop" became concrete feedback loops**
 
