@@ -40,6 +40,7 @@ import {
   addRecipeToList,
 } from '../../src/db/queries';
 import { chatMealPlanner, parseRecipeFromText } from '../../src/services/openai';
+import { scheduleMealReminder } from '../../src/utils/notifications';
 import { logger } from '../../src/utils/logger';
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
@@ -536,6 +537,12 @@ export default function PlannerScreen() {
         fat: ntr?.fat ?? null,
         createdAt: new Date().toISOString(),
       });
+      // Fire-and-forget reminder notification
+      scheduleMealReminder({
+        recipeTitle: pickerSelected.title,
+        plannedDate: pickerTarget.date,
+        mealType: pickerTarget.mealType,
+      }).catch(() => {});
       loadData(); setShowPicker(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err) {
@@ -563,6 +570,12 @@ export default function PlannerScreen() {
         fat: customFat ? parseFloat(customFat) || null : null,
         createdAt: new Date().toISOString(),
       });
+      // Fire-and-forget reminder notification
+      scheduleMealReminder({
+        recipeTitle: name,
+        plannedDate: pickerTarget.date,
+        mealType: pickerTarget.mealType,
+      }).catch(() => {});
       loadData(); setShowPicker(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err) {
@@ -701,6 +714,14 @@ export default function PlannerScreen() {
         }
         loadData();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // Schedule reminders for all applied items (non-blocking)
+        for (const item of items) {
+          scheduleMealReminder({
+            recipeTitle: item.recipe_title ?? 'Planned meal',
+            plannedDate: item.date,
+            mealType: item.meal_type,
+          }).catch(() => {});
+        }
         setUndoIds(newIds); setShowUndo(true);
         if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
         undoTimerRef.current = setTimeout(() => { setShowUndo(false); setUndoIds([]); }, 6000);

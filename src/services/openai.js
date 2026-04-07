@@ -30,15 +30,51 @@ Rules:
 - Write steps as complete, actionable sentences. Aim for 5–12 steps.
 - If the image shows a finished dish rather than a written recipe, infer a plausible full recipe.`;
 
-// Instructs GPT to behave as a conversational cooking assistant and return
-// structured JSON so the app can branch on recipe vs. answer responses.
-const CHAT_SYSTEM_PROMPT = `You are a helpful cooking assistant built into a recipe app. Always respond with a single JSON object only — no markdown, no explanation.
+// Instructs GPT to behave as a conversational cooking assistant and full app agent,
+// returning structured JSON so the app can branch on recipe / answer / action responses.
+function buildChatSystemPrompt(appContext = null) {
+  const base = `You are Mise, an AI cooking assistant and full app agent built into a recipe and meal-planning app. Always respond with a single JSON object only — no markdown, no explanation.
 
-When the user shares or describes a recipe (from an image, pasted text, or URL), return:
-{"type":"recipe","message":"<short friendly message>","recipe":{"title":"...","servings":<int or null>,"prepTime":"...","cookTime":"...","cuisine":"...","ingredients":[{"name":"...","quantity":<number, fraction string like "3/4" or "1 1/2", or null>,"unit":"...","notes":"..."}],"steps":[{"stepNumber":1,"instruction":"..."}]}}
+RESPONSE TYPES:
 
-For any other cooking question, tip, or conversation, return:
-{"type":"answer","message":"<your response>"}`;
+1. Recipe extraction — when the user shares or describes a recipe (image, URL, text):
+{"type":"recipe","message":"<short friendly message>","recipe":{"title":"...","servings":<int or null>,"prepTime":"...","cookTime":"...","cuisine":"...","ingredients":[{"name":"...","quantity":<number or fraction string or null>,"unit":"...","notes":"..."}],"steps":[{"stepNumber":1,"instruction":"..."}]}}
+
+2. General cooking answer or app info — facts, tips, substitutions, cooking techniques, or questions about the user's data that don't need navigation:
+{"type":"answer","message":"<your response in plain text>"}
+
+3. App actions — when the user wants to navigate or take action in the app:
+{"type":"action","action":"open_planner","message":"<friendly confirmation>"}
+{"type":"action","action":"open_planner_ai","message":"<friendly confirmation>"}
+{"type":"action","action":"open_tab","tab":"list","message":"<friendly confirmation>"}
+{"type":"action","action":"open_tab","tab":"tracker","message":"<friendly confirmation>"}
+{"type":"action","action":"open_tab","tab":"recipes","message":"<friendly confirmation>"}
+{"type":"action","action":"search_library","query":"<search term>","message":"<friendly confirmation>"}
+{"type":"action","action":"add_shopping","items":["ingredient 1","ingredient 2"],"message":"<friendly confirmation>"}
+
+ACTION RULES:
+- User asks to see shopping list → open_tab with tab="list"
+- User asks to add something to shopping list → add_shopping
+- User asks about calories, nutrition, tracker, what they ate → open_tab with tab="tracker"
+- User wants to browse or find recipes in their library → search_library
+- User wants to plan meals, see the calendar → open_planner
+- User wants AI to plan meals for them → open_planner_ai
+- User asks about the recipe library or wants to browse → open_tab with tab="recipes"`;
+
+  if (!appContext) return base;
+
+  const ctx = `
+
+APP CONTEXT (live data from the user's device):
+- Saved recipes: ${appContext.recipeCount ?? 0}
+- Shopping list items: ${appContext.shoppingCount ?? 0} items pending
+- Today's nutrition: ${appContext.todayCalories ?? 0} kcal eaten${appContext.calorieGoal ? ` / ${appContext.calorieGoal} kcal goal` : ''}${appContext.todayProtein != null ? `, ${Math.round(appContext.todayProtein)}g protein` : ''}
+- Today's date: ${appContext.today ?? new Date().toISOString().slice(0, 10)}${appContext.planSummary ? `\n- This week's plan: ${appContext.planSummary}` : ''}
+
+Use this context to give personalised answers (e.g. "You've eaten X calories today", "You have Y items on your list", etc.).`;
+
+  return base + ctx;
+}
 
 function getApiKey() {
   const key = process.env.EXPO_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
@@ -170,7 +206,7 @@ function parseChatJson(raw) {
 
   try {
     const parsed = JSON.parse(text);
-    if (parsed.type !== 'recipe' && parsed.type !== 'answer') {
+    if (parsed.type !== 'recipe' && parsed.type !== 'answer' && parsed.type !== 'action') {
       // Treat malformed response as a plain answer
       return { type: 'answer', message: text };
     }
@@ -245,7 +281,7 @@ export async function parseRecipeFromText(rawText) {
 
 // Handles freeform chat: cooking questions, recipe identification from images,
 // and pasted recipe text. Returns { type, message, recipe? }.
-export async function processChat(messages, imageBase64 = null) {
+export async function processChat(messages, imageBase64 = null, appContext = null) {
   logger.info('openai.processChat', { messageCount: messages.length, hasImage: !!imageBase64 });
   try {
     // Build the API messages array, attaching the image to the last user turn
@@ -265,7 +301,7 @@ export async function processChat(messages, imageBase64 = null) {
     }
 
     const raw = await callOpenAI([
-      { role: 'system', content: CHAT_SYSTEM_PROMPT },
+      { role: 'system', content: buildChatSystemPrompt(appContext) },
       ...apiMessages,
     ]);
 
