@@ -189,7 +189,7 @@ export default function LibraryScreen() {
       logger.info('library.addToCollection', { recipeId: collectionPickerRecipe.id, collectionId });
       // Refresh collection counts so the pill badges update
       setCollections((prev) =>
-        prev.map((c) => (c.id === collectionId ? { ...c, recipeCount: c.recipeCount + 1 } : c))
+        prev.map((c) => (c.id === collectionId ? { ...c, recipeCount: (c.recipeCount ?? 0) + 1 } : c))
       );
     } catch (err) {
       logger.error('library.addToCollection.error', { error: err.message });
@@ -204,7 +204,7 @@ export default function LibraryScreen() {
     if (!name) return;
     try {
       const now = new Date().toISOString();
-      const col = { id: Crypto.randomUUID(), name, emoji: newColEmoji, createdAt: now };
+      const col = { id: Crypto.randomUUID(), name, emoji: newColEmoji, recipeCount: 0, createdAt: now };
       createCollection(col);
       setCollections((prev) => [col, ...prev]);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -303,9 +303,9 @@ export default function LibraryScreen() {
         <Text style={[styles.collectionName, isActive && styles.collectionNameActive, isNew && styles.collectionNameNew]} numberOfLines={1}>
           {col.name}
         </Text>
-        {!isNew && col.recipeCount >= 0 && (
+        {!isNew && (
           <Text style={[styles.collectionCount, isActive && styles.collectionCountActive]}>
-            {col.recipeCount}
+            {col.recipeCount ?? 0}
           </Text>
         )}
       </TouchableOpacity>
@@ -629,6 +629,7 @@ const styles = StyleSheet.create({
   collectionCount: {
     fontSize: 10,
     color: C.textFaint,
+    marginBottom: 2,
   },
   collectionCountActive: {
     color: C.orange,

@@ -39,7 +39,20 @@
           }
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Recipe Scanner needs access to your photo library to import recipe images.",
+          "cameraPermission": "Recipe Scanner needs access to your camera to photograph recipes."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Recipe Scanner needs access to your camera to photograph recipes."
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true

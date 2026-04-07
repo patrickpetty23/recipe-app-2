@@ -29,6 +29,7 @@ import { parsePdf, parseDocx } from '../../src/services/fileParser';
 import { logger } from '../../src/utils/logger';
 
 const URL_REGEX = /^https?:\/\//i;
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const WELCOME_ID = 'welcome';
 const TYPING_ID = 'typing';
@@ -165,6 +166,8 @@ export default function ChatScreen() {
   const [attachedImage, setAttachedImage] = useState(null); // { uri, base64 }
   const [busy, setBusy] = useState(false);
   const [showAttachSheet, setShowAttachSheet] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [pendingUrl, setPendingUrl] = useState('');
 
   // ── Message helpers ─────────────────────────────────────────────────────────
 
@@ -337,6 +340,7 @@ export default function ChatScreen() {
 
   async function handleCameraAttach() {
     setShowAttachSheet(false);
+    await sleep(350); // wait for sheet slide-out animation before presenting system UI
     try {
       const { status, canAskAgain } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
@@ -370,6 +374,7 @@ export default function ChatScreen() {
 
   async function handlePhotoAttach() {
     setShowAttachSheet(false);
+    await sleep(350); // wait for sheet slide-out animation before presenting system UI
     try {
       const perms = await ImagePicker.requestMediaLibraryPermissionsAsync();
       logger.info('scan.handlePickPhoto', { step: 'permissions', granted: perms.granted, status: perms.status });
@@ -394,6 +399,7 @@ export default function ChatScreen() {
 
   async function handleFileAttach() {
     setShowAttachSheet(false);
+    await sleep(350); // wait for sheet slide-out animation before presenting system UI
     setBusy(true);
 
     let fileName = 'Document';
@@ -450,6 +456,63 @@ export default function ChatScreen() {
         imageUri: null,
         recipeData: null,
       });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleUrlAttach() {
+    setShowAttachSheet(false);
+    setPendingUrl('');
+    setTimeout(() => setShowUrlInput(true), 320);
+  }
+
+  async function handleUrlImport() {
+    const url = pendingUrl.trim();
+    setShowUrlInput(false);
+    if (!url || !URL_REGEX.test(url)) {
+      Alert.alert('Invalid URL', 'Please enter a URL starting with http:// or https://');
+      return;
+    }
+    if (busy) return;
+    setBusy(true);
+
+    const userMsg = {
+      id: Crypto.randomUUID(),
+      role: 'user',
+      type: 'text',
+      content: url,
+      imageUri: null,
+      recipeData: null,
+    };
+    addMessage(userMsg);
+    addTypingIndicator();
+
+    try {
+      logger.info('chat.handleUrlImport', { url: url.slice(0, 80) });
+      const scraped = await scrapeRecipeUrl(url);
+      const recipeData = await parseRecipeFromText(scraped);
+      removeTypingAndAdd({
+        id: Crypto.randomUUID(),
+        role: 'assistant',
+        type: 'recipe',
+        content: recipeData.title ? `Here's the recipe I found!` : 'Found a recipe for you.',
+        imageUri: null,
+        recipeData,
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err) {
+      logger.error('chat.handleUrlImport.error', { error: err.message });
+      removeTypingIndicator();
+      addMessage({
+        id: Crypto.randomUUID(),
+        role: 'assistant',
+        type: 'text',
+        content: "Couldn't fetch that URL. Check the link and try again.",
+        imageUri: null,
+        recipeData: null,
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setBusy(false);
     }
@@ -608,7 +671,8 @@ export default function ChatScreen() {
         onRequestClose={() => setShowAttachSheet(false)}
       >
         <Pressable style={styles.sheetBackdrop} onPress={() => setShowAttachSheet(false)}>
-          <View style={styles.sheet}>
+          {/* Inner Pressable stops touches on the sheet from bubbling to the backdrop */}
+          <Pressable style={styles.sheet} onPress={() => {}}>
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>Add to Message</Text>
 
@@ -642,14 +706,70 @@ export default function ChatScreen() {
               </View>
             </TouchableOpacity>
 
+            <TouchableOpacity style={styles.sheetRow} onPress={handleUrlAttach}>
+              <View style={[styles.sheetIconBox, { backgroundColor: '#EBFFEF' }]}>
+                <Ionicons name="link" size={22} color="#16A34A" />
+              </View>
+              <View>
+                <Text style={styles.sheetRowTitle}>From URL</Text>
+                <Text style={styles.sheetRowSub}>Paste a recipe website link</Text>
+              </View>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.sheetCancel}
               onPress={() => setShowAttachSheet(false)}
             >
               <Text style={styles.sheetCancelText}>Cancel</Text>
             </TouchableOpacity>
-          </View>
+          </Pressable>
         </Pressable>
+      </Modal>
+
+      {/* URL import modal */}
+      <Modal
+        visible={showUrlInput}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowUrlInput(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.sheetBackdrop}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          {/* Tapping the dark area behind the card dismisses */}
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowUrlInput(false)} />
+          <Pressable style={styles.urlModal} onPress={() => {}}>
+            <Text style={styles.sheetTitle}>Import from URL</Text>
+            <TextInput
+              style={styles.urlInput}
+              placeholder="https://www.example.com/recipe"
+              placeholderTextColor="#B38B6D"
+              value={pendingUrl}
+              onChangeText={setPendingUrl}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              returnKeyType="go"
+              onSubmitEditing={handleUrlImport}
+              autoFocus
+            />
+            <TouchableOpacity
+              style={[styles.saveButton, !pendingUrl.trim() && styles.sendBtnDisabled]}
+              onPress={handleUrlImport}
+              disabled={!pendingUrl.trim()}
+            >
+              <Ionicons name="arrow-forward" size={16} color="#fff" />
+              <Text style={styles.saveButtonText}>Import Recipe</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.sheetCancel, { marginTop: 10 }]}
+              onPress={() => setShowUrlInput(false)}
+            >
+              <Text style={styles.sheetCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
     </KeyboardAvoidingView>
   );
@@ -952,5 +1072,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#6B4C2A',
+  },
+
+  // ── URL import modal ───────────────────────────────────────────────────────
+  urlModal: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    marginHorizontal: 20,
+    padding: 24,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+  },
+  urlInput: {
+    backgroundColor: '#FFF8F0',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F0E0D0',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: '#2D1B00',
+    marginBottom: 16,
   },
 });

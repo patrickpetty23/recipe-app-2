@@ -65,6 +65,7 @@ export default function EditorScreen() {
   const [steps, setSteps] = useState(
     (parsed.steps || []).map((s) => ({ ...s, localId: Crypto.randomUUID() }))
   );
+  const [cuisineEditing, setCuisineEditing] = useState(!parsed.cuisine);
   const [saving, setSaving] = useState(false);
   const [illustrating, setIllustrating] = useState(false);
   const [illustrateProgress, setIllustrateProgress] = useState({ done: 0, total: 0 });
@@ -349,24 +350,35 @@ export default function EditorScreen() {
           {/* Cuisine chip */}
           <View style={styles.cuisineRow}>
             <Text style={styles.sectionLabel}>Cuisine</Text>
-            {cuisine ? (
+            {cuisine && !cuisineEditing ? (
               <TouchableOpacity
                 style={styles.cuisineChip}
-                onPress={() => setCuisine('')}
+                onPress={() => setCuisineEditing(true)}
               >
                 <Text style={styles.cuisineChipText}>{cuisine}</Text>
-                <Ionicons name="close-circle" size={14} color={C.orange} />
+                <Ionicons name="pencil" size={12} color={C.orange} />
               </TouchableOpacity>
             ) : (
               <TextInput
                 style={styles.cuisineInput}
                 value={cuisine}
                 onChangeText={setCuisine}
+                onBlur={() => { if (cuisine.trim()) setCuisineEditing(false); }}
                 placeholder="e.g. Italian"
                 placeholderTextColor={C.textFaint}
                 returnKeyType="done"
+                onSubmitEditing={() => { if (cuisine.trim()) setCuisineEditing(false); }}
+                autoFocus={cuisineEditing && !!cuisine}
               />
             )}
+            {cuisine && !cuisineEditing ? (
+              <TouchableOpacity
+                onPress={() => { setCuisine(''); setCuisineEditing(true); }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="close-circle" size={18} color={C.textFaint} />
+              </TouchableOpacity>
+            ) : null}
           </View>
         </View>
 

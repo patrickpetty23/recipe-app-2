@@ -96,6 +96,11 @@ export default function RecipeDetailScreen() {
   // add step inline form
   const [addingStep, setAddingStep] = useState(false);
   const [newStepText, setNewStepText] = useState('');
+  // dynamic hero sizing based on title height
+  const [titleHeight, setTitleHeight] = useState(30);
+  // cuisine editing
+  const [cuisine, setCuisine] = useState('');
+  const [editingCuisine, setEditingCuisine] = useState(false);
 
   // Animated values for checked items
   const checkAnims = useRef(new Map()).current;
@@ -117,6 +122,8 @@ export default function RecipeDetailScreen() {
       }
       setRecipe(data);
       setTitle(data.title);
+      setCuisine(data.cuisine || '');
+      setEditingCuisine(false);
       setIngredients(data.ingredients || []);
       const loadedSteps = data.steps || [];
       setSteps(loadedSteps);
@@ -187,6 +194,20 @@ export default function RecipeDetailScreen() {
       updateRecipe(id, { title: trimmed });
     } catch (err) {
       logger.error('recipeDetail.updateTitle.error', { id, error: err.message });
+    }
+  }
+
+  // ── Cuisine edit ──────────────────────────────────────────────────────────────
+
+  function handleCuisineSave(text) {
+    const trimmed = text.trim();
+    setCuisine(trimmed);
+    setEditingCuisine(false);
+    try {
+      updateRecipe(id, { cuisine: trimmed || null });
+      setRecipe((prev) => ({ ...prev, cuisine: trimmed || null }));
+    } catch (err) {
+      logger.error('recipeDetail.updateCuisine.error', { id, error: err.message });
     }
   }
 
@@ -515,8 +536,8 @@ export default function RecipeDetailScreen() {
       style={styles.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* ── Hero — pinned outside ScrollView so it never scrolls away ── */}
-      <View style={[styles.hero, { height: insets.top + 92 }]}>
+      {/* ── Hero — height adapts to title length ── */}
+      <View style={[styles.hero, { height: Math.max(insets.top + 92, insets.top + 64 + titleHeight) }]}>
         {recipe.imageUri ? (
           <>
             <Image
@@ -578,7 +599,10 @@ export default function RecipeDetailScreen() {
         </View>
 
         {/* Title overlay */}
-        <View style={styles.heroTitleContainer}>
+        <View
+          style={styles.heroTitleContainer}
+          onLayout={(e) => setTitleHeight(e.nativeEvent.layout.height)}
+        >
           {editMode ? (
             <TextInput
               style={styles.heroTitleInput}
@@ -639,11 +663,39 @@ export default function RecipeDetailScreen() {
             </View>
           </View>
 
-          {recipe.cuisine ? (
-            <View style={styles.cuisineBadge}>
-              <Text style={styles.cuisineBadgeText}>{recipe.cuisine}</Text>
+          {editingCuisine ? (
+            <View style={styles.cuisineEditRow}>
+              <TextInput
+                style={styles.cuisineEditInput}
+                value={cuisine}
+                onChangeText={setCuisine}
+                placeholder="e.g. Italian"
+                placeholderTextColor="#B38B6D"
+                returnKeyType="done"
+                onSubmitEditing={() => handleCuisineSave(cuisine)}
+                onBlur={() => handleCuisineSave(cuisine)}
+                autoFocus
+              />
             </View>
-          ) : null}
+          ) : cuisine ? (
+            <TouchableOpacity
+              style={styles.cuisineBadge}
+              onPress={() => setEditingCuisine(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.cuisineBadgeText}>{cuisine}</Text>
+              <Ionicons name="pencil" size={10} color="#FF6B35" />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.addCuisineBadge}
+              onPress={() => setEditingCuisine(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="add" size={14} color="#FF6B35" />
+              <Text style={styles.addCuisineBadgeText}>Cuisine</Text>
+            </TouchableOpacity>
+          )}
           {recipe.sourceUrl ? (
             <TouchableOpacity
               style={styles.sourceBtn}
@@ -1178,6 +1230,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   cuisineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: '#FFF0E8',
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -1188,6 +1243,38 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#FF6B35',
+  },
+  addCuisineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: '#FFF8F0',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#F0E0D0',
+    borderStyle: 'dashed',
+  },
+  addCuisineBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FF6B35',
+  },
+  cuisineEditRow: {
+    alignSelf: 'flex-start',
+  },
+  cuisineEditInput: {
+    backgroundColor: '#FFF8F0',
+    borderWidth: 1,
+    borderColor: '#FF6B35',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2D1B00',
+    minWidth: 100,
   },
   sourceBtn: {
     flexDirection: 'row',
