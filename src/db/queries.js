@@ -2,6 +2,7 @@ import { getDatabase } from './schema';
 import { logger } from '../utils/logger';
 import { parseFraction } from '../utils/scaler';
 import { SEED_RECIPES } from '../data/seedRecipes';
+import * as ExpoCrypto from 'expo-crypto';
 
 // ── Recipes ───────────────────────────────────────────────────────────────────
 
@@ -1084,7 +1085,7 @@ export function seedDemoData() {
     const savedRecipeIds = [];
 
     for (const recipe of SEED_RECIPES) {
-      const recipeId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      const recipeId = ExpoCrypto.randomUUID();
       const createdAt = daysAgo(Math.floor(Math.random() * 14 + 3));
 
       // Save recipe
@@ -1105,7 +1106,7 @@ export function seedDemoData() {
       // Save ingredients
       sortOrder = 0;
       for (const ing of recipe.ingredients) {
-        const ingId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+        const ingId = ExpoCrypto.randomUUID();
         db.runSync(
           `INSERT INTO ingredients
              (id, recipe_id, name, quantity, unit, notes, checked, in_list, sort_order)
@@ -1118,7 +1119,7 @@ export function seedDemoData() {
 
       // Save steps
       for (const step of recipe.steps) {
-        const stepId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+        const stepId = ExpoCrypto.randomUUID();
         db.runSync(
           `INSERT INTO recipe_steps (id, recipe_id, step_number, instruction, illustration_url)
            VALUES (?, ?, ?, ?, ?)`,
@@ -1159,7 +1160,7 @@ export function seedDemoData() {
       const saved = savedRecipeIds[entry.idx];
       if (!saved) continue;
       const ntr = saved.recipe.nutrition;
-      const logId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      const logId = ExpoCrypto.randomUUID();
       db2.runSync(
         `INSERT INTO cook_log
            (id, recipe_id, recipe_title, servings, calories, protein_g, carbs_g, fat_g, cooked_at)
@@ -1193,7 +1194,7 @@ export function seedDemoData() {
       const saved = savedRecipeIds[entry.idx];
       if (!saved) continue;
       const ntr = saved.recipe.nutrition;
-      const planId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      const planId = ExpoCrypto.randomUUID();
       db3.runSync(
         `INSERT INTO meal_plan
            (id, recipe_id, recipe_title, recipe_image_uri, planned_date, meal_type,
