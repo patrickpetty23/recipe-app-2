@@ -1002,7 +1002,7 @@ export default function RecipeDetailScreen() {
       </ScrollView>
 
       {/* ── Floating "Start Cooking" button ── */}
-      {steps.length > 0 && (
+      {steps.length > 0 && activeTab === 'steps' && (
         <TouchableOpacity
           style={styles.fab}
           onPress={() => {
