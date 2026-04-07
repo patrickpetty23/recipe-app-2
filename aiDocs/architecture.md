@@ -20,10 +20,11 @@ recipe-scanner/
 │   └── run.sh
 ├── app/                           # Expo Router pages
 │   ├── (tabs)/
-│   │   ├── _layout.jsx            # Tab bar config (Chat, Recipes, Shopping, Tracker)
+│   │   ├── _layout.jsx            # Tab bar config (Chat, Recipes, Shopping, Planner, Tracker)
 │   │   ├── index.jsx              # Chat tab — iMessage-style AI cooking assistant
 │   │   ├── library.jsx            # Recipes tab — library + collections
-│   │   ├── list.jsx               # Shopping list tab — check-off + Walmart
+│   │   ├── list.jsx               # Shopping list tab — check-off + Walmart + individual item add
+│   │   ├── planner.jsx            # Meal Planner tab — weekly calendar, AI meal suggestions
 │   │   └── tracker.jsx            # Nutrition Tracker tab — daily macros + cook log
 │   ├── recipe/
 │   │   ├── [id].jsx               # Recipe detail — hero, nutrition, tabs, cooking
@@ -33,16 +34,16 @@ recipe-scanner/
 │   └── _layout.jsx
 ├── src/
 │   ├── services/
-│   │   ├── openai.js              # GPT-4o (chat, extraction, nutrition, lighten) + DALL-E
+│   │   ├── openai.js              # GPT-4o (chat, extraction, nutrition, lighten, meal plan) + DALL-E 3
 │   │   ├── walmart.js             # Walmart API search + cart link
 │   │   ├── scraper.js             # URL recipe scraping
 │   │   └── fileParser.js          # PDF / DOCX text extraction
 │   ├── db/
-│   │   ├── schema.js              # SQLite schema + migrations (10 tables)
+│   │   ├── schema.js              # SQLite schema + migrations (11 tables)
 │   │   └── queries.js             # All DB read/write functions
 │   ├── utils/
 │   │   ├── logger.js              # Structured JSON logger
-│   │   └── scaler.js              # Serving size scaling math
+│   │   └── scaler.js              # Serving size scaling, fraction parsing + display
 │   └── components/
 │       ├── EmptyState.jsx
 │       ├── SkeletonLoader.jsx
@@ -83,10 +84,12 @@ recipe-scanner/
   id: string,              // UUID
   recipeId: string,
   name: string,            // e.g. "all-purpose flour"
-  quantity: number | null, // e.g. 2
+  quantity: string | null, // stored as text to preserve fractions ("3/4", "1 1/2"); parsed via parseFraction()
   unit: string | null,     // e.g. "cups"
   notes: string | null,    // e.g. "sifted"
-  checked: boolean         // for shopping list check-off
+  checked: boolean,        // for shopping list check-off
+  inList: boolean,         // whether ingredient is on the shopping list
+  sortOrder: number        // display order within recipe
 }
 ```
 
@@ -98,6 +101,25 @@ recipe-scanner/
   price: number,
   thumbnailUrl: string,
   productUrl: string
+}
+```
+
+### MealPlan
+```js
+{
+  id: string,              // UUID
+  recipeId: string | null, // linked recipe (SET NULL on delete)
+  recipeTitle: string,
+  recipeImageUri: string | null,
+  plannedDate: string,     // 'YYYY-MM-DD'
+  mealType: string,        // 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  servings: number,
+  calories: number | null,
+  protein: number | null,
+  carbs: number | null,
+  fat: number | null,
+  notes: string | null,
+  createdAt: string
 }
 ```
 
@@ -124,12 +146,12 @@ CREATE TABLE ingredients (
   id TEXT PRIMARY KEY,
   recipe_id TEXT NOT NULL,
   name TEXT NOT NULL,
-  quantity REAL,
+  quantity TEXT,
   unit TEXT,
   notes TEXT,
   checked INTEGER NOT NULL DEFAULT 0,
-  sort_order INTEGER NOT NULL DEFAULT 0,
   in_list INTEGER NOT NULL DEFAULT 0,
+  sort_order INTEGER NOT NULL DEFAULT 0,
   FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 );
 
@@ -138,18 +160,18 @@ CREATE TABLE recipe_steps (
   recipe_id TEXT NOT NULL,
   step_number INTEGER NOT NULL,
   instruction TEXT NOT NULL,
-  illustration_url TEXT,           -- DALL-E 2 generated step illustration
+  illustration_url TEXT,           -- DALL-E 3 generated step illustration
   FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 );
 
 CREATE TABLE recipe_nutrition (
   recipe_id TEXT PRIMARY KEY,
-  calories_per_serving REAL,
+  calories_per_serving INTEGER,
   protein_g REAL,
   carbs_g REAL,
   fat_g REAL,
   fiber_g REAL,
-  estimated_at TEXT,
+  estimated_at TEXT NOT NULL,
   FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE
 );
 
@@ -157,8 +179,8 @@ CREATE TABLE cook_log (
   id TEXT PRIMARY KEY,
   recipe_id TEXT,
   recipe_title TEXT NOT NULL,
-  servings REAL,
-  calories REAL,
+  servings REAL NOT NULL DEFAULT 1,
+  calories INTEGER,
   protein_g REAL,
   carbs_g REAL,
   fat_g REAL,
@@ -194,19 +216,40 @@ CREATE TABLE app_settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+
+CREATE TABLE meal_plan (
+  id TEXT PRIMARY KEY,
+  recipe_id TEXT,
+  recipe_title TEXT NOT NULL,
+  recipe_image_uri TEXT,
+  planned_date TEXT NOT NULL,
+  meal_type TEXT NOT NULL,
+  servings REAL NOT NULL DEFAULT 1,
+  calories INTEGER,
+  protein_g REAL,
+  carbs_g REAL,
+  fat_g REAL,
+  notes TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE SET NULL
+);
 ```
 
 ## Service Design
 
 ### openai.js
-- `parseImageIngredients(base64Image)` — sends image to GPT-4o Vision, returns `Ingredient[]`
-- `parseTextIngredients(rawText)` — sends scraped/extracted text to GPT-4o, returns `Ingredient[]`
-- All calls include a system prompt that instructs GPT-4o to return only valid JSON
-
-**GPT-4o System Prompt (ingredient extraction):**
-```
-You are an ingredient extraction assistant. Given a recipe image or text, extract all ingredients and return ONLY a JSON array with no markdown, no explanation. Each item must have: name (string), quantity (number or null), unit (string or null), notes (string or null). If you cannot determine a value, use null.
-```
+- `parseRecipeFromImage(base64Image)` — sends image to GPT-4o Vision, returns full recipe object (title, ingredients, steps, metadata)
+- `parseRecipeFromText(rawText)` — sends scraped/extracted text to GPT-4o, returns full recipe object
+- `processChat(messages, imageBase64?)` — freeform cooking assistant chat; returns `{type: 'recipe'|'answer', message, recipe?}`
+- `estimateNutrition(ingredients, servings)` — GPT-4o estimates calories/protein/carbs/fat/fiber per serving
+- `lightenRecipe(recipe)` — GPT-4o suggests healthier substitutions, returns lightened recipe + change list
+- `generateRecipeThumbnail(title, cuisine, ingredients)` — DALL-E 3 food photo at 1792×1024
+- `generateStepIllustration(stepText, recipeTitle, allSteps, ingredients)` — DALL-E 3 cookbook illustration at 1024×1024
+- `generateAllStepIllustrations(steps, recipeTitle, ingredients)` — fires all step illustrations in parallel via `Promise.allSettled`
+- `chatMealPlanner({messages, prefs, recipeLibrary, weekStart, weekEnd, currentPlan})` — GPT-4o meal planning chat; returns `{type: 'answer'|'meal_plan', message, items?}`
+- All calls include structured system prompts that instruct GPT-4o to return only valid JSON
+- JSON mode (`response_format: {type: 'json_object'}`) used where supported
+- JSON fence-stripping handles GPT responses wrapped in ```json blocks
 
 ### walmart.js
 - `searchProduct(ingredientName)` — hits Walmart Open API, returns top `WalmartProduct` match
@@ -311,7 +354,7 @@ export LOG_LEVEL="debug"
 ## Navigation Flow
 ```
 Onboarding (first launch only)
-  └─ Welcome → finish → Home tab
+  └─ Welcome → finish → Chat tab
 
 Tab: Chat
   └─ iMessage UI → camera/URL/text → GPT-4o → recipe card → Save → Library
@@ -319,10 +362,17 @@ Tab: Chat
 Tab: Recipes (Library)
   └─ Recipe grid (AI thumbnails) → Recipe Detail → Cooking Mode
                                  → Editor (edit/illustrate steps)
+                                 → Add ingredients / steps inline
                                  → Log Meal → Tracker
 
 Tab: Shopping List
-  └─ Combined ingredients (merged by name+unit) → check off → Walmart search → Open cart link
+  └─ Combined ingredients (merged by name+unit) → add individual items modal
+     → check off → Walmart search → Open cart link
+
+Tab: Planner
+  └─ Weekly calendar → per-day meal slots (breakfast/lunch/dinner/snack)
+     → AI chat to auto-fill week → manual add from recipe library
+     → daily calorie/macro summary
 
 Tab: Tracker
   └─ Calorie ring + macros → Today's meals → Recent history → Edit goals
@@ -333,10 +383,12 @@ Tab: Tracker
 |----------|--------|--------|
 | OCR method | GPT-4o Vision directly | Eliminates separate OCR step, handles messy cookbook typography |
 | Storage | SQLite via expo-sqlite v16 | Relational structure, offline-first, WAL mode for performance |
-| Navigation | Expo Router v6 | File-based, works across all 6 screens without extra config |
+| Navigation | Expo Router v6 | File-based routing across 8 screens (5 tabs + 3 recipe screens) |
 | Language | JavaScript (not TS) | Faster to write and debug in sprint conditions |
 | Logging | Custom JSON logger | Structured output, zero dependencies, AI-parseable |
 | AI pipeline | Non-blocking background | Save is instant; nutrition/thumbnail/illustrations complete async |
-| Image generation | DALL-E 3 thumbnail + DALL-E 2 steps | DALL-E 3 quality for hero; DALL-E 2 speed + parallel for steps |
+| Image generation | DALL-E 3 for all images | DALL-E 3 quality for hero thumbnails (1792×1024) and step illustrations (1024×1024) |
+| Quantity storage | TEXT column + parseFraction | Preserves fractions ("3/4", "1 1/2") for display; parsed to numbers for math |
+| Safe area | useSafeAreaInsets | Consistent layout across iOS notch/Dynamic Island and Android nav bars |
 | TTS | expo-speech | Native platform TTS, no API cost, works offline |
 | Cross-platform | React Native + Expo | Single codebase verified on both iOS and Android |

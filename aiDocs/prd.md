@@ -7,6 +7,7 @@
 | v1.1 | Day 4 | Updated success metrics after testing; added URL import as equal priority to camera scan after finding users reach for URL paste first |
 | v1.2 | Day 7 | Expanded scope post-MVP: chat interface, collections, cooking mode, nutrition tracking, voice guidance, AI image generation — product repositioned as full cooking companion, not just a scanner |
 | v1.3 | Day 8 | Refined problem statement based on actual build learnings; updated out-of-scope to reflect shipped features; added nutrition/tracker success metrics |
+| v1.4 | Day 10 | Added Meal Planner tab (AI-powered weekly planning), fraction-based quantities, individual shopping list items, iOS cross-platform polish |
 
 ## Problem Statement
 
@@ -51,6 +52,13 @@ Home cooks (primarily 25–40) who cook from cookbooks, recipe blogs, or their o
 - **Duplicate ingredient merging**: If two recipes both need flour, combine into one line item on the shopping list
 - ~~**Walmart product matching**: Show Walmart product name + price alongside each ingredient before sending to cart~~ *(moved to P0 and shipped — users needed to see what they were sending to cart)*
 
+### P1.5 — Shipped Post-MVP
+- **AI Meal Planner**: Weekly calendar with GPT-4o-powered meal suggestions from user's recipe library; per-day macro tracking (breakfast/lunch/dinner/snack slots)
+- **Fraction quantities**: Ingredient quantities stored and displayed as fractions ("3/4 cup", "1 1/2 tsp") instead of decimals
+- **Individual shopping list items**: Add specific ingredients from a recipe to the shopping list, not just entire recipes
+- **Inline recipe editing**: Add new ingredients and steps directly from the recipe detail screen
+- **iOS cross-platform polish**: Safe area insets, platform-specific tab bar sizing, memory leak fixes
+
 ### P2 — Nice to Have (post-deadline)
 - **Aisle/category grouping**: Group shopping list by produce, dairy, pantry, etc.
 - **Recipe notes**: User can add freeform notes to a saved recipe
@@ -60,10 +68,12 @@ Home cooks (primarily 25–40) who cook from cookbooks, recipe blogs, or their o
 1. As a user, I can point my camera at a cookbook and get a shopping list in one tap.
 2. As a user, I can import a recipe from a website URL without retyping anything.
 3. As a user, I can fix any ingredient the AI got wrong before I save the list.
-4. As a user, I can scale a recipe to serve more or fewer people and see updated quantities.
+4. As a user, I can scale a recipe to serve more or fewer people and see updated quantities displayed as fractions.
 5. As a user, I can save multiple recipes and combine their ingredient lists.
 6. As a user, I can check off items as I walk through the store.
 7. As a user, I can send my shopping list to Walmart and start adding items to my cart.
+8. As a user, I can ask AI to plan my meals for the week based on recipes in my library.
+9. As a user, I can add individual ingredients to my shopping list, not just entire recipes.
 
 ## Goals and Success Metrics (v1.3 — updated with measured results)
 | Goal | Metric | Actual Result |
@@ -74,14 +84,17 @@ Home cooks (primarily 25–40) who cook from cookbooks, recipe blogs, or their o
 | App stable in demo | Full flow without crashes in 2-minute walkthrough | ✅ Tested end-to-end on Android |
 | Nutrition tracking | Auto-estimated macros per recipe | ✅ GPT-4o returns calories/protein/carbs/fat/fiber per serving |
 | Voice cooking | TTS reads steps hands-free | ✅ expo-speech, rate 0.85 Android / 0.9 iOS |
+| Meal planning | AI suggests weekly meals from library | ✅ GPT-4o-powered planner with calendar view and macro summaries |
+| iOS polish | Consistent layout across devices | ✅ useSafeAreaInsets, platform tab bar sizing, no layout clipping |
 
-## Out of Scope (updated v1.3)
+## Out of Scope (updated v1.4)
 - User accounts or cloud sync (still out of scope)
 - Unit conversion (e.g., cups to grams)
 - Recipe ratings or social features
 - Price tracking or budget tools
 - Instacart, Amazon Fresh, or non-Walmart cart integrations
 - ~~Android testing~~ → removed from out-of-scope; Android verified working
+- ~~Meal planning~~ → shipped: AI-powered weekly meal planner with GPT-4o
 
 ## Risks and Mitigations
 | Risk | Likelihood | Mitigation | Outcome |
