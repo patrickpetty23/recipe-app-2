@@ -178,34 +178,34 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 
 #### 9E — System Understanding (20 pts)
 
-- ✅ Create or update a system diagram — added to `presentation/slides.html` and `presentation/feature-map.md`
-- ✅ If you have a midterm diagram, show how it evolved (new components discovered, feedback loops added)
-- ✅ Be ready to articulate what you got wrong or didn't see at midterm — what changed through building
+- ✅ Create or update a system diagram — `aiDocs/system-understanding.md` (midterm vs. final comparison) + `presentation/slides.html`
+- ✅ If you have a midterm diagram, show how it evolved — 5 new feedback loops discovered through building
+- ✅ Be ready to articulate what you got wrong or didn't see at midterm — documented in system-understanding.md "How the System Evolved" section
 
 #### 9F — Problem Identification (20 pts)
 
-- ✅ Sharpen the problem statement — PRD v1.3 refined statement covers fragmentation, nutrition gap, and cooking guidance gap
-- ✅ Document falsification test results — documented in `presentation/product-research.md`
-- ✅ If problem statement matured since midterm, show the evolution
+- ✅ Sharpen the problem statement — `aiDocs/problem-identification.md` (refined from midterm)
+- ✅ Document falsification test results — Tests 1-4 completed with real user evidence (Kierra, Sherrie, Thomas) in `aiDocs/problem-identification.md`
+- ✅ If problem statement matured since midterm, show the evolution — full midterm→final narrative documented
 
 #### 9G — Customer Focus (20 pts)
 
-- ✅ Document customer research beyond friends and family — `presentation/product-research.md`
-- ✅ Update competitive analysis — Paprika, Mealime, AnyList comparison in `presentation/product-research.md`
-- ✅ Document what customers actually told you vs. what you assumed — `presentation/product-research.md`
-- ✅ Solution positioning: why this approach, validated by user feedback
+- ✅ Document customer research beyond friends and family — 3 interviews (Kierra, Sherrie, Thomas) in `aiDocs/customer-research.md` + `aiDocs/evidence/`
+- ✅ Update competitive analysis — Paprika, Mealime, AnyList, Yummly, Skylight in `aiDocs/customer-research.md`
+- ✅ Document what customers actually told you vs. what you assumed — Assumptions vs. Reality table in `aiDocs/customer-research.md`
+- ✅ Solution positioning: validated by Thomas (unprompted), conditionally by Kierra, rejected by Sherrie (different user type)
 
 #### 9H — Success & Failure Planning (20 pts)
 
-- ✅ Review success metrics from PRD — actual measured results in PRD v1.3 table (times, accuracy %, Walmart confirmation)
+- ✅ Review success metrics from PRD — actual measured results in `aiDocs/success-metrics.md` with interview observations
 - ✅ Report where you actually stand: which criteria met, which fell short, and what you learned
-- ✅ Update pivot/continuation plans based on real data
+- ✅ Update pivot/continuation plans based on real data — data-informed continuation plans in success-metrics.md
 
 #### 9I — Customer Interaction (20 pts)
 
-- ✅ Document the feedback loop: engage → learn → change → re-engage — `presentation/product-research.md`
-- ✅ Point to specific features shaped by customer feedback (URL import prioritized; modal import selector; product preview before cart)
-- ✅ Show at least one cycle of: got feedback → changed something → went back to validate
+- ✅ Document the feedback loop: engage → learn → change → re-engage — 6 loops documented in `aiDocs/customer-interaction.md`
+- ✅ Point to specific features shaped by customer feedback — 11 features/decisions traced to specific feedback sources
+- ✅ Show at least one cycle of: got feedback → changed something → went back to validate — Loops 1-4 completed with re-engagement evidence from final interviews
 
 ### Presentation Prep
 

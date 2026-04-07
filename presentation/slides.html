@@ -49,7 +49,7 @@
   .slide-inner {
     width: 100%; height: 100%;
     display: flex; flex-direction: column;
-    padding: 52px 60px;
+    padding: 40px 56px;
     position: relative;
     z-index: 2;
   }
@@ -135,10 +135,10 @@
     background: var(--white);
     border: 1.5px solid var(--border);
     border-radius: 16px;
-    padding: 24px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
   }
 
   .stat-num {
@@ -168,10 +168,10 @@
     background: var(--white);
     border: 1.5px solid var(--border);
     border-radius: 16px;
-    padding: 22px;
+    padding: 18px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }
 
   .feature-icon {
@@ -188,11 +188,11 @@
     background: var(--white);
     border: 1.5px solid var(--border);
     border-radius: 16px;
-    padding: 20px 24px;
+    padding: 16px 20px;
     display: flex;
-    gap: 16px;
+    gap: 14px;
     align-items: flex-start;
-    margin-bottom: 14px;
+    margin-bottom: 10px;
   }
 
   .problem-card:last-child { margin-bottom: 0; }
@@ -280,6 +280,7 @@
 
   .compare-table td:last-child { text-align: center; font-size: 16px; }
   .compare-table tr:hover td { background: var(--cream); }
+  .compare-table code { background: var(--cream); padding: 1px 5px; border-radius: 4px; font-size: 11px; }
 
   .compare-table .ours {
     background: var(--orange-light) !important;
@@ -290,8 +291,8 @@
   .progress-row {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-bottom: 14px;
+    gap: 3px;
+    margin-bottom: 10px;
   }
 
   .progress-label-row {
@@ -660,7 +661,7 @@
       <div class="cover-tagline">
         <div class="pill">iOS &amp; Android</div>
         <div class="pill">GPT-4o + DALL-E 3</div>
-        <div class="pill">Offline-first SQLite</div>
+        <div class="pill">One-tap Walmart Cart</div>
         <div class="pill">v1.0 — Live Demo</div>
       </div>
     </div>
@@ -749,8 +750,8 @@
             <li>Capture any recipe in under 10 seconds</li>
             <li>Hands-free, voice-guided step-by-step cooking</li>
             <li>AI-estimated nutrition — no manual input ever</li>
+            <li>One-tap Walmart cart — search, match, and send</li>
             <li>Auto-generated food photos and step illustrations</li>
-            <li>Works offline — all data stored on device</li>
           </ul>
         </div>
         <div style="display:flex; justify-content:center;">
@@ -802,25 +803,25 @@
     <div class="slide-inner">
       <div class="eyebrow">Feature 01 — Capture</div>
       <h2>Add any recipe in <span>seconds</span></h2>
-      <div class="three-col" style="margin-top:24px;">
+      <div class="three-col" style="margin-top:18px;">
         <div class="feature-card">
           <div class="feature-icon">📷</div>
           <h3>Camera Scan</h3>
-          <p>Point at a cookbook, magazine, handwritten card. GPT-4o extracts every ingredient and step — even from messy handwriting.</p>
+          <p>Point at a cookbook or handwritten card. GPT-4o extracts every ingredient and step.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">🔗</div>
           <h3>URL Import</h3>
-          <p>Paste any recipe URL. The AI strips ads, pop-ups, and life stories — leaving only the actual recipe.</p>
+          <p>Paste any recipe URL. The AI strips ads and life stories — just the recipe.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">💬</div>
           <h3>Conversational Chat</h3>
-          <p>Describe what you want to cook. The AI builds a full recipe from scratch or answers any cooking question in real time.</p>
+          <p>Describe what you want to cook. The AI builds a recipe or answers cooking questions in real time.</p>
         </div>
       </div>
-      <div style="margin-top:16px; background:white; border-radius:14px; padding:14px 20px; border:1.5px solid var(--border);">
-        <p style="font-size:13px; color:var(--faint);">⚡ Average recipe capture time: <strong style="color:var(--orange);">8 seconds</strong> — vs. 3–5 minutes of manual entry in competitor apps</p>
+      <div style="margin-top:12px; background:white; border-radius:14px; padding:10px 18px; border:1.5px solid var(--border);">
+        <p style="font-size:12px; color:var(--faint); margin:0;">⚡ Average capture time: <strong style="color:var(--orange);">8 seconds</strong> — vs. 3-5 minutes of manual entry in competitor apps</p>
       </div>
     </div>
   </div>
@@ -832,29 +833,29 @@
     <div class="slide-inner">
       <div class="eyebrow">Feature 02 — Cooking</div>
       <h2>A <span>guided kitchen assistant</span> in your pocket</h2>
-      <div class="two-col" style="margin-top:24px;">
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="feature-card">
+      <div class="two-col" style="margin-top:20px;">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div class="feature-card" style="padding:18px;">
             <div class="feature-icon">🎨</div>
             <h3>Auto-generated visuals</h3>
-            <p>Every recipe gets a professional food photo thumbnail and step-by-step illustrations — generated automatically by DALL-E 3, no camera required.</p>
+            <p>DALL-E 3 generates food photo thumbnails and step-by-step illustrations automatically. No camera required.</p>
           </div>
-          <div class="feature-card">
+          <div class="feature-card" style="padding:18px;">
             <div class="feature-icon">🔊</div>
             <h3>Voice-guided cooking mode</h3>
-            <p>Hands-free, text-to-speech narration reads each step aloud. Swipe or tap to advance. Screen stays on. Built-in countdown timers.</p>
+            <p>TTS narration reads each step aloud. Swipe to advance. Screen stays on. Built-in countdown timers.</p>
           </div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="feature-card">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div class="feature-card" style="padding:18px;">
             <div class="feature-icon">⚖️</div>
             <h3>Smart portion scaling</h3>
-            <p>Adjust servings and every ingredient quantity updates instantly. Scales up for a dinner party or down for one.</p>
+            <p>Adjust servings and every ingredient quantity updates instantly. Scales up or down.</p>
           </div>
-          <div class="feature-card">
+          <div class="feature-card" style="padding:18px;">
             <div class="feature-icon">✨</div>
             <h3>"Make it Lighter"</h3>
-            <p>One tap generates a healthier version of any recipe — AI swaps heavy ingredients, shows calorie delta, sends straight to the editor.</p>
+            <p>One tap generates a healthier version — AI swaps ingredients, shows calorie delta, opens in editor.</p>
           </div>
         </div>
       </div>
@@ -868,17 +869,22 @@
     <div class="slide-inner">
       <div class="eyebrow">Feature 03 — Nutrition</div>
       <h2>Calorie tracking that <span>actually works</span></h2>
-      <div class="two-col" style="margin-top:24px; align-items:start;">
+      <div class="two-col" style="margin-top:18px; align-items:start;">
         <div style="display:flex; flex-direction:column; gap:14px;">
-          <p style="font-size:16px; line-height:1.6; color:var(--med);">The fundamental problem with calorie trackers: users have to manually log every meal. <strong style="color:var(--dark);">Nobody does this for more than a week.</strong></p>
-          <div class="quote-block">
-            <div class="quote-text">"What if nutrition tracking was a side effect of cooking — not a separate chore?"</div>
+          <p style="font-size:14px; line-height:1.6; color:var(--med);">The problem with calorie trackers: manual logging. <strong style="color:var(--dark);">Nobody does it for more than a week.</strong> Mise makes tracking a side effect of cooking. GPT-4o estimates macros on save. Users tap "Log Meal" once. Done.</p>
+          <div class="feature-card" style="flex-direction:row; align-items:center; gap:12px; padding:14px 18px;">
+            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">🧮</div>
+            <div><h3 style="margin:0; font-size:14px;">Auto-estimate on save</h3><p style="font-size:12px; margin:0;">Calories, protein, carbs, fat, fiber per serving</p></div>
           </div>
-          <p style="font-size:14px; color:var(--faint); line-height:1.6;">Because users are already cooking in Mise, they tap "Log Meal" once. GPT-4o estimated the macros automatically when the recipe was saved. Zero manual entry.</p>
+          <div class="feature-card" style="flex-direction:row; align-items:center; gap:12px; padding:14px 18px;">
+            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">📊</div>
+            <div><h3 style="margin:0; font-size:14px;">Daily tracker with goals</h3><p style="font-size:12px; margin:0;">Calorie ring, macro bars, editable targets, history</p></div>
+          </div>
+          <p style="font-size:12px; color:var(--faint); margin:0;">5 of 10 interviewees independently asked for calorie tracking.</p>
         </div>
-        <div style="display:flex; flex-direction:column; gap:10px;">
-          <div style="background:white; border:1.5px solid var(--border); border-radius:16px; padding:20px;">
-            <div style="font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:14px;">Today's Macros</div>
+        <div style="display:flex; flex-direction:column; gap:0;">
+          <div style="background:white; border:1.5px solid var(--border); border-radius:16px; padding:18px;">
+            <div style="font-size:11px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">Today's Macros</div>
             <div class="progress-row">
               <div class="progress-label-row"><span class="progress-label">Protein</span><span class="progress-value">112g / 150g</span></div>
               <div class="progress-track"><div class="progress-fill" style="width:75%; background:var(--orange);"></div></div>
@@ -891,7 +897,7 @@
               <div class="progress-label-row"><span class="progress-label">Fat</span><span class="progress-value">48g / 65g</span></div>
               <div class="progress-track"><div class="progress-fill" style="width:74%; background:#6B4C2A;"></div></div>
             </div>
-            <div style="text-align:center; margin-top:10px; font-size:26px; font-weight:900; color:var(--orange);">1,847 <span style="font-size:13px; font-weight:500; color:var(--faint);">/ 2,000 kcal</span></div>
+            <div style="text-align:center; margin-top:8px; font-size:24px; font-weight:900; color:var(--orange);">1,847 <span style="font-size:13px; font-weight:500; color:var(--faint);">/ 2,000 kcal</span></div>
           </div>
         </div>
       </div>
@@ -899,7 +905,48 @@
   </div>
 
   <!-- ═══════════════════════════════════════════════
-       SLIDE 9 — SECTION BREAK: COMPETITION
+       SLIDE 9 — FEATURE: WALMART INTEGRATION
+  ══════════════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Feature 04 — Shopping</div>
+      <h2>Recipe to <span>Walmart cart</span> in one tap</h2>
+      <div class="two-col" style="margin-top:16px; align-items:start;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div class="feature-card" style="padding:14px; flex-direction:row; align-items:center; gap:12px;">
+            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">🔍</div>
+            <div><h3 style="margin:0; font-size:14px;">Smart product matching</h3><p style="font-size:12px; margin:0;">Searches Walmart API per ingredient. Shows products and prices before sending.</p></div>
+          </div>
+          <div class="feature-card" style="padding:14px; flex-direction:row; align-items:center; gap:12px;">
+            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">🛒</div>
+            <div><h3 style="margin:0; font-size:14px;">One-tap cart</h3><p style="font-size:12px; margin:0;">Builds affiliate cart URL, opens Walmart app. Items in cart instantly.</p></div>
+          </div>
+          <div class="feature-card" style="padding:14px; flex-direction:row; align-items:center; gap:12px;">
+            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">🔐</div>
+            <div><h3 style="margin:0; font-size:14px;">RSA-signed auth</h3><p style="font-size:12px; margin:0;">node-forge for SHA-256 signing — React Native has no crypto module.</p></div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div class="stat" style="padding:16px;">
+            <div class="stat-num" style="font-size:36px;">6 / 7</div>
+            <div class="stat-label">Users validated Walmart</div>
+            <div class="stat-sub">Thomas described it unprompted before seeing it.</div>
+          </div>
+          <div class="stat" style="padding:16px;">
+            <div class="stat-num" style="font-size:36px;">0</div>
+            <div class="stat-label">Competitors with this pipeline</div>
+            <div class="stat-sub">No app does AI capture → list → Walmart cart.</div>
+          </div>
+          <div style="background:var(--orange-light); border:1.5px solid var(--orange); border-radius:12px; padding:10px 16px;">
+            <p style="font-size:11px; color:var(--dark); margin:0; font-weight:600;">ingredient → search → match + price → review → send → items in Walmart app</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 10 — SECTION BREAK: COMPETITION
   ══════════════════════════════════════════════════ -->
   <div class="slide section-slide">
     <div class="slide-inner" style="justify-content:flex-end;">
@@ -923,20 +970,20 @@
             <tr>
               <th>Product</th>
               <th>AI Capture</th>
+              <th>Walmart Cart</th>
               <th>Voice Cooking</th>
               <th>Auto Nutrition</th>
               <th>AI Visuals</th>
-              <th>Offline</th>
             </tr>
           </thead>
           <tbody>
             <tr class="ours">
               <td><strong>🍊 Mise (us)</strong></td>
               <td>✅ GPT-4o</td>
+              <td>✅ One-tap</td>
               <td>✅ TTS + Timer</td>
               <td>✅ Auto-estimate</td>
               <td>✅ DALL-E 3</td>
-              <td>✅ SQLite</td>
             </tr>
             <tr>
               <td>Paprika 3</td>
@@ -944,29 +991,29 @@
               <td>❌</td>
               <td>❌</td>
               <td>❌</td>
-              <td>✅</td>
+              <td>❌</td>
             </tr>
             <tr>
-              <td>Yummly</td>
+              <td>Yummly (Walmart-owned)</td>
               <td>⚠️ Partial</td>
+              <td>⚠️ Own recipes only</td>
               <td>⚠️ Basic</td>
               <td>⚠️ Manual only</td>
-              <td>❌</td>
               <td>❌</td>
             </tr>
             <tr>
               <td>MyFitnessPal</td>
               <td>❌</td>
               <td>❌</td>
+              <td>❌</td>
               <td>✅ Database</td>
               <td>❌</td>
-              <td>⚠️</td>
             </tr>
             <tr>
-              <td>Samsung Food</td>
-              <td>⚠️ URL only</td>
+              <td>Skylight Calendar</td>
+              <td>⚠️ Photo only</td>
               <td>❌</td>
-              <td>⚠️ Manual</td>
+              <td>❌</td>
               <td>❌</td>
               <td>❌</td>
             </tr>
@@ -978,7 +1025,120 @@
   </div>
 
   <!-- ═══════════════════════════════════════════════
-       SLIDE 11 — SECTION BREAK: BUSINESS MODEL
+       SLIDE 12 — CUSTOMER VALIDATION
+  ══════════════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Customer Validation</div>
+      <h2><span>10 interviews.</span> Real feedback loops.</h2>
+      <div class="two-col" style="margin-top:16px; align-items:start;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="background:white; border:1.5px solid var(--border); border-radius:14px; padding:14px 18px;">
+            <div style="font-size:10px; font-weight:800; color:var(--orange); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:10px;">Feedback that shipped</div>
+            <div style="display:flex; flex-direction:column; gap:7px;">
+              <div style="display:flex; gap:8px; align-items:baseline; font-size:12px; line-height:1.45;">
+                <span style="color:var(--orange); font-weight:800; min-width:14px;">1</span>
+                <span style="color:var(--med);"><strong style="color:var(--dark);">Trevor:</strong> list was cluttered <span style="color:var(--orange); font-weight:600;">→ simplified UI</span></span>
+              </div>
+              <div style="display:flex; gap:8px; align-items:baseline; font-size:12px; line-height:1.45;">
+                <span style="color:var(--orange); font-weight:800; min-width:14px;">2</span>
+                <span style="color:var(--med);"><strong style="color:var(--dark);">Spencer:</strong> wanted categories <span style="color:var(--orange); font-weight:600;">→ collections</span></span>
+              </div>
+              <div style="display:flex; gap:8px; align-items:baseline; font-size:12px; line-height:1.45;">
+                <span style="color:var(--orange); font-weight:800; min-width:14px;">3</span>
+                <span style="color:var(--med);"><strong style="color:var(--dark);">Kelly + Trevor:</strong> reuse recipes <span style="color:var(--orange); font-weight:600;">→ meal planning</span></span>
+              </div>
+              <div style="display:flex; gap:8px; align-items:baseline; font-size:12px; line-height:1.45;">
+                <span style="color:var(--orange); font-weight:800; min-width:14px;">4</span>
+                <span style="color:var(--med);"><strong style="color:var(--dark);">5 users:</strong> calorie tracking <span style="color:var(--orange); font-weight:600;">→ nutrition tracker</span></span>
+              </div>
+              <div style="display:flex; gap:8px; align-items:baseline; font-size:12px; line-height:1.45;">
+                <span style="color:var(--orange); font-weight:800; min-width:14px;">5</span>
+                <span style="color:var(--med);"><strong style="color:var(--dark);">Thomas:</strong> Walmart cart unprompted <span style="color:var(--orange); font-weight:600;">→ already built</span></span>
+              </div>
+            </div>
+          </div>
+          <div style="background:white; border:1.5px solid var(--border); border-radius:14px; padding:10px 18px;">
+            <p style="font-size:11px; color:var(--faint); margin:0;">All 7 final participants are outside the team's friend circle — weekly Walmart users, in-store shoppers, calorie-conscious cooks, international cuisine shoppers.</p>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div class="stat" style="padding:18px;">
+            <div class="stat-num" style="font-size:36px;">10</div>
+            <div class="stat-label">Total user interviews</div>
+            <div class="stat-sub">3 midterm + 7 final (2 interviewers)</div>
+          </div>
+          <div class="stat" style="padding:18px;">
+            <div class="stat-num" style="font-size:36px;">9</div>
+            <div class="stat-label">Feedback loops shipped</div>
+            <div class="stat-sub">Every round produced features in the app</div>
+          </div>
+          <div class="stat" style="padding:18px;">
+            <div class="stat-num" style="font-size:36px;">6 / 7</div>
+            <div class="stat-label">Validated Walmart</div>
+            <div class="stat-sub">1 in-store shopper preferred list export</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 13 — WHAT WE LEARNED (SYSTEM EVOLUTION)
+  ══════════════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">System Evolution</div>
+      <h2>Midterm → Final: <span>what actually changed</span></h2>
+      <div style="margin-top:16px; overflow:hidden; border-radius:14px;">
+        <table class="compare-table" style="width:100%; font-size:12px;">
+          <thead>
+            <tr>
+              <th style="width:18%; padding:10px 14px;">Area</th>
+              <th style="width:28%; padding:10px 14px;">Midterm Assumption</th>
+              <th style="width:54%; padding:10px 14px;">What We Found</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:9px 14px;"><strong>Input</strong></td>
+              <td style="padding:9px 14px;">Camera scan of cookbooks</td>
+              <td style="padding:9px 14px; color:var(--dark);">Users preferred chat + URL 3:1 over camera</td>
+            </tr>
+            <tr>
+              <td style="padding:9px 14px;"><strong>Scope</strong></td>
+              <td style="padding:9px 14px;">Scanner → shopping list</td>
+              <td style="padding:9px 14px; color:var(--dark);">Grew into full cooking lifecycle with 4 tabs, not 3</td>
+            </tr>
+            <tr>
+              <td style="padding:9px 14px;"><strong>Differentiator</strong></td>
+              <td style="padding:9px 14px;">AI parsing + editing</td>
+              <td style="padding:9px 14px; color:var(--dark);">Walmart cart — no competitor does this. Validated unprompted.</td>
+            </tr>
+            <tr>
+              <td style="padding:9px 14px;"><strong>Trust</strong></td>
+              <td style="padding:9px 14px;">Users check AI output</td>
+              <td style="padding:9px 14px; color:var(--dark);">They don't — we built a structured editor so errors are visible</td>
+            </tr>
+            <tr>
+              <td style="padding:9px 14px;"><strong>Walmart API</strong></td>
+              <td style="padding:9px 14px;">Standard REST</td>
+              <td style="padding:9px 14px; color:var(--dark);">Needed RSA signing + undocumented cart URL. Two debug cycles.</td>
+            </tr>
+            <tr>
+              <td style="padding:9px 14px;"><strong>Database</strong></td>
+              <td style="padding:9px 14px;">2 tables</td>
+              <td style="padding:9px 14px; color:var(--dark);">Grew to 9 tables as every feature needed its own schema</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small" style="margin-top:8px;">Full evolution with midterm vs. final diagrams in <code>aiDocs/system-understanding.md</code></p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 14 — SECTION BREAK: BUSINESS MODEL
   ══════════════════════════════════════════════════ -->
   <div class="slide section-slide">
     <div class="slide-inner" style="justify-content:flex-end;">
@@ -1043,51 +1203,51 @@
     <div class="slide-inner">
       <div class="eyebrow">Go-to-Market</div>
       <h2>Viral by design — <span>sharing is the product</span></h2>
-      <div class="two-col" style="margin-top:24px; align-items:start;">
+      <div class="two-col" style="margin-top:16px; align-items:start;">
         <div class="timeline">
-          <div class="timeline-item">
+          <div class="timeline-item" style="padding-bottom:14px;">
             <div class="timeline-dot orange">Q3</div>
             <div class="timeline-content">
-              <h3>App Store Launch (iOS + Android)</h3>
-              <p>Free tier + Pro. Target food bloggers and home-cook communities on TikTok / Instagram as first movers.</p>
+              <h3>App Store Launch</h3>
+              <p>Free + Pro tiers. Target food bloggers on TikTok / Instagram.</p>
             </div>
           </div>
-          <div class="timeline-item">
+          <div class="timeline-item" style="padding-bottom:14px;">
             <div class="timeline-dot green">Q4</div>
             <div class="timeline-content">
-              <h3>Social Sharing Layer</h3>
-              <p>Share a beautifully rendered recipe card (with AI food photo) direct to Instagram Stories — every share is a Mise ad.</p>
+              <h3>Social Sharing</h3>
+              <p>Share recipe cards with AI photos to Stories — every share is a Mise ad.</p>
             </div>
           </div>
-          <div class="timeline-item">
-            <div class="timeline-dot blue">Y2 Q1</div>
+          <div class="timeline-item" style="padding-bottom:14px;">
+            <div class="timeline-dot blue">Y2</div>
             <div class="timeline-content">
-              <h3>Grocery Integration</h3>
-              <p>One-tap "Order ingredients" via Instacart / Walmart API. Revenue share on every basket.</p>
+              <h3>Multi-Store + Export</h3>
+              <p>Smith's, Sam's Club, Costco. Apple Notes export. Affiliate rev share.</p>
             </div>
           </div>
-          <div class="timeline-item">
-            <div class="timeline-dot faint">Y2 Q3</div>
+          <div class="timeline-item" style="padding-bottom:0;">
+            <div class="timeline-dot faint">Y2+</div>
             <div class="timeline-content">
               <h3>B2B / White-label</h3>
-              <p>License the platform to meal kit companies (HelloFresh, Gousto) as their in-app cooking experience.</p>
+              <p>License to meal kit companies as their cooking experience.</p>
             </div>
           </div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:16px;">
-          <div class="stat">
-            <div class="stat-num">$6.99</div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div class="stat" style="padding:16px;">
+            <div class="stat-num" style="font-size:36px;">$6.99</div>
             <div class="stat-label">Monthly Pro price</div>
-            <div class="stat-sub">Competitive with Spotify, below Netflix — impulse-buy territory</div>
+            <div class="stat-sub">Below Netflix — impulse-buy territory</div>
           </div>
-          <div class="stat">
-            <div class="stat-num">5%</div>
-            <div class="stat-label">Target free→paid conversion</div>
-            <div class="stat-sub">Industry avg. 2–5%; our AI lock-in drives higher intent</div>
+          <div class="stat" style="padding:16px;">
+            <div class="stat-num" style="font-size:36px;">5%</div>
+            <div class="stat-label">Free → paid conversion</div>
+            <div class="stat-sub">Industry avg 2-5%; AI lock-in drives higher</div>
           </div>
-          <div class="stat">
-            <div class="stat-num">$1.2M</div>
-            <div class="stat-label">ARR at 15,000 Pro subscribers</div>
+          <div class="stat" style="padding:16px;">
+            <div class="stat-num" style="font-size:36px;">$1.2M</div>
+            <div class="stat-label">ARR at 15K Pro subs</div>
             <div class="stat-sub">Conservative 18-month target</div>
           </div>
         </div>
@@ -1102,29 +1262,29 @@
     <div class="slide-inner">
       <div class="eyebrow">Technical Differentiation</div>
       <h2>Built to be <span>fast, private, and smart</span></h2>
-      <div class="two-col" style="margin-top:24px; align-items:start;">
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="feature-card">
+      <div class="two-col" style="margin-top:18px; align-items:start;">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div class="feature-card" style="padding:16px;">
             <div class="feature-icon">🗄️</div>
             <h3>Offline-first architecture</h3>
-            <p>Every recipe, ingredient, and cook log lives in a local SQLite database with WAL mode. Zero latency, zero data fees, works in the kitchen with no signal.</p>
+            <p>Local SQLite with WAL mode. Zero latency, works in the kitchen with no signal.</p>
           </div>
-          <div class="feature-card">
+          <div class="feature-card" style="padding:16px;">
             <div class="feature-icon">⚡</div>
             <h3>Non-blocking AI pipeline</h3>
-            <p>Saving a recipe is instant. Nutrition estimation, thumbnail generation, and step illustrations all fire in the background — user never waits for AI.</p>
+            <p>Save is instant. Nutrition, thumbnails, and illustrations fire in the background.</p>
           </div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="feature-card">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div class="feature-card" style="padding:16px;">
             <div class="feature-icon">🔒</div>
             <h3>Privacy by design</h3>
-            <p>No user data leaves the device except anonymised API calls to OpenAI. No account required on free tier. No tracking SDKs.</p>
+            <p>No data leaves the device except API calls. No account required. No tracking.</p>
           </div>
-          <div class="feature-card">
+          <div class="feature-card" style="padding:16px;">
             <div class="feature-icon">🚀</div>
             <h3>Cross-platform from day one</h3>
-            <p>Single React Native / Expo codebase ships to both iOS and Android simultaneously, halving ongoing development cost vs. native.</p>
+            <p>Single React Native / Expo codebase ships to iOS and Android simultaneously.</p>
           </div>
         </div>
       </div>
@@ -1138,33 +1298,33 @@
     <div class="slide-inner">
       <div class="eyebrow">What's Next</div>
       <h2>Roadmap — <span>next 12 months</span></h2>
-      <div class="two-col" style="margin-top:24px; align-items:start;">
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <div class="feature-card" style="flex-direction:row; align-items:center; gap:14px;">
-            <div class="feature-icon" style="min-width:40px;">🛒</div>
-            <div><h3 style="margin:0;">Smart Shopping List</h3><p>Automatically deduplicates across multiple recipes, converts units, estimates grocery cost, integrates with Instacart.</p></div>
+      <div class="two-col" style="margin-top:18px; align-items:start;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div class="feature-card" style="flex-direction:row; align-items:center; gap:12px; padding:14px 16px;">
+            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">🛒</div>
+            <div><h3 style="margin:0; font-size:14px;">Multi-Store Comparison</h3><p style="font-size:12px;">Smith's, Sam's Club, Costco. Per-cart totals so users pick the cheapest store.</p></div>
           </div>
-          <div class="feature-card" style="flex-direction:row; align-items:center; gap:14px;">
-            <div class="feature-icon" style="min-width:40px;">🌍</div>
-            <div><h3 style="margin:0;">Multilingual Support</h3><p>Recipe capture and TTS in 12 languages. Opens Southern Europe, LatAm and South-East Asia markets.</p></div>
+          <div class="feature-card" style="flex-direction:row; align-items:center; gap:12px; padding:14px 16px;">
+            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">🌍</div>
+            <div><h3 style="margin:0; font-size:14px;">Multilingual Support</h3><p style="font-size:12px;">Recipe capture and TTS in 12 languages. Opens LatAm and SE Asia.</p></div>
           </div>
-          <div class="feature-card" style="flex-direction:row; align-items:center; gap:14px;">
-            <div class="feature-icon" style="min-width:40px;">👨‍👩‍👧</div>
-            <div><h3 style="margin:0;">Family Meal Planning</h3><p>Weekly planner, shared collections, household shopping list, dietary restriction management per person.</p></div>
+          <div class="feature-card" style="flex-direction:row; align-items:center; gap:12px; padding:14px 16px;">
+            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">👨‍👩‍👧</div>
+            <div><h3 style="margin:0; font-size:14px;">Family Meal Planning</h3><p style="font-size:12px;">Weekly planner, shared collections, household list, dietary restrictions.</p></div>
           </div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <div class="feature-card" style="flex-direction:row; align-items:center; gap:14px;">
-            <div class="feature-icon" style="min-width:40px;">📺</div>
-            <div><h3 style="margin:0;">Apple Watch / Wear OS</h3><p>Glanceable step counter and timers on the wrist — the most requested feature for cooking mode.</p></div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div class="feature-card" style="flex-direction:row; align-items:center; gap:12px; padding:14px 16px;">
+            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">📺</div>
+            <div><h3 style="margin:0; font-size:14px;">Apple Watch / Wear OS</h3><p style="font-size:12px;">Step counter and timers on the wrist for cooking mode.</p></div>
           </div>
-          <div class="feature-card" style="flex-direction:row; align-items:center; gap:14px;">
-            <div class="feature-icon" style="min-width:40px;">🤝</div>
-            <div><h3 style="margin:0;">Social Recipe Feed</h3><p>Follow friends, share cooked meals with AI-generated photos, discover trending recipes in your community.</p></div>
+          <div class="feature-card" style="flex-direction:row; align-items:center; gap:12px; padding:14px 16px;">
+            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">🤝</div>
+            <div><h3 style="margin:0; font-size:14px;">Social Recipe Feed</h3><p style="font-size:12px;">Share cooked meals with AI photos, discover trending recipes.</p></div>
           </div>
-          <div class="feature-card" style="flex-direction:row; align-items:center; gap:14px;">
-            <div class="feature-icon" style="min-width:40px;">🍳</div>
-            <div><h3 style="margin:0;">Smart Appliance API</h3><p>Send temperature and time to Anova, Thermomix, or connected ovens directly from the step card.</p></div>
+          <div class="feature-card" style="flex-direction:row; align-items:center; gap:12px; padding:14px 16px;">
+            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">🍳</div>
+            <div><h3 style="margin:0; font-size:14px;">Smart Appliance API</h3><p style="font-size:12px;">Send temp and time to Anova, Thermomix, or connected ovens.</p></div>
           </div>
         </div>
       </div>
@@ -1181,7 +1341,7 @@
       <h2 style="color:white; font-size:50px; max-width:600px; margin-top:8px;">The kitchen is the last room in your home without an AI assistant.</h2>
       <p style="color:rgba(255,255,255,0.5); font-size:16px; margin-top:16px; max-width:480px;">Mise puts one in your pocket — and we'd love to show you the live demo right now.</p>
       <div style="display:flex; gap:16px; margin-top:36px; flex-wrap:wrap; justify-content:center;">
-        <div class="pill" style="font-size:13px; padding:10px 20px;">📱 Live demo on Android</div>
+        <div class="pill" style="font-size:13px; padding:10px 20px;">📱 Live demo on device</div>
         <div class="pill" style="font-size:13px; padding:10px 20px;">💻 Codebase on GitHub</div>
         <div class="pill" style="font-size:13px; padding:10px 20px;">🤝 Open to questions</div>
       </div>
