@@ -447,6 +447,110 @@ export async function generateAllStepIllustrations(steps, recipeTitle, ingredien
   return fulfilled;
 }
 
+// ── Meal planner AI chat ──────────────────────────────────────────────────────
+
+function buildMealPlannerSystemPrompt({ prefs, recipeLibrary, weekStart, weekEnd, currentPlan }) {
+  const prefLines = [
+    prefs?.allergies ? `Allergies / dietary restrictions: ${prefs.allergies}` : '',
+    prefs?.budget ? `Budget: ${prefs.budget}` : '',
+    prefs?.goal ? `Health goal: ${prefs.goal}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const libraryLines =
+    recipeLibrary && recipeLibrary.length > 0
+      ? recipeLibrary
+          .slice(0, 60)
+          .map((r) => `- "${r.title}"${r.cuisine ? ` (${r.cuisine})` : ''}`)
+          .join('\n')
+      : 'No saved recipes yet.';
+
+  const planLines =
+    currentPlan && currentPlan.length > 0
+      ? currentPlan.map((p) => `- ${p.plannedDate} ${p.mealType}: ${p.recipeTitle}`).join('\n')
+      : 'Nothing planned this week yet.';
+
+  return `You are an expert nutritionist and meal planning assistant inside a recipe app.
+Respond ONLY with valid JSON — no markdown, no explanation outside JSON.
+
+${prefLines ? `User preferences:\n${prefLines}\n` : ''}
+Planning week: ${weekStart} to ${weekEnd}
+
+User's recipe library (prefer these for suggestions):
+${libraryLines}
+
+Current week's meal plan:
+${planLines}
+
+Response formats — pick one:
+
+For general answers / advice:
+{"type":"answer","message":"<your response>"}
+
+For meal plan suggestions (when user asks to plan meals / fill the week):
+{
+  "type":"meal_plan",
+  "message":"<brief friendly explanation>",
+  "items":[
+    {"date":"YYYY-MM-DD","meal_type":"breakfast|lunch|dinner|snack","recipe_title":"<title>","servings":1,"notes":"<optional tip>"}
+  ]
+}
+
+Rules:
+- Strictly respect allergies and dietary restrictions.
+- Prefer recipes from the library; only invent new ones if the library is empty or insufficient.
+- meal_type must be exactly: breakfast, lunch, dinner, or snack.
+- dates must be within the planning week (${weekStart} to ${weekEnd}).
+- Aim for nutritional balance and variety across the week.
+- Keep message warm, concise, and encouraging.`;
+}
+
+// Sends a message in the meal planner chat. Returns { type, message, items? }.
+export async function chatMealPlanner({ messages, prefs, recipeLibrary, weekStart, weekEnd, currentPlan }) {
+  logger.info('openai.chatMealPlanner', { messageCount: messages.length, weekStart });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const systemPrompt = buildMealPlannerSystemPrompt({ prefs, recipeLibrary, weekStart, weekEnd, currentPlan });
+    const response = await fetch(CHAT_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getApiKey()}`,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...messages.map((m) => ({ role: m.role, content: m.content })),
+        ],
+        temperature: 0.7,
+        max_tokens: 1500,
+      }),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const errBody = await response.text();
+      throw new Error(`OpenAI API error ${response.status}: ${errBody}`);
+    }
+    const data = await response.json();
+    const choice = data?.choices?.[0];
+    if (!choice) throw new Error('OpenAI returned no choices');
+    const raw = choice.message?.content ?? '';
+    const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+    logger.info('openai.chatMealPlanner.success', { type: parsed.type });
+    return parsed;
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error('Request timed out. Please try again.');
+    logger.error('openai.chatMealPlanner.error', { error: err.message });
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // ── Recipe thumbnail (fal.ai FLUX, landscape) ─────────────────────────────────
 
 // Generates a food-photography-style hero thumbnail for a recipe.
