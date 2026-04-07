@@ -1,6 +1,7 @@
 import { getDatabase } from './schema';
 import { logger } from '../utils/logger';
 import { parseFraction } from '../utils/scaler';
+import { SEED_RECIPES } from '../data/seedRecipes';
 
 // ── Recipes ───────────────────────────────────────────────────────────────────
 
@@ -1033,4 +1034,192 @@ function mapMealPlanRow(row) {
     notes: row.notes ?? null,
     createdAt: row.created_at,
   };
+}
+
+// ── Demo seed data ────────────────────────────────────────────────────────────
+
+/**
+ * Inserts demo recipes, nutrition, cook log entries, and meal plan entries
+ * so the app looks populated on any fresh device. Safe to call multiple times
+ * (checks 'demoDataLoaded' flag before running).
+ * Returns true if data was inserted, false if already loaded.
+ */
+export function seedDemoData() {
+  logger.info('queries.seedDemoData', { status: 'checking' });
+  try {
+    const already = getSetting('demoDataLoaded');
+    if (already) {
+      logger.info('queries.seedDemoData', { status: 'skipped' });
+      return false;
+    }
+
+    // Deterministic date helpers
+    const now = new Date();
+    function daysAgo(n) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - n);
+      return d.toISOString();
+    }
+    function daysFromNow(n) {
+      const d = new Date(now);
+      d.setDate(d.getDate() + n);
+      return d.toISOString().slice(0, 10);
+    }
+    // Monday of current week
+    function getMonday() {
+      const d = new Date(now);
+      const day = d.getDay();
+      d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+      return d;
+    }
+    function weekDay(offset) {
+      const d = getMonday();
+      d.setDate(d.getDate() + offset);
+      return d.toISOString().slice(0, 10);
+    }
+
+    // Use a simple incrementing counter for sort_order
+    let sortOrder = 0;
+
+    const savedRecipeIds = [];
+
+    for (const recipe of SEED_RECIPES) {
+      const recipeId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      const createdAt = daysAgo(Math.floor(Math.random() * 14 + 3));
+
+      // Save recipe
+      const db = getDatabase();
+      db.runSync(
+        `INSERT INTO recipes
+           (id, title, source_type, source_uri, source_url, image_uri,
+            servings, instructions, prep_time, cook_time, cuisine,
+            created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        recipeId, recipe.title, recipe.sourceType,
+        null, null, null,
+        recipe.servings, null,
+        recipe.prepTime, recipe.cookTime, recipe.cuisine,
+        createdAt, createdAt
+      );
+
+      // Save ingredients
+      sortOrder = 0;
+      for (const ing of recipe.ingredients) {
+        const ingId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+        db.runSync(
+          `INSERT INTO ingredients
+             (id, recipe_id, name, quantity, unit, notes, checked, in_list, sort_order)
+           VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?)`,
+          ingId, recipeId, ing.name,
+          ing.quantity ?? null, ing.unit ?? null, ing.notes ?? null,
+          sortOrder++
+        );
+      }
+
+      // Save steps
+      for (const step of recipe.steps) {
+        const stepId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+        db.runSync(
+          `INSERT INTO recipe_steps (id, recipe_id, step_number, instruction, illustration_url)
+           VALUES (?, ?, ?, ?, ?)`,
+          stepId, recipeId, step.stepNumber, step.instruction, null
+        );
+      }
+
+      // Save nutrition
+      if (recipe.nutrition) {
+        db.runSync(
+          `INSERT OR REPLACE INTO recipe_nutrition
+             (recipe_id, calories_per_serving, protein_g, carbs_g, fat_g, fiber_g, estimated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          recipeId,
+          recipe.nutrition.calories,
+          recipe.nutrition.protein,
+          recipe.nutrition.carbs,
+          recipe.nutrition.fat,
+          recipe.nutrition.fiber ?? null,
+          new Date().toISOString()
+        );
+      }
+
+      savedRecipeIds.push({ id: recipeId, recipe });
+    }
+
+    // ── Cook log entries (populates Tracker history) ──────────────────────────
+    const cookLogEntries = [
+      { daysBack: 1, idx: 1, mealTitle: 'Chicken Tikka Masala', servings: 2 },
+      { daysBack: 2, idx: 0, mealTitle: 'Creamy Pasta Carbonara', servings: 1 },
+      { daysBack: 3, idx: 3, mealTitle: 'Greek Salmon Salad',    servings: 1 },
+      { daysBack: 4, idx: 2, mealTitle: 'Avocado Toast with Poached Eggs', servings: 2 },
+      { daysBack: 5, idx: 1, mealTitle: 'Chicken Tikka Masala',  servings: 1 },
+    ];
+
+    const db2 = getDatabase();
+    for (const entry of cookLogEntries) {
+      const saved = savedRecipeIds[entry.idx];
+      if (!saved) continue;
+      const ntr = saved.recipe.nutrition;
+      const logId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      db2.runSync(
+        `INSERT INTO cook_log
+           (id, recipe_id, recipe_title, servings, calories, protein_g, carbs_g, fat_g, cooked_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        logId,
+        saved.id,
+        entry.mealTitle,
+        entry.servings,
+        ntr ? Math.round(ntr.calories * entry.servings) : null,
+        ntr ? ntr.protein * entry.servings : null,
+        ntr ? ntr.carbs * entry.servings : null,
+        ntr ? ntr.fat * entry.servings : null,
+        daysAgo(entry.daysBack)
+      );
+    }
+
+    // ── Meal plan entries (populates Planner for current week) ────────────────
+    const planEntries = [
+      { dayOffset: 0, mealType: 'breakfast', idx: 2 },  // Mon breakfast: Avocado Toast
+      { dayOffset: 0, mealType: 'dinner',    idx: 0 },  // Mon dinner: Carbonara
+      { dayOffset: 1, mealType: 'lunch',     idx: 3 },  // Tue lunch: Salmon Salad
+      { dayOffset: 2, mealType: 'dinner',    idx: 1 },  // Wed dinner: Tikka Masala
+      { dayOffset: 3, mealType: 'breakfast', idx: 2 },  // Thu breakfast: Avocado Toast
+      { dayOffset: 4, mealType: 'dinner',    idx: 0 },  // Fri dinner: Carbonara
+      { dayOffset: 5, mealType: 'lunch',     idx: 3 },  // Sat lunch: Salmon Salad
+      { dayOffset: 6, mealType: 'dinner',    idx: 1 },  // Sun dinner: Tikka Masala
+    ];
+
+    const db3 = getDatabase();
+    for (const entry of planEntries) {
+      const saved = savedRecipeIds[entry.idx];
+      if (!saved) continue;
+      const ntr = saved.recipe.nutrition;
+      const planId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      db3.runSync(
+        `INSERT INTO meal_plan
+           (id, recipe_id, recipe_title, recipe_image_uri, planned_date, meal_type,
+            servings, calories, protein_g, carbs_g, fat_g, notes, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        planId,
+        saved.id,
+        saved.recipe.title,
+        null,
+        weekDay(entry.dayOffset),
+        entry.mealType,
+        1,
+        ntr?.calories ?? null,
+        ntr?.protein ?? null,
+        ntr?.carbs ?? null,
+        ntr?.fat ?? null,
+        null,
+        new Date().toISOString()
+      );
+    }
+
+    setSetting('demoDataLoaded', 'true');
+    logger.info('queries.seedDemoData', { status: 'done', recipeCount: savedRecipeIds.length });
+    return savedRecipeIds;
+  } catch (err) {
+    logger.error('queries.seedDemoData.error', { error: err.message });
+    return false;
+  }
 }

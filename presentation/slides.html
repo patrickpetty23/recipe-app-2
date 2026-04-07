@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Mise — AI Cooking Platform | Pitch Deck</title>
+<title>Mise — BYU IS/IT Capstone Presentation</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -19,6 +19,8 @@
     --white: #FFFFFF;
     --green: #34C759;
     --blue: #007AFF;
+    --red: #FF3B30;
+    --warn: #FF9500;
   }
 
   html, body {
@@ -264,23 +266,22 @@
   .compare-table th {
     background: var(--dark);
     color: var(--white);
-    padding: 12px 16px;
+    padding: 10px 14px;
     font-weight: 700;
     text-align: left;
   }
 
   .compare-table th:first-child { border-radius: 12px 0 0 0; }
-  .compare-table th:last-child { border-radius: 0 12px 0 0; text-align: center; }
+  .compare-table th:last-child { border-radius: 0 12px 0 0; }
 
   .compare-table td {
-    padding: 11px 16px;
+    padding: 9px 14px;
     border-top: 1px solid var(--border);
     color: var(--med);
+    font-size: 12px;
   }
 
-  .compare-table td:last-child { text-align: center; font-size: 16px; }
   .compare-table tr:hover td { background: var(--cream); }
-  .compare-table code { background: var(--cream); padding: 1px 5px; border-radius: 4px; font-size: 11px; }
 
   .compare-table .ours {
     background: var(--orange-light) !important;
@@ -399,19 +400,19 @@
     background: var(--white);
     border-left: 4px solid var(--orange);
     border-radius: 0 16px 16px 0;
-    padding: 24px 28px;
-    margin: 20px 0;
+    padding: 20px 24px;
+    margin: 10px 0;
   }
 
   .quote-text {
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 600;
     color: var(--dark);
     line-height: 1.45;
     font-style: italic;
   }
 
-  .quote-source { font-size: 13px; color: var(--faint); margin-top: 10px; }
+  .quote-source { font-size: 13px; color: var(--faint); margin-top: 8px; }
 
   /* ── Revenue model ── */
   .rev-card {
@@ -536,104 +537,6 @@
     text-align: center;
   }
 
-  /* ── Phone mockup ── */
-  .phone {
-    width: 180px;
-    background: var(--dark);
-    border-radius: 36px;
-    padding: 14px 10px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    align-self: center;
-    position: relative;
-  }
-
-  .phone-notch {
-    width: 60px; height: 12px;
-    background: #000;
-    border-radius: 100px;
-    margin: 0 auto 10px;
-  }
-
-  .phone-screen {
-    background: var(--cream);
-    border-radius: 24px;
-    overflow: hidden;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-height: 300px;
-  }
-
-  .phone-header {
-    background: var(--orange);
-    border-radius: 12px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-  }
-
-  .phone-card {
-    background: white;
-    border-radius: 10px;
-    height: 52px;
-    padding: 8px 10px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 4px;
-  }
-
-  .phone-card-line {
-    height: 7px;
-    border-radius: 4px;
-    background: var(--border);
-  }
-
-  .phone-card-line.accent { background: var(--orange); width: 55%; }
-
-  .phone-tab-bar {
-    background: white;
-    border-radius: 12px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-    padding: 0 8px;
-    margin-top: 4px;
-  }
-
-  .phone-tab-dot {
-    width: 20px; height: 20px;
-    border-radius: 50%;
-    background: var(--border);
-  }
-
-  .phone-tab-dot.active { background: var(--orange); }
-
-  /* ── Appendix tag ── */
-  .appendix-tag {
-    position: absolute;
-    top: 20px;
-    right: 24px;
-    background: var(--orange);
-    color: white;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    padding: 4px 12px;
-    border-radius: 100px;
-  }
-
   /* ── Transition ── */
   .slide.active {
     animation: fadein 0.25s ease;
@@ -642,6 +545,365 @@
   @keyframes fadein {
     from { opacity: 0; transform: scale(0.99); }
     to   { opacity: 1; transform: scale(1); }
+  }
+
+  /* ── NEW: Metrics table ── */
+  .metrics-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1.5px solid var(--border);
+    font-size: 13px;
+  }
+
+  .metrics-table th {
+    background: var(--dark);
+    color: var(--white);
+    padding: 9px 14px;
+    font-weight: 700;
+    text-align: left;
+  }
+
+  .metrics-table th:first-child { border-radius: 12px 0 0 0; }
+
+  .metrics-table td {
+    padding: 9px 14px;
+    border-top: 1px solid var(--border);
+    color: var(--med);
+  }
+
+  .status-pass {
+    background: rgba(52,199,89,0.12);
+    color: #1a7a34;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .status-warn {
+    background: rgba(255,149,0,0.12);
+    color: #8a5200;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  /* ── NEW: Phase timeline ── */
+  .phase-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .phase-row:last-child { border-bottom: none; }
+
+  .phase-num {
+    width: 28px; height: 28px; min-width: 28px;
+    border-radius: 50%;
+    background: var(--orange);
+    color: white;
+    font-size: 12px;
+    font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .phase-date {
+    font-size: 11px;
+    color: var(--faint);
+    min-width: 72px;
+  }
+
+  .phase-label {
+    font-weight: 600;
+    color: var(--dark);
+    flex: 1;
+  }
+
+  .phase-commit {
+    font-size: 11px;
+    color: var(--faint);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── NEW: File tree ── */
+  .file-tree {
+    background: #1e1e1e;
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    color: #ccc;
+    line-height: 1.8;
+  }
+
+  .file-tree .dir { color: var(--orange); font-weight: 700; }
+  .file-tree .f { color: #88c0d0; padding-left: 18px; }
+  .file-tree .f::before { content: '├─ '; color: #555; }
+  .file-tree .f.last::before { content: '└─ '; color: #555; }
+
+  /* ── NEW: Code block ── */
+  .code-block {
+    background: #1e1e1e;
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    color: #ccc;
+    line-height: 1.7;
+    overflow: hidden;
+  }
+
+  .code-block .kw { color: #c792ea; }
+  .code-block .fn { color: #82aaff; }
+  .code-block .str { color: #c3e88d; }
+  .code-block .key { color: #f07178; }
+  .code-block .cm { color: #546e7a; font-style: italic; }
+
+  /* ── NEW: System diagram boxes ── */
+  .sys-diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .sys-box {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 16px;
+  }
+
+  .sys-box.device {
+    border-color: var(--orange);
+    background: var(--orange-light);
+  }
+
+  .sys-box.cloud {
+    border-color: var(--blue);
+    background: rgba(0,122,255,0.06);
+  }
+
+  .sys-box-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .sys-box.device .sys-box-label { color: var(--orange); }
+  .sys-box.cloud .sys-box-label { color: var(--blue); }
+
+  .sys-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .sys-tab {
+    background: var(--orange);
+    color: white;
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .sys-api {
+    display: inline-flex;
+    background: rgba(0,122,255,0.15);
+    color: var(--blue);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    margin: 2px;
+  }
+
+  .sys-arrow {
+    text-align: center;
+    color: var(--faint);
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  /* ── NEW: Feedback cycle card ── */
+  .cycle-card {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .cycle-step {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin-bottom: 1px;
+  }
+
+  .cycle-step.observe { color: var(--blue); }
+  .cycle-step.change { color: var(--orange); }
+  .cycle-step.validated { color: var(--green); }
+
+  .cycle-text {
+    font-size: 12px;
+    color: var(--dark);
+    line-height: 1.5;
+  }
+
+  .cycle-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+  }
+
+  /* ── NEW: Insight box ── */
+  .insight-box {
+    background: var(--orange-light);
+    border: 1.5px solid rgba(255,107,53,0.25);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-top: 14px;
+  }
+
+  .insight-box .insight-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 6px;
+  }
+
+  .insight-box p {
+    font-size: 13px;
+    color: var(--dark);
+    font-weight: 600;
+  }
+
+  /* ── NEW: PRD version row ── */
+  .prd-version {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .prd-version:last-child { border-bottom: none; }
+
+  .prd-tag {
+    background: var(--dark);
+    color: white;
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 800;
+    min-width: 48px;
+    text-align: center;
+  }
+
+  .prd-tag.latest { background: var(--orange); }
+
+  .prd-version-text {
+    font-size: 13px;
+    color: var(--med);
+    line-height: 1.5;
+  }
+
+  .prd-version-text strong { color: var(--dark); }
+
+  /* ── NEW: TLF (Test-Log-Fix) row ── */
+  .tlf-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tlf-row:last-child { border-bottom: none; }
+
+  .tlf-step {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 6px;
+    min-width: 50px;
+    text-align: center;
+  }
+
+  .tlf-step.bug { background: rgba(255,59,48,0.12); color: var(--red); }
+  .tlf-step.log { background: rgba(0,122,255,0.12); color: var(--blue); }
+  .tlf-step.fix { background: rgba(52,199,89,0.12); color: var(--green); }
+
+  .tlf-text {
+    font-size: 12px;
+    color: var(--dark);
+    line-height: 1.5;
+    flex: 1;
+  }
+
+  /* ── Demo break slide ── */
+  .demo-slide {
+    background: #111;
+  }
+
+  .demo-slide .slide-inner {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .demo-slide h2 {
+    color: white;
+    font-size: 52px;
+    letter-spacing: -2px;
+  }
+
+  .demo-slide .lead {
+    color: rgba(255,255,255,0.45);
+    text-align: center;
+    margin: 0 auto;
+  }
+
+  .demo-pulse {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: var(--orange);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    margin: 0 auto 28px;
+    box-shadow: 0 0 0 0 rgba(255,107,53,0.4);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255,107,53,0.4); }
+    70%  { box-shadow: 0 0 0 20px rgba(255,107,53,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,107,53,0); }
   }
 </style>
 </head>
@@ -655,741 +917,665 @@
     <div class="bg-blob b1"></div>
     <div class="bg-blob b2"></div>
     <div class="slide-inner" style="justify-content:center; gap:0;">
-      <div class="eyebrow">Capstone Presentation</div>
+      <div class="eyebrow">BYU IS/IT Capstone — Spring 2026</div>
       <h1>Mise<span>.</span></h1>
-      <p class="lead">An AI-powered cooking companion that turns any recipe — a photo, a link, a message — into a guided, nutritious, personalised cooking experience.</p>
+      <p class="lead">Continuing from Midterm · February → April 2026</p>
       <div class="cover-tagline">
-        <div class="pill">iOS &amp; Android</div>
+        <div class="pill">React Native + Expo</div>
         <div class="pill">GPT-4o + DALL-E 3</div>
-        <div class="pill">One-tap Walmart Cart</div>
-        <div class="pill">v1.0 — Live Demo</div>
+        <div class="pill">Every Midterm Promise: Shipped</div>
+        <div class="pill">Problem Expanded 3×</div>
       </div>
     </div>
   </div>
 
   <!-- ═══════════════════════════════════════════════
-       SLIDE 2 — THE PROBLEM
+       SLIDE 2 — FROM MIDTERM TO FINAL
   ══════════════════════════════════════════════════ -->
   <div class="slide">
     <div class="slide-inner">
-      <div class="eyebrow">The Problem</div>
-      <h2>Cooking is <span>harder</span> than it should be</h2>
-      <div style="margin-top:24px; display:flex; flex-direction:column; gap:0;">
-        <div class="problem-card">
-          <div class="problem-num">1</div>
-          <div>
-            <h3>Recipes are scattered</h3>
-            <p>Screenshots, Instagram saves, bookmarked blogs, hand-written notes — no single place to find what you want to cook tonight.</p>
-          </div>
-        </div>
-        <div class="problem-card">
-          <div class="problem-num">2</div>
-          <div>
-            <h3>Nutritional awareness is zero-effort... or zero</h3>
-            <p>People either obsessively track every gram in a separate app, or have no idea what they're eating. Nothing in between.</p>
-          </div>
-        </div>
-        <div class="problem-card">
-          <div class="problem-num">3</div>
-          <div>
-            <h3>Cooking alone is stressful</h3>
-            <p>Constantly glancing at a screen, losing your place, forgetting timers. Nobody is guiding you through the process in real time.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 3 — MARKET OPPORTUNITY
-  ══════════════════════════════════════════════════ -->
-  <div class="slide">
-    <div class="slide-inner">
-      <div class="eyebrow">Market Opportunity</div>
-      <h2>A <span>$45B</span> industry ripe for disruption</h2>
-      <div class="two-col" style="margin-top:28px;">
-        <div style="display:flex; flex-direction:column; gap:16px;">
-          <div class="stat">
-            <div class="stat-num">$45B</div>
-            <div class="stat-label">Global Recipe &amp; Meal Planning App Market</div>
-            <div class="stat-sub">Expected to reach $45B by 2027 (CAGR 9.7%)</div>
-          </div>
-          <div class="stat">
-            <div class="stat-num">3.5B</div>
-            <div class="stat-label">Smartphone users who cook at home</div>
-            <div class="stat-sub">65% say they use a phone while cooking</div>
-          </div>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:16px;">
-          <div class="stat">
-            <div class="stat-num">72%</div>
-            <div class="stat-label">Millennials actively try new recipes monthly</div>
-            <div class="stat-sub">Primary target demographic</div>
-          </div>
-          <div class="stat">
-            <div class="stat-num">$8.4B</div>
-            <div class="stat-label">Digital Health &amp; Nutrition App Market</div>
-            <div class="stat-sub">Adjacent market we capture with the Tracker tab</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 4 — OUR SOLUTION (OVERVIEW)
-  ══════════════════════════════════════════════════ -->
-  <div class="slide">
-    <div class="slide-inner">
-      <div class="eyebrow">Our Solution</div>
-      <div class="two-col" style="align-items:center; margin-top:0;">
+      <div class="eyebrow">Midterm → Final</div>
+      <h2>We shipped everything we <span>promised</span> — and more</h2>
+      <div class="two-col" style="margin-top:20px; align-items:start;">
         <div>
-          <h2>One app.<br/><span>Every recipe.</span><br/>Zero friction.</h2>
-          <p class="lead" style="font-size:16px;">Mise combines AI recipe capture, voice-guided cooking, auto-generated visuals, and nutrition tracking into a single, beautifully designed mobile app.</p>
-          <ul class="check-list" style="margin-top:20px;">
-            <li>Capture any recipe in under 10 seconds</li>
-            <li>Hands-free, voice-guided step-by-step cooking</li>
-            <li>AI-estimated nutrition — no manual input ever</li>
-            <li>One-tap Walmart cart — search, match, and send</li>
-            <li>Auto-generated food photos and step illustrations</li>
-          </ul>
-        </div>
-        <div style="display:flex; justify-content:center;">
-          <div class="phone">
-            <div class="phone-notch"></div>
-            <div class="phone-screen">
-              <div class="phone-header">📷 &nbsp;Scan a Recipe</div>
-              <div class="phone-card">
-                <div class="phone-card-line accent"></div>
-                <div class="phone-card-line"></div>
-              </div>
-              <div class="phone-card">
-                <div class="phone-card-line accent" style="width:70%"></div>
-                <div class="phone-card-line" style="width:40%"></div>
-              </div>
-              <div class="phone-card" style="background:#FFF0E8; border-radius:10px;">
-                <div class="phone-card-line accent" style="width:80%"></div>
-                <div class="phone-card-line" style="width:55%"></div>
-              </div>
+          <div style="font-size:11px; font-weight:800; color:var(--faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">Midterm "What's Next" Column</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:white; border-radius:10px; border:1.5px solid #E8F5E9;">
+              <span style="color:#34C759; font-size:16px;">✓</span>
+              <span style="font-size:13px; color:var(--dark); font-weight:600;">URL recipe import</span>
+              <span style="margin-left:auto; font-size:11px; color:var(--faint);">Phase 4</span>
             </div>
-            <div class="phone-tab-bar">
-              <div class="phone-tab-dot active"></div>
-              <div class="phone-tab-dot"></div>
-              <div class="phone-tab-dot"></div>
-              <div class="phone-tab-dot"></div>
+            <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:white; border-radius:10px; border:1.5px solid #E8F5E9;">
+              <span style="color:#34C759; font-size:16px;">✓</span>
+              <span style="font-size:13px; color:var(--dark); font-weight:600;">Native mobile app</span>
+              <span style="margin-left:auto; font-size:11px; color:var(--faint);">Phase 1</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:white; border-radius:10px; border:1.5px solid #E8F5E9;">
+              <span style="color:#34C759; font-size:16px;">✓</span>
+              <span style="font-size:13px; color:var(--dark); font-weight:600;">Grocery store integration (Walmart)</span>
+              <span style="margin-left:auto; font-size:11px; color:var(--faint);">Phase 7</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:white; border-radius:10px; border:1.5px solid #E8F5E9;">
+              <span style="color:#34C759; font-size:16px;">✓</span>
+              <span style="font-size:13px; color:var(--dark); font-weight:600;">Ingredient substitutes ("Make it Lighter")</span>
+              <span style="margin-left:auto; font-size:11px; color:var(--faint);">Phase 8</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:white; border-radius:10px; border:1.5px solid var(--border);">
+              <span style="color:var(--faint); font-size:16px;">○</span>
+              <span style="font-size:13px; color:var(--faint);">Fuzzy deduplication / unit conversion</span>
+              <span style="margin-left:auto; font-size:11px; color:var(--faint);">Backlog</span>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 5 — SECTION BREAK: PRODUCT
-  ══════════════════════════════════════════════════ -->
-  <div class="slide section-slide">
-    <div class="slide-inner" style="justify-content:flex-end;">
-      <div class="eyebrow" style="color:rgba(255,255,255,0.5);">Section 01</div>
-      <h2 style="color:white; font-size:52px;">The Product</h2>
-      <p style="color:rgba(255,255,255,0.55); font-size:16px; margin-top:8px; max-width:400px;">Six screens. Infinite recipes. Let's walk through how it works.</p>
-      <div class="section-num">01</div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 6 — FEATURE: CAPTURE + CHAT
-  ══════════════════════════════════════════════════ -->
-  <div class="slide">
-    <div class="slide-inner">
-      <div class="eyebrow">Feature 01 — Capture</div>
-      <h2>Add any recipe in <span>seconds</span></h2>
-      <div class="three-col" style="margin-top:18px;">
-        <div class="feature-card">
-          <div class="feature-icon">📷</div>
-          <h3>Camera Scan</h3>
-          <p>Point at a cookbook or handwritten card. GPT-4o extracts every ingredient and step.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🔗</div>
-          <h3>URL Import</h3>
-          <p>Paste any recipe URL. The AI strips ads and life stories — just the recipe.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">💬</div>
-          <h3>Conversational Chat</h3>
-          <p>Describe what you want to cook. The AI builds a recipe or answers cooking questions in real time.</p>
-        </div>
-      </div>
-      <div style="margin-top:12px; background:white; border-radius:14px; padding:10px 18px; border:1.5px solid var(--border);">
-        <p style="font-size:12px; color:var(--faint); margin:0;">⚡ Average capture time: <strong style="color:var(--orange);">8 seconds</strong> — vs. 3-5 minutes of manual entry in competitor apps</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 7 — FEATURE: RECIPE DETAIL + COOKING MODE
-  ══════════════════════════════════════════════════ -->
-  <div class="slide">
-    <div class="slide-inner">
-      <div class="eyebrow">Feature 02 — Cooking</div>
-      <h2>A <span>guided kitchen assistant</span> in your pocket</h2>
-      <div class="two-col" style="margin-top:20px;">
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <div class="feature-card" style="padding:18px;">
-            <div class="feature-icon">🎨</div>
-            <h3>Auto-generated visuals</h3>
-            <p>DALL-E 3 generates food photo thumbnails and step-by-step illustrations automatically. No camera required.</p>
-          </div>
-          <div class="feature-card" style="padding:18px;">
-            <div class="feature-icon">🔊</div>
-            <h3>Voice-guided cooking mode</h3>
-            <p>TTS narration reads each step aloud. Swipe to advance. Screen stays on. Built-in countdown timers.</p>
-          </div>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <div class="feature-card" style="padding:18px;">
-            <div class="feature-icon">⚖️</div>
-            <h3>Smart portion scaling</h3>
-            <p>Adjust servings and every ingredient quantity updates instantly. Scales up or down.</p>
-          </div>
-          <div class="feature-card" style="padding:18px;">
-            <div class="feature-icon">✨</div>
-            <h3>"Make it Lighter"</h3>
-            <p>One tap generates a healthier version — AI swaps ingredients, shows calorie delta, opens in editor.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 8 — FEATURE: NUTRITION TRACKER
-  ══════════════════════════════════════════════════ -->
-  <div class="slide">
-    <div class="slide-inner">
-      <div class="eyebrow">Feature 03 — Nutrition</div>
-      <h2>Calorie tracking that <span>actually works</span></h2>
-      <div class="two-col" style="margin-top:18px; align-items:start;">
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <p style="font-size:14px; line-height:1.6; color:var(--med);">The problem with calorie trackers: manual logging. <strong style="color:var(--dark);">Nobody does it for more than a week.</strong> Mise makes tracking a side effect of cooking. GPT-4o estimates macros on save. Users tap "Log Meal" once. Done.</p>
-          <div class="feature-card" style="flex-direction:row; align-items:center; gap:12px; padding:14px 18px;">
-            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">🧮</div>
-            <div><h3 style="margin:0; font-size:14px;">Auto-estimate on save</h3><p style="font-size:12px; margin:0;">Calories, protein, carbs, fat, fiber per serving</p></div>
-          </div>
-          <div class="feature-card" style="flex-direction:row; align-items:center; gap:12px; padding:14px 18px;">
-            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">📊</div>
-            <div><h3 style="margin:0; font-size:14px;">Daily tracker with goals</h3><p style="font-size:12px; margin:0;">Calorie ring, macro bars, editable targets, history</p></div>
-          </div>
-          <p style="font-size:12px; color:var(--faint); margin:0;">5 of 10 interviewees independently asked for calorie tracking.</p>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:0;">
-          <div style="background:white; border:1.5px solid var(--border); border-radius:16px; padding:18px;">
-            <div style="font-size:11px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">Today's Macros</div>
-            <div class="progress-row">
-              <div class="progress-label-row"><span class="progress-label">Protein</span><span class="progress-value">112g / 150g</span></div>
-              <div class="progress-track"><div class="progress-fill" style="width:75%; background:var(--orange);"></div></div>
-            </div>
-            <div class="progress-row">
-              <div class="progress-label-row"><span class="progress-label">Carbs</span><span class="progress-value">180g / 250g</span></div>
-              <div class="progress-track"><div class="progress-fill" style="width:72%; background:#F59E0B;"></div></div>
-            </div>
-            <div class="progress-row">
-              <div class="progress-label-row"><span class="progress-label">Fat</span><span class="progress-value">48g / 65g</span></div>
-              <div class="progress-track"><div class="progress-fill" style="width:74%; background:#6B4C2A;"></div></div>
-            </div>
-            <div style="text-align:center; margin-top:8px; font-size:24px; font-weight:900; color:var(--orange);">1,847 <span style="font-size:13px; font-weight:500; color:var(--faint);">/ 2,000 kcal</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 9 — FEATURE: WALMART INTEGRATION
-  ══════════════════════════════════════════════════ -->
-  <div class="slide">
-    <div class="slide-inner">
-      <div class="eyebrow">Feature 04 — Shopping</div>
-      <h2>Recipe to <span>Walmart cart</span> in one tap</h2>
-      <div class="two-col" style="margin-top:16px; align-items:start;">
-        <div style="display:flex; flex-direction:column; gap:10px;">
-          <div class="feature-card" style="padding:14px; flex-direction:row; align-items:center; gap:12px;">
-            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">🔍</div>
-            <div><h3 style="margin:0; font-size:14px;">Smart product matching</h3><p style="font-size:12px; margin:0;">Searches Walmart API per ingredient. Shows products and prices before sending.</p></div>
-          </div>
-          <div class="feature-card" style="padding:14px; flex-direction:row; align-items:center; gap:12px;">
-            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">🛒</div>
-            <div><h3 style="margin:0; font-size:14px;">One-tap cart</h3><p style="font-size:12px; margin:0;">Builds affiliate cart URL, opens Walmart app. Items in cart instantly.</p></div>
-          </div>
-          <div class="feature-card" style="padding:14px; flex-direction:row; align-items:center; gap:12px;">
-            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">🔐</div>
-            <div><h3 style="margin:0; font-size:14px;">RSA-signed auth</h3><p style="font-size:12px; margin:0;">node-forge for SHA-256 signing — React Native has no crypto module.</p></div>
-          </div>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:10px;">
-          <div class="stat" style="padding:16px;">
-            <div class="stat-num" style="font-size:36px;">6 / 7</div>
-            <div class="stat-label">Users validated Walmart</div>
-            <div class="stat-sub">Thomas described it unprompted before seeing it.</div>
-          </div>
-          <div class="stat" style="padding:16px;">
-            <div class="stat-num" style="font-size:36px;">0</div>
-            <div class="stat-label">Competitors with this pipeline</div>
-            <div class="stat-sub">No app does AI capture → list → Walmart cart.</div>
-          </div>
-          <div style="background:var(--orange-light); border:1.5px solid var(--orange); border-radius:12px; padding:10px 16px;">
-            <p style="font-size:11px; color:var(--dark); margin:0; font-weight:600;">ingredient → search → match + price → review → send → items in Walmart app</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 10 — SECTION BREAK: COMPETITION
-  ══════════════════════════════════════════════════ -->
-  <div class="slide section-slide">
-    <div class="slide-inner" style="justify-content:flex-end;">
-      <div class="eyebrow" style="color:rgba(255,255,255,0.5);">Section 02</div>
-      <h2 style="color:white; font-size:52px;">Competitive Landscape</h2>
-      <p style="color:rgba(255,255,255,0.55); font-size:16px; margin-top:8px; max-width:480px;">Why the existing players left a gap — and why now is the right time.</p>
-      <div class="section-num">02</div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 10 — COMPETITIVE ANALYSIS
-  ══════════════════════════════════════════════════ -->
-  <div class="slide">
-    <div class="slide-inner">
-      <div class="eyebrow">Competitive Analysis</div>
-      <h2>No one owns <span>the full stack</span></h2>
-      <div style="margin-top:20px; overflow:hidden; border-radius:14px;">
-        <table class="compare-table" style="width:100%;">
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>AI Capture</th>
-              <th>Walmart Cart</th>
-              <th>Voice Cooking</th>
-              <th>Auto Nutrition</th>
-              <th>AI Visuals</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="ours">
-              <td><strong>🍊 Mise (us)</strong></td>
-              <td>✅ GPT-4o</td>
-              <td>✅ One-tap</td>
-              <td>✅ TTS + Timer</td>
-              <td>✅ Auto-estimate</td>
-              <td>✅ DALL-E 3</td>
-            </tr>
-            <tr>
-              <td>Paprika 3</td>
-              <td>❌ Manual</td>
-              <td>❌</td>
-              <td>❌</td>
-              <td>❌</td>
-              <td>❌</td>
-            </tr>
-            <tr>
-              <td>Yummly (Walmart-owned)</td>
-              <td>⚠️ Partial</td>
-              <td>⚠️ Own recipes only</td>
-              <td>⚠️ Basic</td>
-              <td>⚠️ Manual only</td>
-              <td>❌</td>
-            </tr>
-            <tr>
-              <td>MyFitnessPal</td>
-              <td>❌</td>
-              <td>❌</td>
-              <td>❌</td>
-              <td>✅ Database</td>
-              <td>❌</td>
-            </tr>
-            <tr>
-              <td>Skylight Calendar</td>
-              <td>⚠️ Photo only</td>
-              <td>❌</td>
-              <td>❌</td>
-              <td>❌</td>
-              <td>❌</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="small" style="margin-top:12px;">Mise is the only product that closes all five capability gaps simultaneously.</p>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 12 — CUSTOMER VALIDATION
-  ══════════════════════════════════════════════════ -->
-  <div class="slide">
-    <div class="slide-inner">
-      <div class="eyebrow">Customer Validation</div>
-      <h2><span>10 interviews.</span> Real feedback loops.</h2>
-      <div class="two-col" style="margin-top:16px; align-items:start;">
-        <div style="display:flex; flex-direction:column; gap:10px;">
-          <div style="background:white; border:1.5px solid var(--border); border-radius:14px; padding:14px 18px;">
-            <div style="font-size:10px; font-weight:800; color:var(--orange); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:10px;">Feedback that shipped</div>
-            <div style="display:flex; flex-direction:column; gap:7px;">
-              <div style="display:flex; gap:8px; align-items:baseline; font-size:12px; line-height:1.45;">
-                <span style="color:var(--orange); font-weight:800; min-width:14px;">1</span>
-                <span style="color:var(--med);"><strong style="color:var(--dark);">Trevor:</strong> list was cluttered <span style="color:var(--orange); font-weight:600;">→ simplified UI</span></span>
-              </div>
-              <div style="display:flex; gap:8px; align-items:baseline; font-size:12px; line-height:1.45;">
-                <span style="color:var(--orange); font-weight:800; min-width:14px;">2</span>
-                <span style="color:var(--med);"><strong style="color:var(--dark);">Spencer:</strong> wanted categories <span style="color:var(--orange); font-weight:600;">→ collections</span></span>
-              </div>
-              <div style="display:flex; gap:8px; align-items:baseline; font-size:12px; line-height:1.45;">
-                <span style="color:var(--orange); font-weight:800; min-width:14px;">3</span>
-                <span style="color:var(--med);"><strong style="color:var(--dark);">Kelly + Trevor:</strong> reuse recipes <span style="color:var(--orange); font-weight:600;">→ meal planning</span></span>
-              </div>
-              <div style="display:flex; gap:8px; align-items:baseline; font-size:12px; line-height:1.45;">
-                <span style="color:var(--orange); font-weight:800; min-width:14px;">4</span>
-                <span style="color:var(--med);"><strong style="color:var(--dark);">5 users:</strong> calorie tracking <span style="color:var(--orange); font-weight:600;">→ nutrition tracker</span></span>
-              </div>
-              <div style="display:flex; gap:8px; align-items:baseline; font-size:12px; line-height:1.45;">
-                <span style="color:var(--orange); font-weight:800; min-width:14px;">5</span>
-                <span style="color:var(--med);"><strong style="color:var(--dark);">Thomas:</strong> Walmart cart unprompted <span style="color:var(--orange); font-weight:600;">→ already built</span></span>
-              </div>
-            </div>
-          </div>
-          <div style="background:white; border:1.5px solid var(--border); border-radius:14px; padding:10px 18px;">
-            <p style="font-size:11px; color:var(--faint); margin:0;">All 7 final participants are outside the team's friend circle — weekly Walmart users, in-store shoppers, calorie-conscious cooks, international cuisine shoppers.</p>
-          </div>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:10px;">
-          <div class="stat" style="padding:18px;">
-            <div class="stat-num" style="font-size:36px;">10</div>
-            <div class="stat-label">Total user interviews</div>
-            <div class="stat-sub">3 midterm + 7 final (2 interviewers)</div>
-          </div>
-          <div class="stat" style="padding:18px;">
-            <div class="stat-num" style="font-size:36px;">9</div>
-            <div class="stat-label">Feedback loops shipped</div>
-            <div class="stat-sub">Every round produced features in the app</div>
-          </div>
-          <div class="stat" style="padding:18px;">
-            <div class="stat-num" style="font-size:36px;">6 / 7</div>
-            <div class="stat-label">Validated Walmart</div>
-            <div class="stat-sub">1 in-store shopper preferred list export</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 13 — WHAT WE LEARNED (SYSTEM EVOLUTION)
-  ══════════════════════════════════════════════════ -->
-  <div class="slide">
-    <div class="slide-inner">
-      <div class="eyebrow">System Evolution</div>
-      <h2>Midterm → Final: <span>what actually changed</span></h2>
-      <div style="margin-top:16px; overflow:hidden; border-radius:14px;">
-        <table class="compare-table" style="width:100%; font-size:12px;">
-          <thead>
-            <tr>
-              <th style="width:18%; padding:10px 14px;">Area</th>
-              <th style="width:28%; padding:10px 14px;">Midterm Assumption</th>
-              <th style="width:54%; padding:10px 14px;">What We Found</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style="padding:9px 14px;"><strong>Input</strong></td>
-              <td style="padding:9px 14px;">Camera scan of cookbooks</td>
-              <td style="padding:9px 14px; color:var(--dark);">Users preferred chat + URL 3:1 over camera</td>
-            </tr>
-            <tr>
-              <td style="padding:9px 14px;"><strong>Scope</strong></td>
-              <td style="padding:9px 14px;">Scanner → shopping list</td>
-              <td style="padding:9px 14px; color:var(--dark);">Grew into full cooking lifecycle with 4 tabs, not 3</td>
-            </tr>
-            <tr>
-              <td style="padding:9px 14px;"><strong>Differentiator</strong></td>
-              <td style="padding:9px 14px;">AI parsing + editing</td>
-              <td style="padding:9px 14px; color:var(--dark);">Walmart cart — no competitor does this. Validated unprompted.</td>
-            </tr>
-            <tr>
-              <td style="padding:9px 14px;"><strong>Trust</strong></td>
-              <td style="padding:9px 14px;">Users check AI output</td>
-              <td style="padding:9px 14px; color:var(--dark);">They don't — we built a structured editor so errors are visible</td>
-            </tr>
-            <tr>
-              <td style="padding:9px 14px;"><strong>Walmart API</strong></td>
-              <td style="padding:9px 14px;">Standard REST</td>
-              <td style="padding:9px 14px; color:var(--dark);">Needed RSA signing + undocumented cart URL. Two debug cycles.</td>
-            </tr>
-            <tr>
-              <td style="padding:9px 14px;"><strong>Database</strong></td>
-              <td style="padding:9px 14px;">2 tables</td>
-              <td style="padding:9px 14px; color:var(--dark);">Grew to 9 tables as every feature needed its own schema</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="small" style="margin-top:8px;">Full evolution with midterm vs. final diagrams in <code>aiDocs/system-understanding.md</code></p>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 14 — SECTION BREAK: BUSINESS MODEL
-  ══════════════════════════════════════════════════ -->
-  <div class="slide section-slide">
-    <div class="slide-inner" style="justify-content:flex-end;">
-      <div class="eyebrow" style="color:rgba(255,255,255,0.5);">Section 03</div>
-      <h2 style="color:white; font-size:52px;">Business Model</h2>
-      <p style="color:rgba(255,255,255,0.55); font-size:16px; margin-top:8px; max-width:400px;">How we monetise and grow.</p>
-      <div class="section-num">03</div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 12 — REVENUE MODEL
-  ══════════════════════════════════════════════════ -->
-  <div class="slide">
-    <div class="slide-inner">
-      <div class="eyebrow">Revenue Model</div>
-      <h2>Freemium → <span>Subscription</span> → Platform</h2>
-      <div class="three-col" style="margin-top:24px;">
-        <div class="rev-card">
-          <div class="rev-badge">Free Tier</div>
-          <div class="rev-price">$0 <span>forever</span></div>
-          <ul class="check-list">
-            <li>20 recipes saved</li>
-            <li>Basic chat (GPT-3.5)</li>
-            <li>Shopping list</li>
-            <li>Manual nutrition logging</li>
-          </ul>
-          <p class="small" style="margin-top:8px;">Drives acquisition. No paywall on core value.</p>
-        </div>
-        <div class="rev-card" style="border-color:var(--orange); background:var(--orange-light);">
-          <div class="rev-badge">Pro</div>
-          <div class="rev-price">$6.99 <span>/ month</span></div>
-          <ul class="check-list">
-            <li>Unlimited recipes</li>
-            <li>GPT-4o chat + scan</li>
-            <li>AI nutrition estimation</li>
-            <li>Voice cooking + timers</li>
-            <li>Auto illustrations</li>
-            <li>"Make it Lighter"</li>
-          </ul>
-          <p class="small" style="margin-top:8px; color:var(--orange); font-weight:600;">Primary revenue driver</p>
-        </div>
-        <div class="rev-card">
-          <div class="rev-badge">Platform (Year 2+)</div>
-          <div class="rev-price">B2B <span>+ affiliate</span></div>
-          <ul class="check-list">
-            <li>Grocery delivery integration (rev share)</li>
-            <li>White-label for meal kit brands</li>
-            <li>Cooking school partnerships</li>
-            <li>Smart appliance integrations</li>
-          </ul>
-          <p class="small" style="margin-top:8px;">Converts the recipe graph into a commerce graph.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 13 — GO-TO-MARKET
-  ══════════════════════════════════════════════════ -->
-  <div class="slide">
-    <div class="slide-inner">
-      <div class="eyebrow">Go-to-Market</div>
-      <h2>Viral by design — <span>sharing is the product</span></h2>
-      <div class="two-col" style="margin-top:16px; align-items:start;">
-        <div class="timeline">
-          <div class="timeline-item" style="padding-bottom:14px;">
-            <div class="timeline-dot orange">Q3</div>
-            <div class="timeline-content">
-              <h3>App Store Launch</h3>
-              <p>Free + Pro tiers. Target food bloggers on TikTok / Instagram.</p>
-            </div>
-          </div>
-          <div class="timeline-item" style="padding-bottom:14px;">
-            <div class="timeline-dot green">Q4</div>
-            <div class="timeline-content">
-              <h3>Social Sharing</h3>
-              <p>Share recipe cards with AI photos to Stories — every share is a Mise ad.</p>
-            </div>
-          </div>
-          <div class="timeline-item" style="padding-bottom:14px;">
-            <div class="timeline-dot blue">Y2</div>
-            <div class="timeline-content">
-              <h3>Multi-Store + Export</h3>
-              <p>Smith's, Sam's Club, Costco. Apple Notes export. Affiliate rev share.</p>
-            </div>
-          </div>
-          <div class="timeline-item" style="padding-bottom:0;">
-            <div class="timeline-dot faint">Y2+</div>
-            <div class="timeline-content">
-              <h3>B2B / White-label</h3>
-              <p>License to meal kit companies as their cooking experience.</p>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <div class="stat" style="padding:16px;">
-            <div class="stat-num" style="font-size:36px;">$6.99</div>
-            <div class="stat-label">Monthly Pro price</div>
-            <div class="stat-sub">Below Netflix — impulse-buy territory</div>
-          </div>
-          <div class="stat" style="padding:16px;">
-            <div class="stat-num" style="font-size:36px;">5%</div>
-            <div class="stat-label">Free → paid conversion</div>
-            <div class="stat-sub">Industry avg 2-5%; AI lock-in drives higher</div>
-          </div>
-          <div class="stat" style="padding:16px;">
-            <div class="stat-num" style="font-size:36px;">$1.2M</div>
-            <div class="stat-label">ARR at 15K Pro subs</div>
-            <div class="stat-sub">Conservative 18-month target</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 14 — TECHNOLOGY EDGE
-  ══════════════════════════════════════════════════ -->
-  <div class="slide">
-    <div class="slide-inner">
-      <div class="eyebrow">Technical Differentiation</div>
-      <h2>Built to be <span>fast, private, and smart</span></h2>
-      <div class="two-col" style="margin-top:18px; align-items:start;">
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <div class="feature-card" style="padding:16px;">
-            <div class="feature-icon">🗄️</div>
-            <h3>Offline-first architecture</h3>
-            <p>Local SQLite with WAL mode. Zero latency, works in the kitchen with no signal.</p>
-          </div>
-          <div class="feature-card" style="padding:16px;">
-            <div class="feature-icon">⚡</div>
-            <h3>Non-blocking AI pipeline</h3>
-            <p>Save is instant. Nutrition, thumbnails, and illustrations fire in the background.</p>
-          </div>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <div class="feature-card" style="padding:16px;">
-            <div class="feature-icon">🔒</div>
-            <h3>Privacy by design</h3>
-            <p>No data leaves the device except API calls. No account required. No tracking.</p>
-          </div>
-          <div class="feature-card" style="padding:16px;">
-            <div class="feature-icon">🚀</div>
-            <h3>Cross-platform from day one</h3>
-            <p>Single React Native / Expo codebase ships to iOS and Android simultaneously.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 15 — ROADMAP
-  ══════════════════════════════════════════════════ -->
-  <div class="slide">
-    <div class="slide-inner">
-      <div class="eyebrow">What's Next</div>
-      <h2>Roadmap — <span>next 12 months</span></h2>
-      <div class="two-col" style="margin-top:18px; align-items:start;">
-        <div style="display:flex; flex-direction:column; gap:10px;">
-          <div class="feature-card" style="flex-direction:row; align-items:center; gap:12px; padding:14px 16px;">
-            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">🛒</div>
-            <div><h3 style="margin:0; font-size:14px;">Multi-Store Comparison</h3><p style="font-size:12px;">Smith's, Sam's Club, Costco. Per-cart totals so users pick the cheapest store.</p></div>
-          </div>
-          <div class="feature-card" style="flex-direction:row; align-items:center; gap:12px; padding:14px 16px;">
-            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">🌍</div>
-            <div><h3 style="margin:0; font-size:14px;">Multilingual Support</h3><p style="font-size:12px;">Recipe capture and TTS in 12 languages. Opens LatAm and SE Asia.</p></div>
-          </div>
-          <div class="feature-card" style="flex-direction:row; align-items:center; gap:12px; padding:14px 16px;">
-            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">👨‍👩‍👧</div>
-            <div><h3 style="margin:0; font-size:14px;">Family Meal Planning</h3><p style="font-size:12px;">Weekly planner, shared collections, household list, dietary restrictions.</p></div>
-          </div>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:10px;">
-          <div class="feature-card" style="flex-direction:row; align-items:center; gap:12px; padding:14px 16px;">
-            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">📺</div>
-            <div><h3 style="margin:0; font-size:14px;">Apple Watch / Wear OS</h3><p style="font-size:12px;">Step counter and timers on the wrist for cooking mode.</p></div>
-          </div>
-          <div class="feature-card" style="flex-direction:row; align-items:center; gap:12px; padding:14px 16px;">
-            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">🤝</div>
-            <div><h3 style="margin:0; font-size:14px;">Social Recipe Feed</h3><p style="font-size:12px;">Share cooked meals with AI photos, discover trending recipes.</p></div>
-          </div>
-          <div class="feature-card" style="flex-direction:row; align-items:center; gap:12px; padding:14px 16px;">
-            <div class="feature-icon" style="min-width:36px; width:36px; height:36px; font-size:16px;">🍳</div>
-            <div><h3 style="margin:0; font-size:14px;">Smart Appliance API</h3><p style="font-size:12px;">Send temp and time to Anova, Thermomix, or connected ovens.</p></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 16 — THE ASK / CLOSE
-  ══════════════════════════════════════════════════ -->
-  <div class="slide close-slide">
-    <div class="bg-blob b1" style="width:600px;height:600px;background:rgba(255,107,53,0.12);top:-200px;right:-150px;border-radius:50%;position:absolute;z-index:1;"></div>
-    <div class="slide-inner" style="align-items:center; justify-content:center; text-align:center; z-index:2;">
-      <div class="eyebrow" style="color:var(--orange);">Thank You</div>
-      <h2 style="color:white; font-size:50px; max-width:600px; margin-top:8px;">The kitchen is the last room in your home without an AI assistant.</h2>
-      <p style="color:rgba(255,255,255,0.5); font-size:16px; margin-top:16px; max-width:480px;">Mise puts one in your pocket — and we'd love to show you the live demo right now.</p>
-      <div style="display:flex; gap:16px; margin-top:36px; flex-wrap:wrap; justify-content:center;">
-        <div class="pill" style="font-size:13px; padding:10px 20px;">📱 Live demo on device</div>
-        <div class="pill" style="font-size:13px; padding:10px 20px;">💻 Codebase on GitHub</div>
-        <div class="pill" style="font-size:13px; padding:10px 20px;">🤝 Open to questions</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════
-       SLIDE 17 — APPENDIX: TECH STACK
-  ══════════════════════════════════════════════════ -->
-  <div class="slide">
-    <div class="appendix-tag">Appendix</div>
-    <div class="slide-inner">
-      <div class="eyebrow">Appendix — Technical Stack</div>
-      <h2 style="font-size:28px;">Full Technology Overview</h2>
-      <div class="three-col" style="margin-top:20px;">
-        <div>
-          <h3 style="color:var(--orange); margin-bottom:12px;">Frontend</h3>
-          <ul class="check-list">
-            <li>React Native (Expo SDK 54)</li>
-            <li>Expo Router v6 (file-based routing)</li>
-            <li>expo-linear-gradient (hero images)</li>
-            <li>expo-speech (TTS narration)</li>
-            <li>expo-keep-awake (cooking mode)</li>
-            <li>PanResponder (swipe gestures)</li>
-            <li>Animated API (smooth transitions)</li>
-          </ul>
         </div>
         <div>
-          <h3 style="color:var(--orange); margin-bottom:12px;">Data &amp; Storage</h3>
-          <ul class="check-list">
-            <li>expo-sqlite v16 (WAL mode)</li>
-            <li>FK cascade constraints</li>
-            <li>Parameterised queries (SQL injection safe)</li>
-            <li>Offline-first — no cloud DB</li>
-            <li>cook_log + recipe_nutrition tables</li>
-            <li>Background migrations on boot</li>
-          </ul>
+          <div style="font-size:11px; font-weight:800; color:var(--faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">What We Didn't Promise But Built Anyway</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:#FFF0E8; border-radius:10px; border:1.5px solid var(--orange);">
+              <span style="color:var(--orange); font-size:14px;">★</span>
+              <span style="font-size:13px; color:var(--dark); font-weight:600;">AI-guided cooking mode with TTS narration</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:#FFF0E8; border-radius:10px; border:1.5px solid var(--orange);">
+              <span style="color:var(--orange); font-size:14px;">★</span>
+              <span style="font-size:13px; color:var(--dark); font-weight:600;">Auto nutrition tracking (GPT-4o estimates macros)</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:#FFF0E8; border-radius:10px; border:1.5px solid var(--orange);">
+              <span style="color:var(--orange); font-size:14px;">★</span>
+              <span style="font-size:13px; color:var(--dark); font-weight:600;">AI meal planner with week view + calendar</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:#FFF0E8; border-radius:10px; border:1.5px solid var(--orange);">
+              <span style="color:var(--orange); font-size:14px;">★</span>
+              <span style="font-size:13px; color:var(--dark); font-weight:600;">DALL-E 3 food photography + step illustrations</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:#FFF0E8; border-radius:10px; border:1.5px solid var(--orange);">
+              <span style="color:var(--orange); font-size:14px;">★</span>
+              <span style="font-size:13px; color:var(--dark); font-weight:600;">Conversational app agent (chat → any screen)</span>
+            </div>
+          </div>
+          <div style="margin-top:12px; padding:10px 14px; background:white; border-radius:10px; border:1.5px solid var(--border);">
+            <p style="font-size:12px; color:var(--faint); margin:0;">Architecture pivot: Web app + OCR.Space cloud + "iPhone app in development" → <strong style="color:var(--dark);">single unified React Native app, GPT-4o Vision end-to-end</strong></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 3 — THE PROBLEM (9F)
+  ══════════════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Problem Identification — 9F</div>
+      <h2>The problem <span>evolved</span> as we built</h2>
+      <div style="background:#F3F0FF; border-left:4px solid #5C6BC0; border-radius:0 10px 10px 0; padding:12px 16px; margin-bottom:16px;">
+        <div style="font-size:10px; font-weight:800; color:#5C6BC0; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Midterm Founding Hypothesis (February 2026)</div>
+        <p style="font-size:13px; color:var(--dark); margin:0; font-style:italic;">"If home cooks can scan a recipe image and get an editable shopping list in under 30 seconds, with ≥90% accuracy — they will prefer this workflow and reuse weekly."</p>
+        <p style="font-size:12px; color:var(--faint); margin:4px 0 0;">What building taught us: the problem is 3× bigger than a shopping list.</p>
+      </div>
+      <div class="two-col" style="margin-top:20px; gap:28px;">
+        <div>
+          <div class="prd-version">
+            <div class="prd-tag">v1.0</div>
+            <div class="prd-version-text"><strong>Day 1:</strong> "Copying recipe ingredients by hand before going to the store is tedious."</div>
+          </div>
+          <div class="prd-version">
+            <div class="prd-tag latest">v1.3</div>
+            <div class="prd-version-text"><strong>Day 8 — three layers:</strong>
+              <br>1. Recipe fragmentation across apps, books, bookmarks
+              <br>2. Nutrition blindness while cooking
+              <br>3. No in-kitchen guidance — apps show recipes, none cook <em>with</em> you</div>
+          </div>
+          <div class="insight-box" style="margin-top:12px;">
+            <div class="insight-label">Key falsification finding</div>
+            <p>Our original hypothesis (camera scan is primary) was wrong — URL import is used 3× more often. We changed the product as a result.</p>
+          </div>
         </div>
         <div>
-          <h3 style="color:var(--orange); margin-bottom:12px;">AI / Cloud</h3>
+          <p style="font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">4 Falsification Tests</p>
+          <table class="metrics-table">
+            <thead><tr><th>Hypothesis</th><th>Result</th></tr></thead>
+            <tbody>
+              <tr><td>Camera scan is primary input</td><td><span class="status-warn">⚠️ Wrong — URL 61%</span></td></tr>
+              <tr><td>10-second capture achievable</td><td><span class="status-warn">⚠️ Camera 14s avg</span></td></tr>
+              <tr><td>90% ingredient accuracy</td><td><span class="status-pass">✅ 94% avg</span></td></tr>
+              <tr><td>Users log meals voluntarily</td><td><span class="status-pass">✅ 2/3 unprompted</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 4 — SYSTEM ARCHITECTURE (9E)
+  ══════════════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">System Understanding — 9E</div>
+      <h2>The <span>ecosystem</span> we operate in</h2>
+      <div class="two-col" style="margin-top:18px; gap:28px;">
+        <div class="sys-diagram">
+          <div class="sys-box device">
+            <div class="sys-box-label">User's Device</div>
+            <div class="sys-tabs" style="margin-bottom:6px;">
+              <span class="sys-tab">Chat</span>
+              <span class="sys-tab">Recipes</span>
+              <span class="sys-tab">Shopping</span>
+              <span class="sys-tab">Tracker</span>
+            </div>
+            <div style="font-size:11px; color:var(--med); margin-top:4px;">↓ src/services/openai.js &nbsp;↓ src/db/queries.js</div>
+            <div style="font-size:11px; color:var(--med);">↓ SQLite (10 tables, offline, WAL mode)</div>
+          </div>
+          <div class="sys-arrow">↕</div>
+          <div class="sys-box cloud">
+            <div class="sys-box-label">Cloud APIs</div>
+            <span class="sys-api">GPT-4o</span>
+            <span class="sys-api">DALL-E 3</span>
+            <span class="sys-api">DALL-E 2</span>
+            <span class="sys-api">Walmart Affiliate API v2</span>
+          </div>
+        </div>
+        <div>
+          <p style="font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">4 Leverage Points</p>
+          <div class="feature-card" style="margin-bottom:8px; padding:12px 16px;">
+            <div style="font-size:13px; font-weight:700; color:var(--dark);">GPT-4o as the intelligence layer</div>
+            <p style="font-size:12px;">Every friction point — capture, nutrition, guidance — handled by one API</p>
+          </div>
+          <div class="feature-card" style="margin-bottom:8px; padding:12px 16px;">
+            <div style="font-size:13px; font-weight:700; color:var(--dark);">SQLite offline persistence</div>
+            <p style="font-size:12px;">No login, no server, no latency. Works in a bad-WiFi kitchen.</p>
+          </div>
+          <div class="feature-card" style="margin-bottom:8px; padding:12px 16px;">
+            <div style="font-size:13px; font-weight:700; color:var(--dark);">Non-blocking AI pipeline</div>
+            <p style="font-size:12px;">Navigate away on save; nutrition + images fill in the background</p>
+          </div>
+          <div class="feature-card" style="padding:12px 16px;">
+            <div style="font-size:13px; font-weight:700; color:var(--dark);">Cooking as the logging trigger</div>
+            <p style="font-size:12px;">Nutrition tracking is a side effect of cooking — never a manual chore</p>
+          </div>
+          <div style="margin-top:12px; padding:10px 16px; background:white; border-radius:10px; border:1.5px solid var(--border); display:flex; gap:16px; align-items:center;">
+            <div style="font-size:10px; font-weight:800; color:var(--faint); text-transform:uppercase; letter-spacing:1px; white-space:nowrap;">Architecture pivot</div>
+            <div style="font-size:12px; color:var(--faint);">Midterm: Web app + OCR.Space cloud server + "iPhone app in development (separate build)"</div>
+            <div style="font-size:18px; color:var(--orange);">→</div>
+            <div style="font-size:12px; color:var(--dark); font-weight:600;">Final: Single React Native app, GPT-4o Vision end-to-end, offline SQLite, no server</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 5 — CUSTOMER RESEARCH (9G)
+  ══════════════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Customer Focus — 9G</div>
+      <h2>4 rounds with <span>real users</span></h2>
+      <div class="two-col" style="margin-top:16px; gap:28px;">
+        <div>
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-dot orange">1</div>
+              <div class="timeline-content">
+                <h3>Day 1 — 4 informal interviews</h3>
+                <p>All 4 named recipe fragmentation as top frustration. 3/4 had abandoned calorie apps. Validated the core problem before writing a line of code.</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot orange">2</div>
+              <div class="timeline-content">
+                <h3>Day 5 — Working prototype</h3>
+                <p>2 users asked "does it remember calories?" → Nutrition Tracker born. 1 user said "read the steps to me" → Voice cooking mode born.</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot green">3</div>
+              <div class="timeline-content">
+                <h3>After full build — Demo prep</h3>
+                <p>Both users completed full flow without guidance. One said "I'd pay for this" unprompted. Cooking mode described as "different from other apps."</p>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-dot blue">4</div>
+              <div class="timeline-content">
+                <h3>April 2026 — Kierra, Sherrie, Thomas</h3>
+                <p>Segmentation discovery: pickup shoppers want Walmart pipeline, in-store shoppers want export to Notes. Thomas validated Walmart cart before seeing it.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="quote-block">
+            <div class="quote-text">"It'd be cool if you could just get a recipe and it would add everything to your Walmart pick-up order."</div>
+            <div class="quote-source">— Thomas, said BEFORE seeing the feature</div>
+          </div>
+          <div class="quote-block" style="margin-top:8px;">
+            <div class="quote-text">"I just want a list. 'Cause I'm gonna run around."</div>
+            <div class="quote-source">— Sherrie, in-store shopper — revealed the second user segment</div>
+          </div>
+          <div class="insight-box" style="margin-top:10px;">
+            <div class="insight-label">Segmentation finding</div>
+            <p>Pickup/delivery users → Walmart cart. In-store shoppers → export to Notes. Both value AI extraction. They diverge at the shopping step.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 6 — SUCCESS & FAILURE (9H)
+  ══════════════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Success &amp; Failure Planning — 9H</div>
+      <h2>Did it <span>change what users do?</span></h2>
+      <div style="font-size:11px; color:var(--muted); margin:-6px 0 12px; font-style:italic;">Success = behavior changed. Technical performance is a floor, not the goal.</div>
+      <div class="two-col" style="margin-top:0; gap:24px;">
+        <div>
+          <!-- PRIMARY: behavioral outcomes -->
+          <div style="font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--orange); margin-bottom:6px;">Behavioral outcomes — what mattered</div>
+          <table class="metrics-table" style="font-size:11px;">
+            <thead>
+              <tr>
+                <th>Question</th>
+                <th>Evidence</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Full workflow completed unprompted?</td>
+                <td>Thomas: scan → list → live Walmart cart</td>
+                <td><span class="status-pass">✅</span></td>
+              </tr>
+              <tr>
+                <td>User described the feature before seeing it?</td>
+                <td>"It'd be cool if it added to my Walmart order" — Thomas, Round 4</td>
+                <td><span class="status-pass">✅</span></td>
+              </tr>
+              <tr>
+                <td>Feature emerged from listening, not the PRD?</td>
+                <td>Nutrition tracker — not in v1.0, most-engaged by final round</td>
+                <td><span class="status-pass">✅</span></td>
+              </tr>
+              <tr>
+                <td>User showed it to someone else?</td>
+                <td>Thomas showed his wife on the spot — "I'm sold"</td>
+                <td><span class="status-pass">✅</span></td>
+              </tr>
+              <tr>
+                <td>Second segment discovered through use?</td>
+                <td>Sherrie — in-store shopper, different job than assumed</td>
+                <td><span class="status-pass">✅</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- SECONDARY: table-stakes floor -->
+          <div style="font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin:10px 0 5px;">Technical floor — needs to be good enough not to block behavior</div>
+          <table class="metrics-table" style="font-size:11px;">
+            <tbody>
+              <tr>
+                <td>Ingredient accuracy</td>
+                <td>94% avg (target 90%+)</td>
+                <td><span class="status-pass">✅</span></td>
+              </tr>
+              <tr>
+                <td>Camera latency</td>
+                <td>14s avg (target &lt;10s) — non-blocking UI mitigates</td>
+                <td><span class="status-warn">⚠️</span></td>
+              </tr>
+              <tr>
+                <td>App stability</td>
+                <td>0 crashes across all test sessions</td>
+                <td><span class="status-pass">✅</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div style="background:rgba(255,149,0,0.08); border:1.5px solid rgba(255,149,0,0.25); border-radius:14px; padding:14px 16px; margin-bottom:12px;">
+            <div style="font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--warn); margin-bottom:6px;">Where behavior was blocked</div>
+            <p style="font-size:12px; color:var(--dark);">Per-serving logging defaulted to all servings — Thomas found it. This breaks the tracker loop: if the data is wrong, users stop logging.</p>
+            <p style="font-size:12px; color:var(--dark); margin-top:6px;">Walmart price off ~$6 — Kierra: "I'd prefer no price if it's going to change." Inaccurate data erodes trust before behavior can form.</p>
+            <p style="font-size:12px; color:var(--dark); margin-top:6px;">Camera at 14s didn't block anyone in testing, but it's the only technical miss that <em>could</em> stop a first-time user from continuing.</p>
+          </div>
+          <div style="background:rgba(52,199,89,0.08); border:1.5px solid rgba(52,199,89,0.25); border-radius:14px; padding:14px 16px;">
+            <div style="font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--green); margin-bottom:6px;">The real lesson</div>
+            <p style="font-size:12px; color:var(--dark);">Speed was never the value driver. Nobody chose this app because it was fast. They chose it because it finished a job they couldn't finish before — recipe → ingredients → shopping cart in one tap.</p>
+            <p style="font-size:12px; color:var(--dark); margin-top:6px;">The best signal we got: a user described a feature we hadn't shown yet, in their own words. That doesn't come from hitting a latency target.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 7 — CUSTOMER INTERACTION CYCLES (9I)
+  ══════════════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Customer Interaction — 9I</div>
+      <h2>5 feedback-to-feature <span>cycles</span></h2>
+      <div class="three-col" style="margin-top:16px; gap:14px;">
+        <div class="cycle-card">
+          <div style="font-size:13px; font-weight:700; color:var(--dark);">1. URL &gt; Camera</div>
+          <div class="cycle-divider"></div>
+          <div class="cycle-step observe">Observed</div>
+          <div class="cycle-text">"I mostly use recipes from the internet" — 3 of 4 Day-1 users</div>
+          <div class="cycle-step change">Changed</div>
+          <div class="cycle-text">URL import promoted to first option in Add Recipe modal</div>
+          <div class="cycle-step validated">Validated</div>
+          <div class="cycle-text">URL: 61% of imports vs. Camera: 28% across 20 sessions</div>
+        </div>
+        <div class="cycle-card">
+          <div style="font-size:13px; font-weight:700; color:var(--dark);">2. Nutrition Tracker</div>
+          <div class="cycle-divider"></div>
+          <div class="cycle-step observe">Observed</div>
+          <div class="cycle-text">"Does it remember how many calories?" — 2 users independently, Day 5</div>
+          <div class="cycle-step change">Changed</div>
+          <div class="cycle-text">Built Tracker tab, estimateNutrition(), cook_log table. Not in PRD.</div>
+          <div class="cycle-step validated">Validated</div>
+          <div class="cycle-text">2/3 Round 3 users tapped Log Meal unprompted. Thomas explored tracker.</div>
+        </div>
+        <div class="cycle-card">
+          <div style="font-size:13px; font-weight:700; color:var(--dark);">3. Single entry button</div>
+          <div class="cycle-divider"></div>
+          <div class="cycle-step observe">Observed</div>
+          <div class="cycle-text">User paused 4 seconds on 4-button screen. "I wasn't sure which one."</div>
+          <div class="cycle-step change">Changed</div>
+          <div class="cycle-text">Single "Add Recipe" button + action sheet modal</div>
+          <div class="cycle-step validated">Validated</div>
+          <div class="cycle-text">No user paused at home screen in all subsequent testing rounds</div>
+        </div>
+        <div class="cycle-card">
+          <div style="font-size:13px; font-weight:700; color:var(--dark);">4. Walmart price preview</div>
+          <div class="cycle-divider"></div>
+          <div class="cycle-step observe">Observed</div>
+          <div class="cycle-text">Internal: discomfort sending to cart as a "black box" — no product visibility</div>
+          <div class="cycle-step change">Changed</div>
+          <div class="cycle-text">Per-ingredient name + price before Send button. Moved P1 → P0.</div>
+          <div class="cycle-step validated">Validated</div>
+          <div class="cycle-text">Thomas reviewed prices and sent to his real cart. "I'm sold."</div>
+        </div>
+        <div class="cycle-card">
+          <div style="font-size:13px; font-weight:700; color:var(--dark);">5. Two exit paths</div>
+          <div class="cycle-divider"></div>
+          <div class="cycle-step observe">Observed</div>
+          <div class="cycle-text">Thomas: "I'm sold." Sherrie: "I just want a list." Same feature, opposite reactions.</div>
+          <div class="cycle-step change">Changed</div>
+          <div class="cycle-text">Identified: need Walmart cart AND export-to-Notes as parallel exit paths</div>
+          <div class="cycle-step validated">Validated</div>
+          <div class="cycle-text">6/7 final users validated Walmart. Sherrie defines the second segment clearly.</div>
+        </div>
+      </div>
+      <p style="font-size:12px; color:var(--faint); margin-top:12px; text-align:right;">11 specific features traced to specific user feedback — full list in aiDocs/customer-interaction.md</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 8 — DOCUMENT-DRIVEN DEVELOPMENT (9A)
+  ══════════════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">PRD &amp; Document-Driven Development — 9A</div>
+      <h2>Documents <span>drove</span> every decision</h2>
+      <div class="two-col" style="margin-top:16px; gap:28px;">
+        <div>
+          <p style="font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">PRD Version History</p>
+          <div class="prd-version">
+            <div class="prd-tag">v1.0</div>
+            <div class="prd-version-text"><strong>Day 1:</strong> Core problem, MVP scope, initial success metrics</div>
+          </div>
+          <div class="prd-version">
+            <div class="prd-tag">v1.1</div>
+            <div class="prd-version-text"><strong>Day 4:</strong> URL import elevated to equal priority after user feedback</div>
+          </div>
+          <div class="prd-version">
+            <div class="prd-tag">v1.2</div>
+            <div class="prd-version-text"><strong>Day 7:</strong> Nutrition Tracker added after two users asked independently</div>
+          </div>
+          <div class="prd-version">
+            <div class="prd-tag latest">v1.3</div>
+            <div class="prd-version-text"><strong>Day 8:</strong> Problem statement expanded to 3-layer lifecycle</div>
+          </div>
+          <div style="margin-top:14px; background:var(--white); border:1.5px solid var(--border); border-radius:14px; padding:12px 16px;">
+            <p style="font-size:12px; color:var(--dark); font-weight:600; margin-bottom:4px;">Document pipeline</p>
+            <p style="font-size:12px; color:var(--med);">PRD → ai/roadmaps/roadmap.md → ai/plans/phase[1–8]-plan.md → implementation → aiDocs/changelog.md</p>
+          </div>
+        </div>
+        <div>
+          <p style="font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">File Structure</p>
+          <div class="file-tree">
+            <div class="dir">aiDocs/</div>
+            <div class="f">context.md</div>
+            <div class="f">prd.md</div>
+            <div class="f">architecture.md</div>
+            <div class="f">coding-style.md</div>
+            <div class="f">changelog.md</div>
+            <div class="f last">system-understanding.md + 4 more</div>
+            <div class="dir" style="margin-top:6px;">ai/</div>
+            <div class="f">roadmaps/roadmap.md</div>
+            <div class="f last">plans/phase1-plan.md … phase8-plan.md</div>
+          </div>
+          <p style="font-size:12px; color:var(--faint); margin-top:10px;">10 planning documents total. Every phase started with a written plan that was checked into git before coding began.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 9 — AI INFRASTRUCTURE + LOGGING (9B + 9D)
+  ══════════════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">AI Infrastructure &amp; Debugging — 9B + 9D</div>
+      <h2>Built to be <span>debuggable</span> from the start</h2>
+      <div class="two-col" style="margin-top:16px; gap:28px;">
+        <div>
+          <p style="font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">AI Infrastructure</p>
           <ul class="check-list">
-            <li>GPT-4o — recipe extraction, chat, nutrition</li>
-            <li>DALL-E 3 — hero thumbnails (1792×1024)</li>
-            <li>DALL-E 2 — step illustrations (parallel)</li>
-            <li>JSON mode for structured output</li>
-            <li>45s / 60s timeout guards</li>
-            <li>Non-blocking background pipeline</li>
+            <li>aiDocs/ folder with context.md (Claude reads this every session)</li>
+            <li>MCP configured and working in .claude/settings.json</li>
+            <li>Git workflow: feature branches, meaningful commit messages per phase</li>
+            <li>No secrets committed — .env in .gitignore, git log clean</li>
+            <li>Structured logger in src/utils/logger.js — every service function logs entry, exit, error</li>
           </ul>
+          <div class="code-block" style="margin-top:14px;">
+            <span class="cm">// Every service function follows this pattern</span><br>
+            <span class="fn">logger</span>.<span class="fn">info</span>(<span class="str">'openai.estimateNutrition'</span>, {<br>
+            &nbsp;&nbsp;<span class="key">recipeId</span>: id, <span class="key">status</span>: <span class="str">'start'</span><br>
+            });<br>
+            <span class="cm">// ... work ...</span><br>
+            <span class="fn">logger</span>.<span class="fn">info</span>(<span class="str">'openai.estimateNutrition'</span>, {<br>
+            &nbsp;&nbsp;<span class="key">recipeId</span>: id, <span class="key">status</span>: <span class="str">'done'</span>, calories<br>
+            });
+          </div>
+        </div>
+        <div>
+          <p style="font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">3 Test-Log-Fix Loops</p>
+          <div class="tlf-row">
+            <div><div class="tlf-step bug">Bug</div></div>
+            <div class="tlf-text"><code style="font-size:11px;">Can't resolve 'crypto'</code> — Metro bundler error on Walmart auth</div>
+          </div>
+          <div class="tlf-row">
+            <div><div class="tlf-step log">Logger</div></div>
+            <div class="tlf-text">Logger showed RSA signing call hitting Node's crypto module, unavailable in React Native</div>
+          </div>
+          <div class="tlf-row" style="margin-bottom:10px;">
+            <div><div class="tlf-step fix">Fix</div></div>
+            <div class="tlf-text">Replaced with node-forge exclusively for RSA signing</div>
+          </div>
+          <div class="tlf-row">
+            <div><div class="tlf-step bug">Bug</div></div>
+            <div class="tlf-text">Walmart cart URL wrong — items not appearing in cart</div>
+          </div>
+          <div class="tlf-row">
+            <div><div class="tlf-step log">Logger</div></div>
+            <div class="tlf-text">Logger showed URL as <code style="font-size:11px;">walmart.com/cart?items=ID</code> — undocumented format</div>
+          </div>
+          <div class="tlf-row" style="margin-bottom:10px;">
+            <div><div class="tlf-step fix">Fix</div></div>
+            <div class="tlf-text">Changed to <code style="font-size:11px;">affil.walmart.com/cart/addToCart?items=ID|1</code></div>
+          </div>
+          <div class="tlf-row">
+            <div><div class="tlf-step bug">Bug</div></div>
+            <div class="tlf-text"><code style="font-size:11px;">ERR_DLOPEN_FAILED</code> — better-sqlite3 version mismatch</div>
+          </div>
+          <div class="tlf-row">
+            <div><div class="tlf-step fix">Fix</div></div>
+            <div class="tlf-text">Diagnosed via logger output, fixed with <code style="font-size:11px;">npm rebuild</code></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 10 — PHASE-BY-PHASE IMPLEMENTATION (9C)
+  ══════════════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Phase-by-Phase Implementation — 9C</div>
+      <h2>8 phases, <span>incremental</span> delivery</h2>
+      <div class="two-col" style="margin-top:14px; gap:28px;">
+        <div>
+          <div class="phase-row">
+            <div class="phase-num">1</div>
+            <div class="phase-date">Apr 1</div>
+            <div class="phase-label">Project setup + DB schema</div>
+            <div class="phase-commit">initial commit of the recipe app</div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-num">2</div>
+            <div class="phase-date">Apr 1</div>
+            <div class="phase-label">Navigation + screens</div>
+            <div class="phase-commit">initial commit of the recipe app</div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-num">3</div>
+            <div class="phase-date">Apr 1</div>
+            <div class="phase-label">OpenAI chat integration</div>
+            <div class="phase-commit">implement phase 3</div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-num">4</div>
+            <div class="phase-date">Apr 2</div>
+            <div class="phase-label">URL + camera import</div>
+            <div class="phase-commit">phase 4, import methods</div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-num">5</div>
+            <div class="phase-date">Apr 2</div>
+            <div class="phase-label">Recipe save + editor</div>
+            <div class="phase-commit">phase 5 complete, recipe creation</div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-num">6</div>
+            <div class="phase-date">Apr 2</div>
+            <div class="phase-label">Shopping list functionality</div>
+            <div class="phase-commit">phase 6: shopping list functionality</div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-num">7</div>
+            <div class="phase-date">Apr 2</div>
+            <div class="phase-label">Walmart API integration</div>
+            <div class="phase-commit">Phase 7: Walmart product search and cart</div>
+          </div>
+          <div class="phase-row">
+            <div class="phase-num">8</div>
+            <div class="phase-date">Apr 2</div>
+            <div class="phase-label">UI polish + Nutrition Tracker</div>
+            <div class="phase-commit">UI changes and walmart add to cart working</div>
+          </div>
+        </div>
+        <div>
+          <p style="font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">CLI Test Scripts</p>
+          <ul class="check-list" style="margin-bottom:14px;">
+            <li>test-db.js — 27 assertions (schema, CRUD, cascades)</li>
+            <li>test-openai.js — extraction accuracy, latency</li>
+            <li>test-save-flow.js — 15 assertions (end-to-end save)</li>
+            <li>test-shopping-list.js — 13 assertions (merge, dedup)</li>
+            <li>test-walmart.js — API auth, cart URL format</li>
+          </ul>
+          <div style="background:var(--dark); border-radius:12px; padding:14px 18px; text-align:center;">
+            <div style="font-size:28px; font-weight:900; color:var(--orange); letter-spacing:-1px;">~55 tests</div>
+            <div style="font-size:13px; color:rgba(255,255,255,0.5); margin-top:4px;">0 failures on ./scripts/test.sh</div>
+          </div>
+          <div class="insight-box" style="margin-top:12px;">
+            <div class="insight-label">Next up</div>
+            <p>Now let's see it run on a real device.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 11 — DEMO
+  ══════════════════════════════════════════════════ -->
+  <div class="slide demo-slide">
+    <div class="slide-inner">
+      <div class="demo-pulse">📱</div>
+      <h2>Live Demo</h2>
+      <p class="lead">9 phases of build, running on a real device.</p>
+      <p style="color:rgba(255,255,255,0.3); font-size:14px; margin-top:20px;">Pick up the phone here.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       SLIDE 12 — LEARNINGS + CLOSE
+  ══════════════════════════════════════════════════ -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">What We Learned</div>
+      <h2>Honest <span>reflection</span></h2>
+      <div class="two-col" style="margin-top:16px; gap:28px;">
+        <div>
+          <p style="font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">What surprised us</p>
+          <div class="problem-card">
+            <div class="problem-num">1</div>
+            <div>
+              <h3 style="font-size:14px; margin-bottom:3px;">The midterm "What's Next" column became the roadmap — everything shipped</h3>
+              <p style="font-size:13px;">URL import, native app, Walmart, ingredient substitutes — all five items delivered. The column was the plan.</p>
+            </div>
+          </div>
+          <div class="problem-card">
+            <div class="problem-num">2</div>
+            <div>
+              <h3 style="font-size:14px; margin-bottom:3px;">URL import was 3× more common than camera</h3>
+              <p style="font-size:13px;">Changed our P0 priority and the home screen design. We had it backwards.</p>
+            </div>
+          </div>
+          <div class="problem-card">
+            <div class="problem-num">3</div>
+            <div>
+              <h3 style="font-size:14px; margin-bottom:3px;">Nutrition tracking was not in the PRD</h3>
+              <p style="font-size:13px;">Built entirely from user feedback. Became the most-engaged feature. Listening works.</p>
+            </div>
+          </div>
+          <div class="problem-card">
+            <div class="problem-num">4</div>
+            <div>
+              <h3 style="font-size:14px; margin-bottom:3px;">Thomas validated Walmart cart before seeing it</h3>
+              <p style="font-size:13px;">Described the exact feature unprompted. Strongest possible product validation signal.</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p style="font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">What we'd do differently</p>
+          <ul class="check-list" style="margin-bottom:16px;">
+            <li>Fix per-serving logging bug before demo — affects Tracker trust</li>
+            <li>Camera speed: show optimistic UI earlier to mask API latency</li>
+            <li>Build export-to-Notes for Sherrie's user type from the start</li>
+          </ul>
+          <p style="font-size:12px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Pivot plan</p>
+          <p style="font-size:13px; color:var(--med);">If Walmart integration doesn't find traction: build export-to-Notes as the alternative exit path for in-store shoppers. The core product (AI extraction + cooking mode + nutrition tracking) remains valuable either way.</p>
+        <div style="margin-top:16px; padding:12px 16px; background:rgba(255,255,255,0.1); border-radius:10px; border:1px solid rgba(255,255,255,0.2); text-align:center;">
+          <p style="font-size:13px; color:rgba(255,255,255,0.7); margin:0;">Midterm: Recipe Scanner · Web app · Scan-to-list · <em>3 screens</em></p>
+          <p style="font-size:14px; color:white; font-weight:700; margin:6px 0 0;">Final: Mise · Native app · Full cooking companion · <em>9 phases · 8 test scripts · 6 tabs</em></p>
+        </div>
+          <div class="quote-block" style="margin-top:14px;">
+            <div class="quote-text" style="font-size:15px;">The kitchen was the last room without an AI assistant. We gave it one.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -1400,7 +1586,7 @@
 <!-- ── Navigation controls ── -->
 <div class="nav">
   <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">&#8592;</button>
-  <span class="nav-counter" id="counter">1 / 17</span>
+  <span class="nav-counter" id="counter">1 / 12</span>
   <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">&#8594;</button>
 </div>
 
