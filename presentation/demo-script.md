@@ -33,14 +33,15 @@
 
 | Section | Duration | Slides |
 |---|---|---|
-| Cover + problem hook | 1 min | 1 |
-| Problem evolution + falsification | 2 min | 2 |
-| System architecture | 1.5 min | 3 |
-| Customer research + cycles | 2 min | 4, 5, 6 |
-| Success/failure metrics | 1 min | 5 |
-| Technical process: docs + logging | 2 min | 7, 8, 9 |
-| Live demo | 5 min | 10 (phone) |
-| Learnings + close | 0.5 min | 11 |
+| Cover + problem hook | 0.75 min | 1 |
+| Midterm → Final continuation | 1 min | 2 |
+| Problem evolution + falsification | 2 min | 3 |
+| System architecture | 1.5 min | 4 |
+| Customer research + cycles | 2 min | 5, 6, 7 |
+| Success/failure metrics | 1 min | 6 |
+| Technical process: docs + logging | 2 min | 8, 9, 10 |
+| Live demo | 5 min | 11 (phone) |
+| Learnings + close | 0.5 min | 12 |
 | Buffer / Q&A | 1 min | — |
 
 ---
@@ -57,6 +58,11 @@
 
 Then: names, project name, brief description.
 
+**Midterm connection to establish early:**
+> "At midterm we had a web app, a scan-to-list hypothesis, and a 'What's Next' column with five items on it. This presentation is the answer to that column."
+
+Say this in the first 30 seconds. It frames everything that follows.
+
 **Key points:**
 - Pills on the slide: React Native + Expo, GPT-4o + DALL-E 3, 9 Phases, 8 Test Scripts
 - Emphasize "9 Phases" — this signals structured process to Casey
@@ -67,7 +73,28 @@ Then: names, project name, brief description.
 
 ---
 
-### 1:00 — Problem Evolution + Falsification (Slide 2)
+### 0:45 — Midterm → Final (Slide 2)
+
+**Opening line:**
+> "Let's start with what we owed you from February. Here's our midterm 'What's Next' column — URL import, native mobile app, grocery integration, ingredient substitutes. Every single one shipped."
+
+**Walk through the left column quickly (15 seconds):**
+- URL import → Phase 4 commit, April 2nd
+- Native mobile app → this is it, you're looking at it
+- Walmart integration → Phase 7
+- Make it Lighter → ingredient substitution, Phase 8
+
+**Then point at the right column:**
+> "But the more interesting story is the right column — the things we didn't promise. Nutrition tracking wasn't in the original PRD. Voice-guided cooking mode wasn't in the PRD. The AI meal planner wasn't in the PRD. All three came directly from user feedback between February and April."
+
+**Key line:**
+> "The architecture also changed completely. At midterm we had three separate pieces: a web app, a cloud server, and 'an iPhone app in development.' By final we consolidated to a single React Native app with GPT-4o end-to-end and SQLite offline. That's not scope creep — that's what the midterm falsification findings told us to do."
+
+**Transition:** "Let me show you the problem statement that drove all of this."
+
+---
+
+### 1:45 — Problem Evolution + Falsification (Slide 3)
 
 **Opening line:**
 > "The v1.0 problem statement was 'copying ingredients by hand is tedious.' By Day 8, after four rounds of user research and actually building the thing, it had expanded to three layers."
@@ -83,7 +110,7 @@ Then: names, project name, brief description.
 
 ---
 
-### 2:00 — System Architecture (Slide 3)
+### 3:00 — System Architecture (Slide 4)
 
 **Opening line:**
 > "The system has two parts: everything that lives on the device, and two cloud APIs. The interesting design decisions are in how they connect."
@@ -100,7 +127,7 @@ Then: names, project name, brief description.
 
 ---
 
-### 3:30 — Customer Research (Slide 4)
+### 4:30 — Customer Research (Slide 5)
 
 **Opening line:**
 > "We ran four rounds of research. The last round included people we'd never met. Here's what changed each time."
@@ -121,7 +148,7 @@ Then: names, project name, brief description.
 
 ---
 
-### 4:30 — Customer Interaction Cycles (Slide 6)
+### 5:30 — Customer Interaction Cycles (Slide 7)
 
 **Opening line:**
 > "We tracked every feedback-to-feature cycle — what we heard, what we built, how we validated it. Here are the five core ones."
@@ -140,7 +167,7 @@ Then: names, project name, brief description.
 
 ---
 
-### 6:00 — Success & Failure (Slide 5) — can fold into Customer Research block
+### 6:00 — Success & Failure (Slide 6) — can fold into Customer Research block
 
 **If short on time**, handle this with one sentence while pointing at the table:
 > "Five of six primary metrics met or exceeded. Camera speed is the miss — 14 seconds average versus a 10-second target. GPT-4o Vision API latency. We mitigated it with a non-blocking UI, but the raw number missed."
@@ -150,7 +177,7 @@ Then: names, project name, brief description.
 
 ---
 
-### 7:00 — Document-Driven Development (Slide 7)
+### 7:00 — Document-Driven Development (Slide 8)
 
 **Opening line:**
 > "Casey, this is for you. Every phase started with a written plan that was committed to git before a line of code was written."
@@ -166,7 +193,7 @@ Then: names, project name, brief description.
 
 ---
 
-### 8:00 — AI Infrastructure + Debugging (Slide 8)
+### 8:00 — AI Infrastructure + Debugging (Slide 9)
 
 **Opening line:**
 > "The structured logger was in from Phase 1. Every service function logs on entry, exit, and error with a structured object. That's what made debugging fast."
@@ -189,7 +216,7 @@ Then: names, project name, brief description.
 
 ---
 
-### 9:00 — Phase-by-Phase (Slide 9)
+### 9:00 — Phase-by-Phase (Slide 10)
 
 **Opening line:**
 > "Eight phases, each with a written plan, each with a meaningful commit. The roadmap was the checklist."
@@ -205,7 +232,7 @@ Then: names, project name, brief description.
 
 ---
 
-### 10:00 — LIVE DEMO (5 minutes, Slide 10)
+### 10:00 — LIVE DEMO (5 minutes, Slide 11)
 
 **Pick up the phone.**
 
@@ -258,7 +285,7 @@ Tap Send to Walmart (or show the button).
 
 ---
 
-### 14:30 — Learnings + Close (Slide 11)
+### 14:30 — Learnings + Close (Slide 12)
 
 **Brief — 30 seconds:**
 > "Three things surprised us. Camera wasn't the primary input — that changed the product. Nutrition tracking wasn't in the PRD — that became the killer feature. And Thomas told us what the Walmart cart did before he saw it. That's the feedback loop working."
@@ -274,6 +301,9 @@ Tap Send to Walmart (or show the button).
 ## Q&A Preparation
 
 Casey and Jason will ask about process, not product features. Prepare for these:
+
+**"How does this compare to what you showed at midterm?"**
+> At midterm: web app, OCR.Space pipeline, three separate codebases, a scan-to-list problem statement. The midterm 'What's Next' column had five items — all five shipped. The bigger change is the problem statement: midterm was one layer (manual ingredient copying), final is three layers (fragmentation, nutrition blindness, no in-kitchen guidance). The midterm falsification finding — that users use screenshots, not cookbooks — directly shaped Phase 4's URL import becoming P0 over camera scan.
 
 **"Walk me through how your git history shows the phases."**
 > We committed a written plan before each phase. git log shows 8 distinct phase commits from Apr 1–2, each matching the roadmap milestone. The roadmap.md was the checklist — each phase is checked off as it was completed.
