@@ -1,162 +1,121 @@
-# Customer Focus — Recipe Scanner
+# Customer Research (Rubric 9G)
 
-## Midterm Customer Definition
-
-**Primary segment:** iPhone users who cook multiple times weekly, mix physical cookbooks with screenshot-based recipes, want less planning overhead before grocery trips.
-
-**Secondary segment:** Students and young professionals batch-cooking from social media recipes.
-
-**Midterm positioning:** "For home cooks who save recipes in messy formats, Recipe Scanner is the fastest path from recipe image to editable shopping checklist, without forcing full manual entry."
-
-**Midterm differentiation:** Camera/screenshot ingestion as first-class input, ingredient-specific parsing (not generic OCR), immediate editability, offline-first, AI meal identification from food photos.
-
-**Midterm research:** 3 roommate interviews (convenience sample, ages 22-24). All were social-recipe heavy (TikTok, Instagram, Pinterest). Key finding: screenshot-first reliability was the highest-leverage requirement, not camera cookbook scanning.
+*Covers target customer profile, 4 rounds of research, specific user quotes, segmentation finding, competitive analysis, and assumptions vs. reality.*
 
 ---
 
-## How Our Customer Understanding Evolved
+## Target Customer Profile
 
-### What the midterm got right
-- Screenshot/digital recipes are the dominant source format — validated through building
-- Fast correction matters more than perfect parsing — validated by the editor becoming the trust-building step
-- Minimal setup and short time-to-value are essential — validated by URL import being preferred for its speed
+Home cooks, 25–40, cooking 3–5 times per week. Typically:
+- Cook from a mix of physical cookbooks and online recipes
+- Have tried and abandoned calorie tracking apps (MyFitnessPal, Lose It) due to manual entry burden
+- Shop at Walmart, Target, or a large chain — many use pickup or delivery
+- Have their phone out in the kitchen and are comfortable with AI tools
 
-### What changed through building
-1. **Input sources are broader than screenshots — and the interface became conversational.** We added URL import, PDF/DOCX import, and plain-text description. More importantly, all input methods converge through a **Chat tab** — a conversational AI interface where users send messages, photos, URLs, or files. This replaced the original button-driven import flow and turned out to be more natural. Users can also ask general cooking questions (e.g., substitution suggestions) in the same interface.
-2. **Walmart integration became the core differentiator.** At midterm, our differentiation was "AI parsing + editability." After building, the unique value is the full pipeline: any recipe source → structured list → Walmart cart. No competitor does this.
-3. **The app grew beyond recipe-to-list into a cooking lifecycle tool.** Users asked about calories unprompted, wanted the app to help them cook (not just plan), and expected AI-generated visuals. We added: nutrition estimation (GPT-4o auto-estimates macros on save), a Nutrition Tracker tab with daily calorie/macro tracking, a full-screen Cooking Mode with text-to-speech and countdown timers, DALL-E 3 recipe thumbnails and step illustrations, "Make it Lighter" AI substitution suggestions, meal logging, and recipe collections with emoji organization.
-4. **The customer profile needs to include "shops at Walmart" — but not exclusively.** Our midterm segment was generic "iPhone users who cook." The Walmart integration narrows this for the cart feature, but the broader cooking lifecycle features (nutrition tracking, cooking mode, meal planning, recipe library) have value for all home cooks, including users like Sherrie who don't want cart integration.
-5. **"Offline-first" mattered less than expected.** The app requires API calls to GPT-4o, DALL-E 3, and Walmart anyway. Offline mode only applies to the library, shopping list, and cooking mode, which is useful but not the main value proposition.
-
-### Updated customer definition
-
-**Primary segment:** iPhone users who cook from recipes 3+ times per week and do their grocery shopping at Walmart (pickup or delivery). They want a single tool that handles the full cooking lifecycle: recipe capture → structured list → Walmart cart → cooking guidance → nutrition tracking → weekly meal planning. Thomas and his wife Chris are the archetype — weekly Walmart pickup, recipe-driven cooking, currently using paper lists.
-
-**Secondary segment:** Home cooks who value recipe organization, cooking guidance, and nutrition tracking but don't use Walmart cart integration. They benefit from the AI extraction, recipe library with collections, cooking mode with TTS, and nutrition tracker. Sherrie represents this segment — she wants the recipe→list flow exported to her own tools, plus calorie tracking.
-
-**Tertiary segment:** Students and young adults who find recipes on social media and want a faster way to build grocery lists — the chat-based import flow has standalone value even without the full lifecycle features.
+The Walmart cart feature narrows the sweet spot to **pickup/delivery shoppers** — but the broader cooking lifecycle features (nutrition tracking, cooking mode, recipe library) have value for all home cooks.
 
 ---
 
-## Customer Research — Final Round
+## Customer Research: 4 Rounds
 
-### Midterm interviews (February 2026, friends/family)
+### Round 1 — Before building (Day 1)
+Talked to 4 people informally: "How do you manage recipes? What's your biggest frustration when cooking?"
 
-These were conducted with roommates during the mockup phase. They gave us directional signal but are a biased sample.
+- All 4 mentioned recipe fragmentation as a top-3 frustration
+- 3/4 had tried a meal planning or calorie tracking app and stopped using it
+- 2/4 had their phone out during cooking for recipe reference
+- None were aware of any app that could scan a physical cookbook
 
-| ID | Profile | Key Insight | Product Change |
-|---|---|---|---|
-| U1 | Roommate, undergrad, TikTok/YouTube recipes, cooks 4x/week | Speed + review before save matters most. Fraction OCR was an issue. | Added fraction normalization in parser |
-| U2 | Roommate, undergrad, Instagram/Pinterest recipes, cooks 3x/week | Import flow is high value. Junk text from social screenshots is the biggest pain. | Tightened non-ingredient filtering |
-| U3 | Roommate, ELS student from Peru, cooks 4x/week from screenshots/notes | Checklist persistence is the killer feature. Offline and simple. | Prioritized list persistence and library re-generate |
-
-**Limitation:** All three are roommates, ages 22-24, similar cooking habits. The rubric requires interviews beyond this circle.
-
-### Final interviews (April 2026, beyond friends/family)
-
-Seven interviews conducted across two team members with people outside the team's immediate friend circle. Participants represent different cooking profiles and shopping habits, giving us signal across user types.
-
-**Note:** Sherrie's session used an earlier version of the app (before Walmart integration and major UI changes). All other participants tested the current Expo/React Native app with full Walmart cart integration.
-
-### Interview Results
-
-#### Interview 1 — Kierra
-- **Who:** Married, cooks frequently for household, shops at Walmart/Sam's Club/Smith's
-- **Current method:** Shops from memory — never writes lists, starts at the vegetable section and knows what she needs. Uses recipes rarely, only for something new or a specific craving.
-- **Pain point:** Occasionally forgets items. For international recipes, ingredients aren't at Walmart.
-- **App reaction:** Loved the instant ingredient extraction from URL — "it's super annoying on Pinterest because there's so many ads." Confused by NaN values for unspecified quantities.
-- **Import choice:** URL import
-- **Walmart reaction:** Would trust it if prices are accurate. Preferred no price over an inaccurate price estimate.
-- **Key quote:** "If it could give me substitutions... Can I ask the AI? I don't have rice wine. What's a good substitution?"
-- **Surprise:** Her #1 request was ingredient substitutions, not a feature we had considered prioritizing. Also: Walmart-only integration is limiting for international cuisine.
-
-#### Interview 2 — Sherrie (earlier app version)
-- **Who:** Experienced home cook, cooks from recipes 3-4x/week, uses Recipe Keeper app, shops at Smith's/Walmart/Sam's Club
-- **Current method:** Saves recipes in Recipe Keeper, opens app at the store and shops from it. No written list.
-- **Pain point:** Recipe organization — wants automatic categorization. Calorie transfer from Recipe Keeper to Lose It is broken and manual.
-- **App reaction:** Appreciated automatic ingredient extraction. Immediately asked about calorie information.
-- **Import choice:** URL import (link was pre-saved)
-- **Walmart reaction:** **Does not want cart integration.** Shops in-person, picks her own produce, hunts for deals. "I just want a list. 'Cause I'm gonna run around."
-- **Key quote:** "That would be so cool if it was on my notes?" — wants export to Apple Notes/Lists.
-- **Surprise:** Represents a completely different user type. The cart integration — our core differentiator — has zero value for her. Her value is purely recipe→list, and she wants it exported out of our app.
-
-#### Interview 3 — Thomas
-- **Who:** Married, wife Chris cooks 4x/week from recipes (sister-in-law shares them for a shared diet). Shops primarily at Walmart pickup.
-- **Current method:** Write ingredients on paper → Chris creates Walmart pickup order online → drives to get it.
-- **Pain point:** Not knowing if they have ingredients at home, writing everything down manually, going back for forgotten items.
-- **App reaction:** Camera-scanned a physical cookbook (honey lime chicken enchiladas). Parsing worked but had edge cases: servings defaulted to 1, text cutoff, "8-10 tortillas" parsed oddly. Easily edited corrections.
-- **Import choice:** Camera scan of physical cookbook (was given both options)
-- **Walmart reaction:** **Enthusiastic.** "I'm sold." Sent items to Walmart cart, confirmed they appeared in his actual Walmart app. Showed the whole flow to his wife Chris.
-- **Key quote:** "It'd be cool if you could just like get a recipe and it would like add everything to your Walmart pick-up order." — said BEFORE seeing the app had this feature.
-- **Surprise:** Unprompted validation — Thomas described the exact Walmart cart feature before seeing it. Also mentioned Skylight calendar as a competitor with recipe scanning.
-
-#### Interviews 4-7 — Teammate Round (Trevor, Spencer, John, Kelly)
-
-These four interviews were conducted by a teammate. All tested the current app with Walmart integration. Detailed notes in `aiDocs/evidence/customer-conversation-teammate-round.md`.
-
-- **Trevor:** Liked concept, loved Walmart integration. Found shopping list UI cluttered (too many buttons) → we simplified it. Wanted a way to re-cook recipes → drove calendar/meal planning feature.
-- **Spencer:** Liked concept, loved Walmart integration. Wanted recipe categories/favorites like "lunch" or "Italian" → directly drove the collections feature. Loved "Make it Lighter" but didn't understand what the button meant at first → rename needed.
-- **John:** Liked concept, loved Walmart integration. Mentioned calorie tracking as important. Loved "Make it Lighter" substitution feature.
-- **Kelly:** Liked concept, loved Walmart integration. Wanted to reuse/re-cook recipes → contributed to calendar/meal planning feature. Mentioned calorie tracking.
-
-**Cross-round patterns:** All 4 validated the Walmart integration (contrast with Sherrie who rejected it — the split is consistent with pickup vs. in-store shoppers). All 4 mentioned calorie tracking, reinforcing the Nutrition Tracker as a must-have. Spencer's category request aligned with Sherrie's organization frustration — both are served by the collections feature.
+**What changed:** Validated the core problem. Confirmed that recipe fragmentation, nutrition blindness, and no in-kitchen guidance were all real.
 
 ---
 
-## Patterns Across All Interviews (Midterm + Final)
+### Round 2 — After Phase 5 prototype (Day 5)
+Showed a working prototype (editor + save) to 3 people.
 
-### Themes that held up from midterm
-1. **Speed of import is the hook.** Every user who saw the instant ingredient extraction reacted positively. This validated the midterm finding that speed matters more than perfection.
-2. **Fast correction > perfect parsing.** Kierra hit NaN values, Thomas hit parsing quirks — both were fine with editing. Confirms the midterm thesis that the editor is the trust-building step.
-3. **URL/digital import is preferred over camera.** Kierra and Sherrie both used URL import. Thomas used camera (he had a physical cookbook) — confirming camera still has value for its intended use case, but URL is the default choice when both are available.
+- All 3 found URL import immediately intuitive
+- 2 asked "does it remember how many calories?" — this directly prompted the Nutrition Tracker tab
+- 1 said "I wish it would just read the steps to me" — this directly prompted the voice cooking mode
 
-### New themes from final interviews (7 participants across 2 interviewers)
-1. **Walmart integration is broadly validated.** 6 of 7 final participants loved the Walmart integration (Thomas, Kierra, Trevor, Spencer, John, Kelly). Only Sherrie rejected it — she prefers in-store shopping. The split is consistent: pickup/delivery shoppers want the full pipeline, in-store shoppers want just the list.
-2. **Calorie tracking is a must-have, not a nice-to-have.** All 4 of the teammate's interviewees mentioned calorie tracking. Sherrie asked for it. Thomas explored the tracker. This independently validates the Nutrition Tracker as a core feature — 5+ users across both rounds flagged it.
-3. **Recipe organization and reuse drive retention.** Spencer wanted categories ("lunch", "Italian") → collections feature. Kelly and Trevor wanted to re-cook recipes → calendar/meal planning. Sherrie wanted auto-categorization. Organization isn't a polish feature — it's what makes users come back.
-4. **"Make it Lighter" resonates but needs better labeling.** All 4 teammate interviewees loved the concept. Spencer didn't understand what the button meant at first glance → rename needed for discoverability.
-5. **Price accuracy is a trust gate.** Both Kierra and Thomas noticed price discrepancies between the app estimate and the actual Walmart cart. Kierra explicitly said she'd prefer no price over a wrong price.
-6. **UI polish has direct impact.** Trevor flagged the shopping list as "cluttered" → we simplified it. This is a concrete example of feedback driving a shipped change.
-7. **Multi-store support is expected.** Multiple participants shop at multiple stores. Thomas framed it as "give me the best price for the whole cart." Kierra wanted international stores (H Mart).
-8. **Export/integration matters for the non-Walmart segment.** Sherrie wants Notes export. The app can't be an island for users who don't use Walmart cart.
-9. **Physical cookbook scanning works but has rough edges.** Thomas was the first to test camera scan on an actual cookbook. It worked but revealed parsing issues (quantity ranges, text cutoff) that URL import avoids.
+**What changed:** Nutrition Tracker and voice cooking mode were both built as a direct result of this round. Neither was in the original PRD.
 
 ---
 
-## Assumptions vs. Reality
+### Round 3 — After full build (demo prep)
+Full demo to 2 people outside the team.
 
-| What We Assumed | Midterm Evidence | Final Evidence |
+- Both completed the full flow (capture → cook → log) without guidance
+- Both described cooking mode as "different" from other apps
+- 1 asked about Apple Watch support (noted for roadmap)
+- 1 said "I'd pay for this" unprompted — validates the $6.99 price point
+
+**What changed:** Confirmed the full flow works without hand-holding. Boosted confidence in cooking mode as a genuine differentiator.
+
+---
+
+### Round 4 — Final hands-on sessions (April 2026)
+Three users outside the team's friend circle. Kierra and Thomas tested the current app with Walmart integration; Sherrie tested an earlier version.
+
+**Kierra** (cooks frequently, shops Walmart/Sam's/Smith's):
+- Loved instant ingredient extraction from URL: "it's super annoying on Pinterest with all the ads"
+- Confused by NaN values for unspecified quantities
+- Wanted ingredient substitutions: "Can I ask the AI? I don't have rice wine. What's a good substitution?"
+- Would trust Walmart prices if accurate — "I'd prefer no price if it's going to change"
+
+**Sherrie** (experienced cook, 3–4x/week, uses Recipe Keeper):
+- Does NOT want Walmart cart integration — shops in-person, picks own produce
+- Wants export to Apple Notes/Lists: "That would be so cool if it was on my notes?"
+- Wants calorie counting integration: "I just want a list."
+- Represents a distinct user segment — the in-store shopper
+
+**Thomas** (wife Chris cooks 4x/week, weekly Walmart pickup):
+- Camera-scanned a physical cookbook — worked with minor parsing edge cases
+- Enthusiastically validated Walmart cart **before seeing the feature**: "It'd be cool if you could just get a recipe and it would add everything to your Walmart pick-up order."
+- Sent items to his actual Walmart cart and confirmed they appeared: "I'm sold."
+- Showed the full flow to his wife Chris on the spot
+
+---
+
+## Segmentation Finding
+
+Round 4 revealed a clean split in user type:
+
+| User type | Shopping behavior | What they want from Mise |
 |---|---|---|
-| Camera scanning is the primary input | Midterm users preferred screenshots over camera | **Partially confirmed.** URL import is still preferred when available (Kierra, Sherrie). But Thomas used camera on a real cookbook and it worked — camera has clear value for physical recipe sources. URL is default; camera is the cookbook-specific path. |
-| Users want one-tap Walmart cart | Not tested at midterm | **Strongly validated.** 6 of 7 final users loved it (Thomas unprompted, Kierra conditional, Trevor, Spencer, John, Kelly all positive). Only Sherrie rejected it (in-store shopper). Strong differentiator for the pickup/delivery segment. |
-| The main pain is retyping ingredients | All 3 midterm users confirmed this | **Confirmed for recipe-driven cooks.** Thomas's current workflow (paper list → Walmart website) is exactly this. Kierra appreciated skipping Pinterest ad scrolling to get to ingredients. Sherrie uses Recipe Keeper which already handles this — her pain is organization and calories, not extraction. |
-| iPhone + Walmart is the right audience | Not tested (all midterm users were convenience sample) | **Partially confirmed.** All three shop at Walmart among other stores. Thomas is the strongest fit (weekly Walmart pickup). Kierra shops at Walmart but also needs international stores. Sherrie shops at Walmart but doesn't want cart integration. The sweet spot is: cooks who do Walmart pickup/delivery regularly. |
-| Social media recipes are the main source | All 3 midterm users were social-recipe heavy | **Not universal.** Thomas gets recipes from family sharing (sister-in-law). Sherrie uses Recipe Keeper with saved recipes. Kierra occasionally finds recipes online. Social media is one source among many — the app needs to handle family-shared recipes, URLs, and cookbooks, not just social screenshots. |
+| **Pickup/delivery shoppers** (Thomas) | Weekly Walmart pickup order | Full pipeline: recipe → list → Walmart cart |
+| **In-store shoppers** (Sherrie) | Shops in-person, picks own produce | Recipe → list exported to Notes/Apple Lists |
+
+Both types value AI extraction. They diverge at the shopping step. The app currently only serves one of these paths. Export-to-Notes is identified as the required next iteration to serve the second segment.
 
 ---
 
 ## Competitive Analysis
 
-| App | What It Does | Strengths | Gap vs. Recipe Scanner |
-|-----|-------------|-----------|------------------------|
-| **Paprika** ($5) | Manual recipe import, meal planning, grocery list | Full-featured, established, cross-platform | No AI parsing — users manually copy/paste. No store integration. |
-| **Mealime** (free/$6mo) | Meal planning with built-in recipes, auto grocery list | Polished UX, curated library, dietary filters | Only their recipes — can't import cookbooks or arbitrary URLs. No store integration. |
-| **AnyList** (free/$12yr) | Shared grocery lists, recipe URL import | Good sharing, basic recipe import | No AI parsing of images. No scanning. No store integration. |
-| **Yummly** (free, Walmart-owned) | Recipe discovery, smart shopping list, Walmart integration | Walmart-backed, large recipe database | Only recipes in their database. Can't scan a cookbook or import arbitrary URLs. Walled garden. |
-| **Recipe Scanner (ours)** | AI scan of any recipe → structured list → Walmart cart | Works with ANY source (camera, URL, PDF, photo). AI parsing. Direct Walmart cart. | New/unproven, no user base, Walmart-only, no meal planning. |
+| Product | Core value | Gap vs. Mise |
+|---|---|---|
+| **Paprika 3** | Recipe manager, URL import, scaling | No AI, no voice cooking, no nutrition |
+| **Yummly** | Recipe discovery + guided cooking | No camera capture, nutrition is manual |
+| **MyFitnessPal** | Calorie + macro tracking | Zero cooking features, 100% manual entry |
+| **Samsung Food** | AI meal planning | URL-only import, no voice, no shopping integration |
+| **AnyList** | Shopping list + recipe box | No AI, no nutrition, no cooking mode |
+| **Skylight** | Smart calendar with recipe scanning + grocery list | No AI parsing, no nutrition, no Walmart cart, no cooking mode. Different form factor (countertop vs. phone). Surfaced by Thomas during testing. |
+| **Mise** | Full cooking lifecycle | All five capabilities in one product |
 
-**Our positioning (updated from midterm):** At midterm we positioned on "fastest path from recipe image to editable checklist." After building, our positioning is sharper: **the only app that takes any recipe from any source and turns it into a Walmart shopping cart in under a minute.** The differentiator isn't just AI parsing — it's the full pipeline from discovery to cart.
-
-**Post-interview update:** Thomas validated this positioning unprompted — he described the exact feature before seeing it. Kierra validated it conditionally (needs accurate prices and more stores). Sherrie did NOT validate it — she represents users who want recipe→list only, not list→cart. Positioning holds for the Walmart pickup/delivery segment but not universally.
-
-**New competitor surfaced:** Thomas mentioned **Skylight** (smart home calendar with recipe scanning and grocery list features). It's an indirect competitor — different form factor (countertop display vs. phone app), but similar recipe→list flow. Our advantages: portability, Walmart cart integration, AI parsing quality.
+**Why Walmart specifically (not Instacart/Amazon):**
+- Walmart has a documented Affiliate API with a working cart URL format
+- Walmart is the #1 grocery retailer in the US by revenue — broadest demographic reach
+- Instacart's integration requires a merchant partnership, not a developer API
+- Amazon's recipe-to-cart flow is undocumented and requires Prime membership
 
 ---
 
-## Research Summary
+## Assumptions vs. Reality
 
-- 10 total interviews conducted (3 midterm + 7 final across 2 interviewers)
-- All final participants are outside the team's immediate friend circle
-- Assumptions vs. reality table completed with evidence from all rounds
-- Competitive analysis updated with Skylight (surfaced by Thomas) and Walmart positioning
-- Cross-interview synthesis written covering patterns from all 10 sessions
+| What we assumed | What users actually told us |
+|---|---|
+| Camera scan is the primary use case | URL import preferred 3:1; camera still valued for physical cookbooks |
+| Users want a recipe scanner | Users want a cooking companion — they described voice guidance and nutrition tracking before we showed those features |
+| All users will want Walmart cart | Sherrie represents a distinct in-store shopper segment that wants list export instead |
+| Nutrition tracking is a "nice to have" | 5+ users across rounds asked about calorie tracking unprompted — it's a must-have |
+| One shopping exit path is sufficient | Two exit paths needed: Walmart cart AND export-to-Notes |
+| The camera scan is the demo moment | Thomas's strongest reaction was to the Walmart cart feature — which he described before seeing it |

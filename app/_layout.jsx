@@ -5,7 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { getSetting } from '../src/db/queries';
+import { getSetting, seedDemoData, updateRecipeImageUri } from '../src/db/queries';
+import { generateRecipeThumbnail } from '../src/services/openai';
 import { logger } from '../src/utils/logger';
 
 export default function RootLayout() {
@@ -14,6 +15,19 @@ export default function RootLayout() {
 
   useEffect(() => {
     try {
+      // Seed demo data on first install, then fire thumbnail generation (non-blocking)
+      try {
+        const seeded = seedDemoData();
+        if (Array.isArray(seeded) && seeded.length > 0) {
+          // Fire hero image generation for each seed recipe (DALL-E, fire-and-forget)
+          for (const { id, recipe } of seeded) {
+            generateRecipeThumbnail(recipe.title, recipe.cuisine, recipe.ingredients)
+              .then((url) => updateRecipeImageUri(id, url))
+              .catch(() => {});
+          }
+        }
+      } catch (e) { logger.error('layout.seed.error', { error: e.message }); }
+
       const seen = getSetting('hasSeenOnboarding');
       if (!seen) {
         setTimeout(() => router.replace('/onboarding'), 0);
