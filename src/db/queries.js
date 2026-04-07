@@ -900,6 +900,23 @@ export function removeMealPlan(id) {
   }
 }
 
+export function updateMealPlanRecipeId(planId, recipeId, imageUri) {
+  logger.info('queries.updateMealPlanRecipeId', { planId, recipeId });
+  try {
+    const db = getDatabase();
+    db.runSync(
+      'UPDATE meal_plan SET recipe_id = ?, recipe_image_uri = ? WHERE id = ?',
+      recipeId,
+      imageUri ?? null,
+      planId
+    );
+    logger.info('queries.updateMealPlanRecipeId.success', { planId });
+  } catch (err) {
+    logger.error('queries.updateMealPlanRecipeId.error', { planId, error: err.message });
+    throw err;
+  }
+}
+
 export function clearMealPlanForWeek(weekStart, weekEnd) {
   logger.info('queries.clearMealPlanForWeek', { weekStart, weekEnd });
   try {

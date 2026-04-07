@@ -29,6 +29,7 @@ import { parsePdf, parseDocx } from '../../src/services/fileParser';
 import { logger } from '../../src/utils/logger';
 
 const URL_REGEX = /^https?:\/\//i;
+const MEAL_PLAN_REGEX = /\b(meal.?plan|plan.{0,6}(week|meal|day|menu)|what.{0,12}(should|can).{0,8}eat|weekly.{0,6}(meal|menu|food)|help.{0,8}(me.{0,6})?(plan|meal|diet|nutrition)|diet.{0,6}plan|schedule.{0,8}meal)\b/i;
 
 const WELCOME_ID = 'welcome';
 const TYPING_ID = 'typing';
@@ -87,6 +88,32 @@ function TypingIndicator() {
           />
         ))}
       </View>
+    </View>
+  );
+}
+
+// ── Meal plan promo card ──────────────────────────────────────────────────────
+
+function MealPlanCard({ onOpen }) {
+  return (
+    <View style={styles.mealPlanCard}>
+      <View style={styles.mealPlanCardHeader}>
+        <Ionicons name="calendar" size={22} color="#FF6B35" />
+        <Text style={styles.mealPlanCardTitle}>Meal Planner AI</Text>
+      </View>
+      <Text style={styles.mealPlanCardBody}>
+        Tell me your goals, allergies, or budget and I'll build a personalised weekly plan — choosing from your saved recipes or suggesting new ones.
+      </Text>
+      <View style={styles.mealPlanCardFeatures}>
+        {['📅  Weekly calendar view', '🥗  Smart meal suggestions', '🛒  Auto shopping list', '📊  Nutrition tracking'].map((f) => (
+          <Text key={f} style={styles.mealPlanCardFeature}>{f}</Text>
+        ))}
+      </View>
+      <TouchableOpacity style={styles.mealPlanCardBtn} onPress={onOpen} activeOpacity={0.85}>
+        <Ionicons name="sparkles" size={16} color="#fff" />
+        <Text style={styles.mealPlanCardBtnText}>Open Meal Planner</Text>
+        <Ionicons name="chevron-forward" size={16} color="#fff" />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -255,6 +282,20 @@ export default function ChatScreen() {
     addTypingIndicator();
 
     try {
+      // ── Meal planning intent → navigate to Planner AI ─────────────────────
+      if (!pendingBase64 && MEAL_PLAN_REGEX.test(text)) {
+        removeTypingAndAdd({
+          id: Crypto.randomUUID(),
+          role: 'assistant',
+          type: 'meal_plan_promo',
+          content: '',
+          imageUri: null,
+          recipeData: null,
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        return;
+      }
+
       // ── URL detected → scrape + full recipe parse ──────────────────────────
       if (!pendingBase64 && URL_REGEX.test(text)) {
         logger.info('chat.handleSend.url', { url: text.slice(0, 80) });
@@ -597,6 +638,12 @@ export default function ChatScreen() {
             </View>
           </View>
         )}
+
+        {item.type === 'meal_plan_promo' && (
+          <View style={styles.assistantRow}>
+            <MealPlanCard onOpen={() => router.push('/(tabs)/planner?openAI=true')} />
+          </View>
+        )}
       </Animated.View>
     );
   }
@@ -895,6 +942,37 @@ const styles = StyleSheet.create({
     maxWidth: '88%',
     gap: 6,
   },
+  mealPlanCard: {
+    maxWidth: '88%',
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F0E0D0',
+    elevation: 2,
+    shadowColor: '#2D1B00',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    gap: 10,
+  },
+  mealPlanCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  mealPlanCardTitle: { fontSize: 17, fontWeight: '800', color: '#2D1B00' },
+  mealPlanCardBody: { fontSize: 14, color: '#6B4C2A', lineHeight: 20 },
+  mealPlanCardFeatures: { gap: 4 },
+  mealPlanCardFeature: { fontSize: 13, color: '#B38B6D' },
+  mealPlanCardBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FF6B35',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 6,
+    marginTop: 4,
+  },
+  mealPlanCardBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
   recipeIntroText: {
     fontSize: 14,
     color: '#6B4C2A',
