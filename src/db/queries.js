@@ -834,6 +834,88 @@ export function deleteCookLogEntry(id) {
   }
 }
 
+// ── Meal plan ─────────────────────────────────────────────────────────────────
+
+export function getMealPlanForWeek(weekStart, weekEnd) {
+  // weekStart / weekEnd: 'YYYY-MM-DD'
+  logger.info('queries.getMealPlanForWeek', { weekStart, weekEnd });
+  try {
+    const db = getDatabase();
+    const rows = db.getAllSync(
+      `SELECT id, recipe_id, recipe_title, recipe_image_uri,
+              planned_date, meal_type, servings,
+              calories, protein_g, carbs_g, fat_g, notes, created_at
+       FROM meal_plan
+       WHERE planned_date >= ? AND planned_date <= ?
+       ORDER BY planned_date ASC, created_at ASC`,
+      weekStart,
+      weekEnd
+    );
+    return rows.map(mapMealPlanRow);
+  } catch (err) {
+    logger.error('queries.getMealPlanForWeek.error', { weekStart, weekEnd, error: err.message });
+    return [];
+  }
+}
+
+export function addMealPlan(entry) {
+  logger.info('queries.addMealPlan', { id: entry.id, date: entry.plannedDate, type: entry.mealType });
+  try {
+    const db = getDatabase();
+    db.runSync(
+      `INSERT INTO meal_plan
+         (id, recipe_id, recipe_title, recipe_image_uri, planned_date, meal_type,
+          servings, calories, protein_g, carbs_g, fat_g, notes, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      entry.id,
+      entry.recipeId ?? null,
+      entry.recipeTitle,
+      entry.recipeImageUri ?? null,
+      entry.plannedDate,
+      entry.mealType,
+      entry.servings ?? 1,
+      entry.calories ?? null,
+      entry.protein ?? null,
+      entry.carbs ?? null,
+      entry.fat ?? null,
+      entry.notes ?? null,
+      entry.createdAt
+    );
+    logger.info('queries.addMealPlan.success', { id: entry.id });
+  } catch (err) {
+    logger.error('queries.addMealPlan.error', { id: entry.id, error: err.message });
+    throw err;
+  }
+}
+
+export function removeMealPlan(id) {
+  logger.info('queries.removeMealPlan', { id });
+  try {
+    const db = getDatabase();
+    db.runSync('DELETE FROM meal_plan WHERE id = ?', id);
+    logger.info('queries.removeMealPlan.success', { id });
+  } catch (err) {
+    logger.error('queries.removeMealPlan.error', { id, error: err.message });
+    throw err;
+  }
+}
+
+export function clearMealPlanForWeek(weekStart, weekEnd) {
+  logger.info('queries.clearMealPlanForWeek', { weekStart, weekEnd });
+  try {
+    const db = getDatabase();
+    db.runSync(
+      'DELETE FROM meal_plan WHERE planned_date >= ? AND planned_date <= ?',
+      weekStart,
+      weekEnd
+    );
+    logger.info('queries.clearMealPlanForWeek.success', { weekStart, weekEnd });
+  } catch (err) {
+    logger.error('queries.clearMealPlanForWeek.error', { weekStart, weekEnd, error: err.message });
+    throw err;
+  }
+}
+
 // ── Row mappers ───────────────────────────────────────────────────────────────
 
 function mapRecipeRow(row) {
@@ -915,5 +997,23 @@ function mapCookLogRow(row) {
     carbs: row.carbs_g ?? null,
     fat: row.fat_g ?? null,
     cookedAt: row.cooked_at,
+  };
+}
+
+function mapMealPlanRow(row) {
+  return {
+    id: row.id,
+    recipeId: row.recipe_id ?? null,
+    recipeTitle: row.recipe_title,
+    recipeImageUri: row.recipe_image_uri ?? null,
+    plannedDate: row.planned_date,
+    mealType: row.meal_type,
+    servings: row.servings,
+    calories: row.calories ?? null,
+    protein: row.protein_g ?? null,
+    carbs: row.carbs_g ?? null,
+    fat: row.fat_g ?? null,
+    notes: row.notes ?? null,
+    createdAt: row.created_at,
   };
 }

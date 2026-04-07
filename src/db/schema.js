@@ -176,6 +176,27 @@ export function getDatabase() {
     )
   `);
 
+  // ── Meal plan ─────────────────────────────────────────────────────────────────
+
+  db.execSync(`
+    CREATE TABLE IF NOT EXISTS meal_plan (
+      id TEXT PRIMARY KEY,
+      recipe_id TEXT,
+      recipe_title TEXT NOT NULL,
+      recipe_image_uri TEXT,
+      planned_date TEXT NOT NULL,
+      meal_type TEXT NOT NULL,
+      servings REAL NOT NULL DEFAULT 1,
+      calories INTEGER,
+      protein_g REAL,
+      carbs_g REAL,
+      fat_g REAL,
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE SET NULL
+    )
+  `);
+
   // ── Migrations for existing installs ─────────────────────────────────────────
 
   migrateAddInList(db);
@@ -188,6 +209,7 @@ export function getDatabase() {
   db.execSync(`CREATE INDEX IF NOT EXISTS idx_recipe_steps_recipe ON recipe_steps(recipe_id)`);
   db.execSync(`CREATE INDEX IF NOT EXISTS idx_chat_messages_recipe ON chat_messages(recipe_id)`);
   db.execSync(`CREATE INDEX IF NOT EXISTS idx_cook_log_cooked_at ON cook_log(cooked_at)`);
+  db.execSync(`CREATE INDEX IF NOT EXISTS idx_meal_plan_date ON meal_plan(planned_date)`);
 
   logger.info('schema.getDatabase.success', { status: 'ready' });
   return db;
