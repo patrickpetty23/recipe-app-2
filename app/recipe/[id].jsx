@@ -1182,6 +1182,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 20,
+    alignSelf: 'flex-start',
   },
   cuisineBadgeText: {
     fontSize: 12,
