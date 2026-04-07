@@ -18,7 +18,7 @@ import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 
-import { scaleIngredients } from '../../src/utils/scaler';
+import { scaleIngredients, parseFraction, toFractionString } from '../../src/utils/scaler';
 import {
   saveRecipe, saveIngredients, saveRecipeSteps, saveNutrition, updateRecipeImageUri,
   updateStepIllustration,
@@ -381,10 +381,9 @@ export default function EditorScreen() {
             <View key={index} style={styles.ingredientRow}>
               <TextInput
                 style={styles.qtyInput}
-                value={item.quantity != null ? String(item.quantity) : ''}
+                value={item.quantity != null ? toFractionString(item.quantity) : ''}
                 onChangeText={(val) => {
-                  const num = parseFloat(val);
-                  handleUpdateIngredient(index, 'quantity', isNaN(num) ? null : num);
+                  handleUpdateIngredient(index, 'quantity', parseFraction(val));
                 }}
                 keyboardType="decimal-pad"
                 placeholder="Qty"

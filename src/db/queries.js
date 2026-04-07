@@ -1,5 +1,6 @@
 import { getDatabase } from './schema';
 import { logger } from '../utils/logger';
+import { parseFraction } from '../utils/scaler';
 
 // ── Recipes ───────────────────────────────────────────────────────────────────
 
@@ -863,7 +864,7 @@ function mapIngredientRow(row) {
     id: row.id,
     recipeId: row.recipe_id,
     name: row.name,
-    quantity: row.quantity,
+    quantity: parseFraction(row.quantity),
     unit: row.unit,
     notes: row.notes,
     checked: row.checked === 1,

@@ -35,7 +35,7 @@ import {
   addIngredient,
   addRecipeStep,
 } from '../../src/db/queries';
-import { scaleIngredients } from '../../src/utils/scaler';
+import { scaleIngredients, toFractionString } from '../../src/utils/scaler';
 import { generateStepIllustration, generateAllStepIllustrations, estimateNutrition, lightenRecipe } from '../../src/services/openai';
 import { logger } from '../../src/utils/logger';
 import * as Crypto from 'expo-crypto';
@@ -475,7 +475,7 @@ export default function RecipeDetailScreen() {
     if (ingredients.length > 0) {
       lines.push('Ingredients:');
       ingredients.forEach((ing) => {
-        const qty = ing.quantity != null ? String(Math.round(ing.quantity * 100) / 100) : '';
+        const qty = ing.quantity != null ? toFractionString(ing.quantity) : '';
         const unit = ing.unit ? ` ${ing.unit}` : '';
         lines.push(`• ${qty}${unit} ${ing.name}`.trim());
       });
@@ -772,7 +772,7 @@ export default function RecipeDetailScreen() {
                         <View style={styles.ingredientEditRow}>
                           <TextInput
                             style={styles.editQtyInput}
-                            value={item.quantity != null ? String(Math.round(item.quantity * 100) / 100) : ''}
+                            value={item.quantity != null ? toFractionString(item.quantity) : ''}
                             onChangeText={(val) => {
                               const num = parseFloat(val);
                               handleUpdateIngredient(index, 'quantity', isNaN(num) ? null : num);
@@ -813,7 +813,7 @@ export default function RecipeDetailScreen() {
                           </Animated.Text>
                           {(item.quantity != null || item.unit) ? (
                             <Text style={[styles.ingredientQty, isChecked && styles.ingredientQtyChecked]}>
-                              {item.quantity != null ? String(Math.round(item.quantity * 100) / 100) : ''}
+                              {item.quantity != null ? toFractionString(item.quantity) : ''}
                               {item.unit ? ` ${item.unit}` : ''}
                             </Text>
                           ) : null}

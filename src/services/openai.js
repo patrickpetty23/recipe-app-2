@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger';
+import { parseFraction } from '../utils/scaler';
 
 const CHAT_API_URL = 'https://api.openai.com/v1/chat/completions';
 const IMAGE_API_URL = 'https://api.openai.com/v1/images/generations';
@@ -17,7 +18,7 @@ Required format:
   "cookTime": "e.g. 30 minutes — string or null",
   "cuisine": "e.g. Italian, American — string or null",
   "ingredients": [
-    { "name": "ingredient name", "quantity": <number or null>, "unit": "string or null", "notes": "string or null" }
+    { "name": "ingredient name", "quantity": <number, fraction string like "3/4" or "1 1/2", or null>, "unit": "string or null", "notes": "string or null" }
   ],
   "steps": [
     { "stepNumber": 1, "instruction": "Complete step text." }
@@ -34,7 +35,7 @@ Rules:
 const CHAT_SYSTEM_PROMPT = `You are a helpful cooking assistant built into a recipe app. Always respond with a single JSON object only — no markdown, no explanation.
 
 When the user shares or describes a recipe (from an image, pasted text, or URL), return:
-{"type":"recipe","message":"<short friendly message>","recipe":{"title":"...","servings":<int or null>,"prepTime":"...","cookTime":"...","cuisine":"...","ingredients":[{"name":"...","quantity":<number or null>,"unit":"...","notes":"..."}],"steps":[{"stepNumber":1,"instruction":"..."}]}}
+{"type":"recipe","message":"<short friendly message>","recipe":{"title":"...","servings":<int or null>,"prepTime":"...","cookTime":"...","cuisine":"...","ingredients":[{"name":"...","quantity":<number, fraction string like "3/4" or "1 1/2", or null>,"unit":"...","notes":"..."}],"steps":[{"stepNumber":1,"instruction":"..."}]}}
 
 For any other cooking question, tip, or conversation, return:
 {"type":"answer","message":"<your response>"}`;
@@ -143,7 +144,7 @@ function parseRecipeJson(raw) {
       cuisine: typeof parsed.cuisine === 'string' ? parsed.cuisine : null,
       ingredients: parsed.ingredients.map((item) => ({
         name: typeof item.name === 'string' ? item.name : String(item.name ?? ''),
-        quantity: typeof item.quantity === 'number' ? item.quantity : null,
+        quantity: parseFraction(item.quantity),
         unit: typeof item.unit === 'string' ? item.unit : null,
         notes: typeof item.notes === 'string' ? item.notes : null,
       })),
