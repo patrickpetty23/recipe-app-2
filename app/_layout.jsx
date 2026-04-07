@@ -48,7 +48,7 @@ export default function RootLayout() {
           <Stack.Screen name="onboarding" options={{ headerShown: false }} />
           <Stack.Screen
             name="recipe/editor"
-            options={{ headerShown: false, presentation: 'modal' }}
+            options={{ headerShown: false, presentation: 'fullScreenModal' }}
           />
           <Stack.Screen name="recipe/[id]" options={{ headerShown: false }} />
           <Stack.Screen

@@ -91,6 +91,18 @@ export default function EditorScreen() {
     });
   }
 
+  function handleAddIngredient() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIngredients((prev) => [
+      ...prev,
+      { name: '', quantity: null, unit: null, notes: null },
+    ]);
+  }
+
+  function handleRemoveIngredient(index) {
+    setIngredients((prev) => prev.filter((_, i) => i !== index));
+  }
+
   // ── Steps ─────────────────────────────────────────────────────────────────────
 
   function handleUpdateStep(localId, instruction) {
@@ -265,7 +277,7 @@ export default function EditorScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
         <TouchableOpacity onPress={handleDiscard}>
           <Text style={styles.headerCancel}>Cancel</Text>
         </TouchableOpacity>
@@ -286,7 +298,7 @@ export default function EditorScreen() {
         keyboardDismissMode="interactive"
       >
         {/* Source image */}
-        {imageUri ? (
+        {imageUri && imageUri.length > 0 ? (
           <View style={styles.imageContainer}>
             <Image
               source={{ uri: imageUri }}
@@ -415,8 +427,19 @@ export default function EditorScreen() {
                 placeholder="Ingredient"
                 placeholderTextColor={C.textFaint}
               />
+              <TouchableOpacity
+                onPress={() => handleRemoveIngredient(index)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="close-circle-outline" size={20} color={C.textFaint} />
+              </TouchableOpacity>
             </View>
           ))}
+
+          <TouchableOpacity style={styles.addStepBtn} onPress={handleAddIngredient}>
+            <Ionicons name="add-circle-outline" size={18} color={C.orange} />
+            <Text style={styles.addStepText}>Add Ingredient</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Steps */}
@@ -510,8 +533,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: C.border,
     backgroundColor: C.surface,
