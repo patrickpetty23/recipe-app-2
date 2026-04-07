@@ -137,6 +137,15 @@ Full demo to 2 people outside the team:
 - 1 asked about Apple Watch support (noted for roadmap)
 - 1 said "I'd pay for this" unprompted (validation of the $6.99 price point)
 
+**Round 4 — Final user tests (April 2026)**
+Hands-on sessions with 3 users outside the team's friend circle. Kierra and Thomas tested the current app with Walmart integration; Sherrie tested an earlier version.
+
+- **Kierra** (cooks frequently, shops Walmart/Sam's/Smith's): Loved instant ingredient extraction from URL ("super annoying on Pinterest with all the ads"). Confused by NaN quantities. Wanted ingredient substitutions and multiple grocery stores. Would use regularly.
+- **Sherrie** (experienced cook, 3-4x/week, uses Recipe Keeper): Does NOT want Walmart cart integration — shops in-person, picks own produce. Wants export to Apple Notes/Lists. Wants calorie counting integration. "I just want a list."
+- **Thomas** (wife Chris cooks 4x/week, weekly Walmart pickup): Camera-scanned a cookbook — worked with minor parsing edge cases. **Enthusiastically validated Walmart cart.** Described the feature unprompted before seeing it: "It'd be cool if you could just get a recipe and it would add everything to your Walmart pick-up order." Sent items to actual Walmart cart. "I'm sold."
+
+**Key finding:** Users split into two types. Pickup/delivery shoppers (Thomas) want the full pipeline to Walmart cart. In-store shoppers (Sherrie) want recipe→list exported to their own tools. Both types value the AI extraction; they diverge at the shopping step.
+
 ### Competitive Analysis
 
 | Product | Core value | Gap vs. Mise |
@@ -146,6 +155,7 @@ Full demo to 2 people outside the team:
 | **MyFitnessPal** | Calorie + macro tracking | Zero cooking features, 100% manual entry |
 | **Samsung Food** | AI meal planning | URL-only import, no voice, no shopping integration |
 | **AnyList** | Shopping list + recipe box | Basic recipe storage, no AI, no nutrition, no cooking mode |
+| **Skylight** | Smart calendar with recipe scanning + grocery list | Recipe capture, countertop display | No AI parsing, no nutrition, no Walmart cart, no cooking mode. Different form factor (countertop vs. phone). Surfaced by Thomas during testing. |
 | **Mise (us)** | Full cooking lifecycle | All five capabilities in one product |
 
 **Why Walmart specifically (not Instacart/Amazon):**
@@ -172,10 +182,15 @@ Full demo to 2 people outside the team:
 ### What Fell Short
 - **Camera capture speed**: GPT-4o Vision latency is ~12–18 seconds. This exceeds the 10-second target. Root cause: Vision calls include image encoding + API round trip. Mitigation applied: show a progress indicator immediately, navigate optimistically after save. The *perceived* speed is better than the raw number.
 - **Walmart product matching quality**: Ingredients like "salt" and "olive oil" match generic bulk products. Users see the product name before committing, which partially mitigates this.
+- **Walmart price accuracy**: Thomas compared app estimates vs. actual Walmart cart — individual items were within cents, but the total was off by ~$6 ($32 estimated vs. $38 actual). Kierra said she'd "prefer no price if it's going to change." Price display needs an "estimated" label or better accuracy.
+- **Per-serving meal logging**: Thomas found the "Log Meal" button tried to log all 6 servings instead of 1. The tracker is only useful if logging is per-serving.
+- **NaN quantity display**: Kierra encountered NaN values for ingredients without specified quantities. Needs a default display (e.g., "to taste" or blank) instead of NaN.
 
 ### What Exceeded Expectations
-- Nutrition tracking emerged as a killer feature unprompted by the original PRD — two testers asked for it independently before it was built
-- Voice cooking mode was described by one tester as "the only cooking app that actually feels like it's helping me"
+- Nutrition tracking emerged as a killer feature unprompted by the original PRD — Sherrie explicitly asked for calorie counting, Thomas explored the tracker. Two earlier testers asked for it independently before it was built.
+- Voice cooking mode was described by one tester as "the only cooking app that actually feels like it's helping me." Thomas navigated the full cooking flow in his session.
+- Thomas validated the Walmart cart feature **unprompted** — he described the exact feature before seeing the app: "It'd be cool if you could just get a recipe and it would add everything to your Walmart pick-up order."
+- DALL-E illustrations make the app feel more polished than expected for a class project. Thomas: "kind of cool."
 
 ---
 
@@ -218,3 +233,23 @@ Full demo to 2 people outside the team:
 **Change made:** Replaced 4 buttons with a single "Add Recipe" button + action sheet modal. Cleaner entry point matches user mental model ("I just want to add a recipe").
 
 **Validation:** In subsequent testing, no user paused at the home screen. First tap was immediate.
+
+---
+
+### Cycle 4: Walmart Trust Gate → Price Preview
+
+**Observation (Phase 7 testing):** Internal testing revealed discomfort sending items to a Walmart cart without seeing what products were matched.
+
+**Change made:** Added per-ingredient product name and price display before the "Send to Walmart" button. Moved product matching from P1 to P0.
+
+**Validation (Round 4):** Thomas reviewed prices, found them mostly accurate (within cents), and confidently sent items to his actual Walmart cart. Kierra reviewed prices but was bothered by discrepancies — "I would prefer no price if it's going to change." Price preview increases trust for most users, but accuracy is the next gate.
+
+---
+
+### Cycle 5: User Segmentation Discovery
+
+**Feedback (Round 4):** Sherrie explicitly rejected the Walmart cart concept. Thomas enthusiastically validated it unprompted.
+
+**Insight:** The app serves two user types with different endpoints. The Walmart integration is a strong differentiator for pickup/delivery users but irrelevant to in-store shoppers. Export-to-Notes is the equivalent "last mile" for the other segment.
+
+**Change identified:** The app needs both exit paths: send to Walmart cart AND export list to external apps (Notes, Apple Lists, etc.).

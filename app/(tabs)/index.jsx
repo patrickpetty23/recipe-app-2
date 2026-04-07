@@ -24,11 +24,19 @@ import { useRouter } from 'expo-router';
 import * as Crypto from 'expo-crypto';
 
 import { processChat, parseRecipeFromText, parseRecipeFromImage } from '../../src/services/openai';
+import {
+  getAllRecipes,
+  getShoppingListIngredients,
+  getCookLogForDate,
+  getSetting,
+  addRecipeToList,
+} from '../../src/db/queries';
 import { scrapeRecipeUrl } from '../../src/services/scraper';
 import { parsePdf, parseDocx } from '../../src/services/fileParser';
 import { logger } from '../../src/utils/logger';
 
 const URL_REGEX = /^https?:\/\//i;
+const MEAL_PLAN_REGEX = /\b(meal.?plan|plan.{0,6}(week|meal|day|menu)|what.{0,12}(should|can).{0,8}eat|weekly.{0,6}(meal|menu|food)|help.{0,8}(me.{0,6})?(plan|meal|diet|nutrition)|diet.{0,6}plan|schedule.{0,8}meal)\b/i;
 
 const WELCOME_ID = 'welcome';
 const TYPING_ID = 'typing';
@@ -38,7 +46,7 @@ const WELCOME_MESSAGE = {
   role: 'assistant',
   type: 'text',
   content:
-    "Hi! I'm your recipe assistant. Send me a photo of a recipe, paste a link, or just describe what you want to cook.",
+    "Hi! I'm Mise, your AI cooking assistant. Ask me anything — scan a recipe, plan your week, check your nutrition, add items to your shopping list, or just ask what to cook tonight.",
   imageUri: null,
   recipeData: null,
 };
@@ -87,6 +95,63 @@ function TypingIndicator() {
           />
         ))}
       </View>
+    </View>
+  );
+}
+
+// ── Action card (rendered for agent action responses) ─────────────────────────
+
+function ActionCard({ item, onAction }) {
+  const ACTION_META = {
+    open_planner:    { icon: 'calendar',      label: 'Open Meal Planner',  color: '#9C27B0' },
+    open_planner_ai: { icon: 'sparkles',      label: 'Ask AI to Plan',     color: '#FF6B35' },
+    open_tab_list:   { icon: 'cart',          label: 'View Shopping List', color: '#0071DC' },
+    open_tab_tracker:{ icon: 'bar-chart',     label: 'View Nutrition',     color: '#34C759' },
+    open_tab_recipes:{ icon: 'book',          label: 'Browse Recipes',     color: '#FF6B35' },
+    search_library:  { icon: 'search',        label: 'Search Library',     color: '#FF6B35' },
+    add_shopping:    { icon: 'add-circle',    label: 'Add to Shopping List', color: '#0071DC' },
+  };
+  const key = item.action === 'open_tab' ? `open_tab_${item.tab}` : item.action;
+  const meta = ACTION_META[key] ?? { icon: 'arrow-forward-circle', label: 'Take Action', color: '#FF6B35' };
+
+  return (
+    <View style={styles.actionCard}>
+      <Text style={styles.assistantBubbleText}>{item.content}</Text>
+      <TouchableOpacity
+        style={[styles.actionCardBtn, { backgroundColor: meta.color }]}
+        onPress={() => onAction(item)}
+        activeOpacity={0.85}
+      >
+        <Ionicons name={meta.icon} size={16} color="#fff" />
+        <Text style={styles.actionCardBtnText}>{meta.label}</Text>
+        <Ionicons name="chevron-forward" size={14} color="#fff" />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// ── Meal plan promo card ──────────────────────────────────────────────────────
+
+function MealPlanCard({ onOpen }) {
+  return (
+    <View style={styles.mealPlanCard}>
+      <View style={styles.mealPlanCardHeader}>
+        <Ionicons name="calendar" size={22} color="#FF6B35" />
+        <Text style={styles.mealPlanCardTitle}>Meal Planner AI</Text>
+      </View>
+      <Text style={styles.mealPlanCardBody}>
+        Tell me your goals, allergies, or budget and I'll build a personalised weekly plan — choosing from your saved recipes or suggesting new ones.
+      </Text>
+      <View style={styles.mealPlanCardFeatures}>
+        {['📅  Weekly calendar view', '🥗  Smart meal suggestions', '🛒  Auto shopping list', '📊  Nutrition tracking'].map((f) => (
+          <Text key={f} style={styles.mealPlanCardFeature}>{f}</Text>
+        ))}
+      </View>
+      <TouchableOpacity style={styles.mealPlanCardBtn} onPress={onOpen} activeOpacity={0.85}>
+        <Ionicons name="sparkles" size={16} color="#fff" />
+        <Text style={styles.mealPlanCardBtnText}>Open Meal Planner</Text>
+        <Ionicons name="chevron-forward" size={16} color="#fff" />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -148,6 +213,33 @@ function RecipeCard({ item, onSave }) {
       </View>
     </View>
   );
+}
+
+// ── Build live app context for the AI agent ───────────────────────────────────
+
+function buildAppContext() {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const recipes = getAllRecipes();
+    const shoppingItems = getShoppingListIngredients();
+    const todayLog = getCookLogForDate(today);
+    const calorieGoalRaw = getSetting('calorie_goal');
+    const calorieGoal = calorieGoalRaw ? parseInt(calorieGoalRaw, 10) : null;
+
+    const todayCalories = todayLog.reduce((s, e) => s + (e.calories ?? 0), 0);
+    const todayProtein = todayLog.reduce((s, e) => s + (e.protein ?? 0), 0);
+
+    return {
+      recipeCount: recipes.length,
+      shoppingCount: shoppingItems.filter((i) => !i.checked).length,
+      todayCalories: Math.round(todayCalories),
+      todayProtein,
+      calorieGoal,
+      today,
+    };
+  } catch {
+    return null;
+  }
 }
 
 // ── Main screen ───────────────────────────────────────────────────────────────
@@ -255,6 +347,20 @@ export default function ChatScreen() {
     addTypingIndicator();
 
     try {
+      // ── Meal planning intent → navigate to Planner AI ─────────────────────
+      if (!pendingBase64 && MEAL_PLAN_REGEX.test(text)) {
+        removeTypingAndAdd({
+          id: Crypto.randomUUID(),
+          role: 'assistant',
+          type: 'meal_plan_promo',
+          content: '',
+          imageUri: null,
+          recipeData: null,
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        return;
+      }
+
       // ── URL detected → scrape + full recipe parse ──────────────────────────
       if (!pendingBase64 && URL_REGEX.test(text)) {
         logger.info('chat.handleSend.url', { url: text.slice(0, 80) });
@@ -303,10 +409,11 @@ export default function ChatScreen() {
         return;
       }
 
-      // ── Plain text → processChat ───────────────────────────────────────────
+      // ── Plain text → processChat (with live app context) ──────────────────
       logger.info('chat.handleSend.text', { length: text.length });
       const history = buildHistory(messages);
-      const result = await processChat([...history, { role: 'user', content: text }]);
+      const appCtx = buildAppContext();
+      const result = await processChat([...history, { role: 'user', content: text }], null, appCtx);
       if (result.type === 'recipe' && result.recipe) {
         removeTypingAndAdd({
           id: Crypto.randomUUID(),
@@ -315,6 +422,19 @@ export default function ChatScreen() {
           content: result.message || 'Here you go!',
           imageUri: null,
           recipeData: result.recipe,
+        });
+      } else if (result.type === 'action') {
+        removeTypingAndAdd({
+          id: Crypto.randomUUID(),
+          role: 'assistant',
+          type: 'action',
+          content: result.message || "Here you go!",
+          action: result.action,
+          tab: result.tab ?? null,
+          query: result.query ?? null,
+          items: result.items ?? null,
+          recipeData: null,
+          imageUri: null,
         });
       } else {
         removeTypingAndAdd({
@@ -538,6 +658,51 @@ export default function ChatScreen() {
     }
   }
 
+  // ── Handle agent action responses ──────────────────────────────────────────
+
+  function handleAction(item) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    switch (item.action) {
+      case 'open_planner':
+        router.push('/(tabs)/planner');
+        break;
+      case 'open_planner_ai':
+        router.push('/(tabs)/planner?openAI=true');
+        break;
+      case 'open_tab':
+        router.push(`/(tabs)/${item.tab ?? 'index'}`);
+        break;
+      case 'search_library':
+        router.push({ pathname: '/(tabs)/recipes', params: { q: item.query ?? '' } });
+        break;
+      case 'add_shopping': {
+        const items = Array.isArray(item.items) ? item.items : [];
+        if (items.length === 0) break;
+        Alert.alert(
+          `Add ${items.length} item${items.length !== 1 ? 's' : ''} to shopping list?`,
+          items.slice(0, 5).join(', ') + (items.length > 5 ? `… +${items.length - 5} more` : ''),
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Add',
+              onPress: () => {
+                // These are free-text items; add as standalone list entries
+                const { addStandaloneShoppingItem } = require('../../src/db/queries');
+                for (const name of items) {
+                  try { addStandaloneShoppingItem?.(name); } catch { /* ignore */ }
+                }
+                router.push('/(tabs)/list');
+              },
+            },
+          ]
+        );
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
   // ── Save recipe → editor ────────────────────────────────────────────────────
 
   function handleSaveRecipe(item) {
@@ -595,6 +760,18 @@ export default function ChatScreen() {
               ) : null}
               <RecipeCard item={item} onSave={handleSaveRecipe} />
             </View>
+          </View>
+        )}
+
+        {item.type === 'action' && (
+          <View style={styles.assistantRow}>
+            <ActionCard item={item} onAction={handleAction} />
+          </View>
+        )}
+
+        {item.type === 'meal_plan_promo' && (
+          <View style={styles.assistantRow}>
+            <MealPlanCard onOpen={() => router.push('/(tabs)/planner?openAI=true')} />
           </View>
         )}
       </Animated.View>
@@ -656,7 +833,7 @@ export default function ChatScreen() {
           <TextInput
             ref={inputRef}
             style={styles.textInput}
-            placeholder="Paste a link, drop a photo, or describe a recipe…"
+            placeholder="Ask me anything — recipes, your plan, shopping list…"
             placeholderTextColor="#8E8E93"
             value={inputText}
             onChangeText={setInputText}
@@ -895,6 +1072,60 @@ const styles = StyleSheet.create({
     maxWidth: '88%',
     gap: 6,
   },
+  actionCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: '#F0E0D0',
+    gap: 12,
+    maxWidth: 300,
+  },
+  actionCardBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    gap: 6,
+  },
+  actionCardBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  mealPlanCard: {
+    maxWidth: '88%',
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F0E0D0',
+    elevation: 2,
+    shadowColor: '#2D1B00',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    gap: 10,
+  },
+  mealPlanCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  mealPlanCardTitle: { fontSize: 17, fontWeight: '800', color: '#2D1B00' },
+  mealPlanCardBody: { fontSize: 14, color: '#6B4C2A', lineHeight: 20 },
+  mealPlanCardFeatures: { gap: 4 },
+  mealPlanCardFeature: { fontSize: 13, color: '#B38B6D' },
+  mealPlanCardBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FF6B35',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 6,
+    marginTop: 4,
+  },
+  mealPlanCardBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
   recipeIntroText: {
     fontSize: 14,
     color: '#6B4C2A',
