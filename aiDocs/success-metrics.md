@@ -4,48 +4,55 @@
 
 ---
 
-## Original PRD Success Metrics
+## Framing: What Success Actually Means
 
-Defined in prd.md v1.0 (Day 1), refined through v1.3:
+The original PRD v1.0 defined success as technical performance (speed, accuracy, stability). By Round 3 of user research we recognized that was the wrong primary frame. Speed and accuracy are **table stakes** — they need to be good enough not to block behavior. They are not value drivers.
 
-| Metric | Target |
-|---|---|
-| Scan → structured list speed | Under 10 seconds end-to-end |
-| Ingredient extraction accuracy | 90%+ across diverse recipes |
-| Walmart cart integration | Opens with correct items populated |
-| Demo stability | Full flow (capture → cook → log) with zero crashes |
-| Voice cooking | Reads steps aloud on both Android and iOS |
-| Nutrition estimation | Auto-estimates macros after save, no manual entry |
+The real question is: **did using this app change what users actually did?**
 
 ---
 
-## Measured Results vs. Targets
+## Behavioral Success Metrics (Primary)
 
-| Metric | Target | Measured Result | Status |
+These are the outcomes that actually indicate product-market fit:
+
+| Behavioral Question | Evidence | Result |
+|---|---|---|
+| Did users complete the full workflow end-to-end without prompting? | Thomas: scan → list → live Walmart cart populated | ✅ |
+| Did a user describe a feature before seeing it? | Thomas described the Walmart cart feature in his own words in Round 4, before we showed it | ✅ Strongest possible signal |
+| Did a feature emerge entirely from listening to users (not the PRD)? | Nutrition tracker not in v1.0 — two users independently asked for it → became most-engaged feature | ✅ |
+| Did a user show the app to someone else unprompted? | Thomas showed his wife on the spot and said "I'm sold" | ✅ |
+| Did we discover a second user segment through real use? | Sherrie revealed an in-store shopper segment with a different job-to-be-done than our original target | ✅ |
+
+---
+
+## Technical Floor Metrics (Secondary — "Good Enough" Threshold)
+
+These must be met to avoid blocking behavior. They are not the reason users choose the app.
+
+| Metric | Target | Measured | Status |
 |---|---|---|---|
-| Capture speed (camera) | Under 10 seconds | 14s average | ⚠️ 40% over target |
-| Capture speed (URL) | Under 10 seconds | 8s average | ✅ |
-| Ingredient accuracy | 90%+ | 94% avg across 5 recipes | ✅ Exceeded |
-| Walmart cart | Opens with items | Confirmed working — Thomas sent to real cart | ✅ |
-| Demo stability | 0 crashes | Tested on real Android, 0 crashes | ✅ |
+| Ingredient extraction accuracy | 90%+ | 94% avg across 5 recipes | ✅ Exceeded |
+| Camera latency | &lt;10s | 14s avg (GPT-4o Vision 12–18s) | ⚠️ Missed — mitigated by non-blocking UI |
+| URL import latency | &lt;10s | 8s avg | ✅ |
+| App stability | 0 crashes | 0 crashes across all test sessions | ✅ |
 | Voice cooking | Reads steps aloud | Functional on Android and iOS | ✅ |
-| Nutrition estimation | Auto after save | GPT-4o returns macros in background | ✅ |
+| Nutrition auto-estimate | Auto after save | GPT-4o macros in background | ✅ |
 
 ---
 
-## What Fell Short
+## Where Behavior Was Actually Blocked
 
-**Camera capture speed (14s vs. 10s target):**
-GPT-4o Vision API latency is 12–18 seconds including image encoding and API round trip. Root cause: Vision calls require base64 encoding of the image before the API call, which adds overhead compared to URL or text input. Mitigation applied: show a progress indicator immediately, navigate optimistically after save so the user never stares at a spinner. The *perceived* speed is better than the raw number, but the target was not met on camera.
+These are the failures that matter — not because they missed a number, but because they broke a behavior loop:
 
-**Walmart price accuracy:**
-Thomas compared app estimates vs. actual Walmart cart — individual items matched within cents, but the total was off by approximately $6 ($32 estimated vs. $38 actual). Kierra said she would "prefer no price if it's going to change." The product matching is good; the pricing display needs an "estimated" label or better accuracy before it builds full user trust.
+**Per-serving meal logging (confirmed bug):**
+Thomas found the "Log Meal" button logged all 6 servings instead of 1. This breaks the tracker behavior loop: if the data is wrong, users stop trusting it and stop logging. A tracker that requires manual correction is worse than no tracker.
 
-**Per-serving meal logging:**
-Thomas found the "Log Meal" button logged all 6 servings instead of 1. The tracker is only useful if logging is per-serving. This is a confirmed bug that makes the Tracker tab less trustworthy in its current state.
+**Walmart price accuracy off ~$6:**
+Kierra said "I'd prefer no price if it's going to change." Inaccurate data erodes trust before behavior can form. Users who see a wrong total stop trusting the whole feature, not just the number.
 
-**NaN quantity display:**
-Kierra encountered NaN values for ingredients without specified quantities (e.g., "salt to taste"). These display as NaN in the ingredient list. The fix is a default display ("to taste" or blank) rather than a raw NaN.
+**Camera at 14s:**
+Didn't block any tester in our sessions, but it is the only technical miss that *could* stop a first-time user from continuing. It's worth fixing — not because 14s vs 10s is inherently meaningful, but because the first session determines whether someone returns.
 
 ---
 

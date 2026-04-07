@@ -1167,68 +1167,81 @@
   <div class="slide">
     <div class="slide-inner">
       <div class="eyebrow">Success &amp; Failure Planning — 9H</div>
-      <h2>Measured vs. target — <span>honest results</span></h2>
-      <div class="two-col" style="margin-top:16px; gap:28px;">
+      <h2>Did it <span>change what users do?</span></h2>
+      <div style="font-size:11px; color:var(--muted); margin:-6px 0 12px; font-style:italic;">Success = behavior changed. Technical performance is a floor, not the goal.</div>
+      <div class="two-col" style="margin-top:0; gap:24px;">
         <div>
-          <table class="metrics-table">
+          <!-- PRIMARY: behavioral outcomes -->
+          <div style="font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--orange); margin-bottom:6px;">Behavioral outcomes — what mattered</div>
+          <table class="metrics-table" style="font-size:11px;">
             <thead>
               <tr>
-                <th>Metric</th>
-                <th>Target</th>
-                <th>Actual</th>
-                <th>Status</th>
+                <th>Question</th>
+                <th>Evidence</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>Camera speed</td>
-                <td>&lt; 10s</td>
-                <td>14s avg</td>
-                <td><span class="status-warn">⚠️ Miss</span></td>
+                <td>Full workflow completed unprompted?</td>
+                <td>Thomas: scan → list → live Walmart cart</td>
+                <td><span class="status-pass">✅</span></td>
               </tr>
               <tr>
-                <td>URL speed</td>
-                <td>&lt; 10s</td>
-                <td>8s avg</td>
-                <td><span class="status-pass">✅ Met</span></td>
+                <td>User described the feature before seeing it?</td>
+                <td>"It'd be cool if it added to my Walmart order" — Thomas, Round 4</td>
+                <td><span class="status-pass">✅</span></td>
               </tr>
+              <tr>
+                <td>Feature emerged from listening, not the PRD?</td>
+                <td>Nutrition tracker — not in v1.0, most-engaged by final round</td>
+                <td><span class="status-pass">✅</span></td>
+              </tr>
+              <tr>
+                <td>User showed it to someone else?</td>
+                <td>Thomas showed his wife on the spot — "I'm sold"</td>
+                <td><span class="status-pass">✅</span></td>
+              </tr>
+              <tr>
+                <td>Second segment discovered through use?</td>
+                <td>Sherrie — in-store shopper, different job than assumed</td>
+                <td><span class="status-pass">✅</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- SECONDARY: table-stakes floor -->
+          <div style="font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin:10px 0 5px;">Technical floor — needs to be good enough not to block behavior</div>
+          <table class="metrics-table" style="font-size:11px;">
+            <tbody>
               <tr>
                 <td>Ingredient accuracy</td>
-                <td>90%+</td>
-                <td>94%</td>
-                <td><span class="status-pass">✅ Exceeded</span></td>
+                <td>94% avg (target 90%+)</td>
+                <td><span class="status-pass">✅</span></td>
               </tr>
               <tr>
-                <td>Walmart cart</td>
-                <td>Opens w/ items</td>
-                <td>Confirmed live</td>
-                <td><span class="status-pass">✅ Met</span></td>
+                <td>Camera latency</td>
+                <td>14s avg (target &lt;10s) — non-blocking UI mitigates</td>
+                <td><span class="status-warn">⚠️</span></td>
               </tr>
               <tr>
-                <td>Crash-free demo</td>
-                <td>0 crashes</td>
-                <td>0 crashes</td>
-                <td><span class="status-pass">✅ Met</span></td>
-              </tr>
-              <tr>
-                <td>Auto nutrition</td>
-                <td>After save</td>
-                <td>Background GPT-4o</td>
-                <td><span class="status-pass">✅ Met</span></td>
+                <td>App stability</td>
+                <td>0 crashes across all test sessions</td>
+                <td><span class="status-pass">✅</span></td>
               </tr>
             </tbody>
           </table>
         </div>
         <div>
           <div style="background:rgba(255,149,0,0.08); border:1.5px solid rgba(255,149,0,0.25); border-radius:14px; padding:14px 16px; margin-bottom:12px;">
-            <div style="font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--warn); margin-bottom:6px;">What fell short</div>
-            <p style="font-size:12px; color:var(--dark);">Camera speed 40% over target — GPT-4o Vision latency is 12–18s. Mitigated by non-blocking UI but raw number missed.</p>
-            <p style="font-size:12px; color:var(--dark); margin-top:6px;">Walmart price total off ~$6 on a $32–38 basket. Per-serving meal logging defaulted to all servings.</p>
+            <div style="font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--warn); margin-bottom:6px;">Where behavior was blocked</div>
+            <p style="font-size:12px; color:var(--dark);">Per-serving logging defaulted to all servings — Thomas found it. This breaks the tracker loop: if the data is wrong, users stop logging.</p>
+            <p style="font-size:12px; color:var(--dark); margin-top:6px;">Walmart price off ~$6 — Kierra: "I'd prefer no price if it's going to change." Inaccurate data erodes trust before behavior can form.</p>
+            <p style="font-size:12px; color:var(--dark); margin-top:6px;">Camera at 14s didn't block anyone in testing, but it's the only technical miss that <em>could</em> stop a first-time user from continuing.</p>
           </div>
           <div style="background:rgba(52,199,89,0.08); border:1.5px solid rgba(52,199,89,0.25); border-radius:14px; padding:14px 16px;">
-            <div style="font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--green); margin-bottom:6px;">What exceeded expectations</div>
-            <p style="font-size:12px; color:var(--dark);">Nutrition tracking was <strong>not in the original PRD</strong> — emerged entirely from user feedback and became the most-engaged feature.</p>
-            <p style="font-size:12px; color:var(--dark); margin-top:6px;">Thomas validated Walmart cart unprompted before seeing the feature: strongest possible product signal.</p>
+            <div style="font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--green); margin-bottom:6px;">The real lesson</div>
+            <p style="font-size:12px; color:var(--dark);">Speed was never the value driver. Nobody chose this app because it was fast. They chose it because it finished a job they couldn't finish before — recipe → ingredients → shopping cart in one tap.</p>
+            <p style="font-size:12px; color:var(--dark); margin-top:6px;">The best signal we got: a user described a feature we hadn't shown yet, in their own words. That doesn't come from hitting a latency target.</p>
           </div>
         </div>
       </div>
