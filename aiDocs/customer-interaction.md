@@ -78,18 +78,48 @@ Thomas also explored "Make it Lighter" — a related AI substitution feature. Th
 
 ---
 
-## 11 Features Traced to Specific Feedback Sources
+## Cycle 7: Passive calorie tracking validated as the killer feature
+
+**What we observed/heard (Maya, Round 4):**
+Maya had quit MyFitnessPal twice because manual calorie entry was "soul-crushing." When she discovered the Tracker tab and that logging happens automatically after cooking, her eyes lit up: "Wait, so it counts the calories FOR me when I cook? I don't have to type everything in?" This was her strongest positive reaction in the entire session.
+
+**What we changed:**
+The Nutrition Tracker is already built. Maya's reaction confirms the core value proposition of passive tracking — this is the feature that differentiates Mise from every calorie app. No changes needed; this is validation.
+
+**How we validated:**
+Maya is the 7th+ user to validate nutrition tracking across all rounds. The pattern is now undeniable: passive calorie logging (cook → it's logged) is the single most consistently validated feature in the app.
+
+---
+
+### Cycle 8: URL import needs better discoverability in chat
+
+**What we observed/heard (Jane, Round 4):**
+Jane couldn't find how to import a recipe from a URL. The chat welcome message suggests "scan a recipe" and "plan your week" but doesn't mention pasting a URL. Jane said: "It doesn't say anything about adding recipes from the Internet." She Googles recipes and pastes URLs — that's her primary workflow.
+
+**What we changed (identified):**
+Add "Add a URL from your favorite recipe website" to the chat welcome suggestions. This is a copy change, not a feature build — but it unblocks Jane's entire use case.
+
+**How we validated:**
+This is the second time URL import discoverability has been flagged (the first was the 4-button → modal redesign). The chat interface solves the modal problem but creates a new one: the capability is hidden behind an attachment button that new users don't discover.
+
+---
+
+## 15 Features Traced to Specific Feedback Sources
 
 | Feature / Decision | Who triggered it | What they said or did |
 |---|---|---|
 | URL import as equal priority | Round 2 testers (3 people) | "I mostly use recipes from the internet" |
-| Nutrition Tracker tab | Round 2 (2 users independently) | "Does it remember how many calories?" |
-| Voice cooking mode (TTS) | Round 2 (1 user) | "I wish it would just read the steps to me" |
+| Nutrition Tracker tab | Round 2 (2 users), Maya, Sherrie, Jane | "Does it remember how many calories?" / "It counts the calories FOR me?" |
+| Voice cooking mode (TTS) | Round 2 (1 user), Maya | "I wish it would just read the steps to me" / "Nice when your hands are covered in chicken" |
 | Single "Add Recipe" button + modal | Day 6 tester | Paused 4 seconds on 4-button screen |
-| Walmart product preview with prices | Internal testing | Discomfort sending to cart without seeing products |
+| Walmart product preview with prices | Internal testing, Maya | Discomfort sending to cart without seeing products / "I like seeing the prices up front" |
 | Export-to-Notes exit path (identified) | Sherrie, Round 4 | "I just want a list. I'm gonna run around." |
 | Per-serving meal logging fix (identified) | Thomas, Round 4 | "Log Meal" defaulted to all servings, not one |
 | NaN quantity display fix (identified) | Kierra, Round 4 | Confused by NaN for unspecified amounts |
-| Ingredient substitution UX (identified) | Kierra, Round 4 | "Can I ask the AI? I don't have rice wine." |
-| Recipe collections with emoji | Spencer (teammate round) + Sherrie | Independently asked for recipe categories/organization |
-| Meal planner (Planner tab) | Kelly + Trevor (teammate round) | Both wanted a way to "reuse" recipes and plan ahead |
+| Ingredient substitution UX (identified) | Kierra, Maya | "Can I ask the AI?" / "Can it tell me if something has gluten?" |
+| Recipe collections with emoji | Spencer (teammate) + Sherrie + Jane | All independently asked for recipe organization |
+| Meal planner (Planner tab) | Kelly + Trevor (teammate round) | Both wanted to "reuse" recipes and plan ahead |
+| Social recipe sharing (identified) | Jane, Round 4 | "That would be a game changer" — wants Goodreads for recipes |
+| Dietary restriction flags (identified) | Maya, Round 4 | "Can it tell me if something has gluten?" — kid has sensitivity |
+| Chat welcome message update (identified) | Jane, Round 4 | "It doesn't say anything about adding recipes from the Internet" |
+| Multi-store comparison (identified) | Thomas, Kierra, Jane | All want price comparison across Walmart, Sam's, Smith's |

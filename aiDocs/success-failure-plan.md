@@ -16,8 +16,8 @@ The product is successful when:
 |-----------|--------|--------|--------|
 | Full-flow completion without help | > 50% of users | Thomas completed full flow independently | Met |
 | Speed vs. manual | > 2x faster | URL: ~8s vs. minutes manual | Met |
-| Reuse intent | > 50% say "yes" | 7/7 final users said they'd use regularly | Met |
-| Walmart cart trust | > 50% would use | 6/7 validated (Thomas unprompted) | Met |
+| Reuse intent | > 50% say "yes" | 9/9 final users said they'd use regularly | Met |
+| Walmart cart trust | > 50% would use | 8/9 validated (Thomas unprompted, Maya and Jane confirmed) | Met |
 | User-driven features shipped | At least 1 | 5+ features from feedback (Nutrition, Cooking Mode, Collections, Planner, UI cleanup) | Exceeded |
 
 ## Failure Definition
@@ -35,7 +35,7 @@ The product is failing when:
 |-----------|-----------|---------------|
 | Full-flow completion | < 50% without help | Not triggered — Thomas completed independently |
 | Edits per recipe | > 5 on average | Not triggered — URL imports need 0-1 edits |
-| Walmart cart send rate | < 40% tap "Send" | Not triggered — 6/7 expressed intent |
+| Walmart cart send rate | < 40% tap "Send" | Not triggered — 8/9 expressed intent |
 | 7-day return | < 25% (if deployed) | Not yet measurable — qualitative intent is strong |
 | Speed advantage | < 50% report faster | Not triggered — all users reported faster |
 

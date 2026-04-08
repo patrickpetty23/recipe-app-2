@@ -44,8 +44,9 @@ The midterm hypothesis focused narrowly on camera scanning of cookbooks and OCR 
 
 ## Current Status
 
-- Core hypothesis validated across 10 user sessions (3 midterm + 7 final).
+- Core hypothesis validated across 12 user sessions (3 midterm + 9 final).
 - Speed advantage confirmed: URL import ~8s vs. minutes of manual entry.
-- Trust validated: structured per-field editor catches parsing errors effectively.
-- Reuse intent: all 7 final participants said they would use the app regularly.
-- Walmart validation: 6/7 final users endorsed the cart integration.
+- Trust validated: structured per-field editor catches parsing errors effectively. Maya caught a ricotta→rice misparse immediately.
+- Reuse intent: all 9 final participants said they would use the app regularly. Maya: "Sunday meal prep is my whole thing and this would make it so much faster."
+- Walmart validation: 8/9 final users endorsed the cart integration.
+- Passive calorie tracking validated by 7+ users as the strongest differentiator vs. MyFitnessPal.

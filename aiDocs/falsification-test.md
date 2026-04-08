@@ -46,7 +46,7 @@ The app needs to direct attention, not just allow editing. We built the editor w
 
 **Result:** Validated for the primary segment, with a segmentation discovery. Thomas enthusiastically validated — described the feature unprompted before seeing it. Kierra would use it conditionally (price accuracy matters). All 4 teammate-round participants loved it. Sherrie rejected it (in-store shopper) — revealing a second user segment that wants list export instead.
 
-**6 of 7 final users validated the Walmart cart.** Sherrie's feedback deepened our customer understanding rather than invalidating the feature.
+**8 of 9 final users validated the Walmart cart** (adding Maya and Jane). Sherrie's feedback deepened our customer understanding rather than invalidating the feature. Maya and Jane both used the Walmart search and saw value, though Jane immediately asked about Sam's Club too.
 
 ---
 
@@ -54,9 +54,19 @@ The app needs to direct attention, not just allow editing. We built the editor w
 
 **Hypothesis (midterm):** Camera scanning is the primary use case.
 
-**How tested:** Users given access to all import methods. Thomas also had a physical cookbook.
+**How tested:** Users given access to all import methods. Thomas had a physical cookbook. Maya tested both URL and camera (handwritten recipe card).
 
-**Result:** Partially falsified. URL import preferred when a URL is available (Kierra, Sherrie). Thomas chose camera scan with a physical cookbook — it worked but surfaced parsing edge cases. Camera is not the primary use case, but it IS the use case that differentiates us most from competitors.
+**Result:** Partially falsified. URL import preferred when a URL is available (Kierra, Sherrie, Jane). Thomas chose camera scan with a physical cookbook. Maya tested both — URL for online recipes, camera for her mom's handwritten recipe card. Camera is not the primary use case, but it IS emotionally resonant (Maya: "The fact that it even read my mom's handwriting is kind of amazing") and differentiates us from competitors.
+
+---
+
+## Test 5 — Is passive calorie tracking a real differentiator? (Final, April 2026)
+
+**Hypothesis:** Users will value automatic nutrition tracking over manual calorie entry.
+
+**How tested:** Showed Maya and Jane the Tracker tab after they saved a recipe. Neither was prompted about nutrition — we waited to see if they found it and how they reacted.
+
+**Result:** Strongly validated. Maya's eyes lit up: "Wait, so it counts the calories FOR me when I cook? I don't have to type everything in?" This was her strongest reaction in the entire session. She had quit MyFitnessPal twice because manual entry was "soul-crushing." Jane also noticed the nutrition tab and appreciated that it wasn't weight-focused: "I kind of like that it's not about weight loss, just nutrition." This is now the 7th+ user to validate nutrition tracking across all rounds.
 
 ---
 
@@ -66,5 +76,6 @@ The app needs to direct attention, not just allow editing. We built the editor w
 |------|-----------|--------|---------------|
 | 1 (midterm) | Users catch AI errors | Falsified — 0/3 caught both | Built structured per-field editor |
 | 2 (final) | App faster than manual | Validated | Confirmed core value proposition |
-| 3 (final) | Users want Walmart cart | Validated 6/7, segmentation found | Walmart cart is core pitch + need export path |
-| 4 (final) | Camera is primary input | Partially falsified | URL/chat promoted, camera kept for cookbooks |
+| 3 (final) | Users want Walmart cart | Validated 8/9, segmentation found | Walmart cart is core pitch + need export and multi-store paths |
+| 4 (final) | Camera is primary input | Partially falsified | URL/chat promoted, camera kept for cookbooks and family recipes |
+| 5 (final) | Passive calorie tracking differentiates | Strongly validated | Nutrition tracker confirmed as must-have by 7+ users |

@@ -91,7 +91,7 @@ These are the numerical red lines that would trigger a change in direction:
 | 7-day return rate (if deployed) | < 25% | Core loop doesn't retain — cooking mode and tracker aren't enough to bring users back |
 | User-reported speed advantage | < 50% say app is faster than their current method | The fundamental value proposition is broken — re-scope the product |
 
-**Current status against failure thresholds:** None of these failure conditions are triggered. Full-flow completion was demonstrated by Thomas without assistance. Edit counts are 0-1 for URL imports. 6/7 users expressed intent to use Walmart cart. All tested users reported the app as faster than manual entry.
+**Current status against failure thresholds:** None of these failure conditions are triggered. Full-flow completion was demonstrated by Thomas without assistance. Edit counts are 0-1 for URL imports. 8/9 users expressed intent to use Walmart cart. All tested users reported the app as faster than manual entry.
 
 ---
 

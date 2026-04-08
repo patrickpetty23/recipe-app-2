@@ -74,18 +74,35 @@ Three users outside the team's friend circle. Kierra and Thomas tested the curre
 - Sent items to his actual Walmart cart and confirmed they appeared: "I'm sold."
 - Showed the full flow to his wife Chris on the spot
 
+**Maya** (31, dental hygienist, meal preps Sundays, Walmart+ delivery, kid with gluten sensitivity):
+- Tested URL import (Pinterest recipe) and camera scan (handwritten family recipe card)
+- Strongest reaction was nutrition tracking: "Wait, so it counts the calories FOR me when I cook? I don't have to type everything in?"
+- Scanned mom's handwritten lasagna recipe — "The fact that it even read my mom's handwriting is kind of amazing"
+- Wants dietary restriction flags: "Can it tell me if something has gluten?" — her #1 request
+- Used serving scaler to double for meal prep: "This is what I need. I always mess up the math."
+- Would use weekly: "Sunday meal prep is my whole thing and this would make it so much faster."
+
+**Jane** (young mom, weekly Walmart+ and Sam's Club orders, stores recipes as phone screenshots):
+- Navigated to recipes and shopping list without guidance
+- Liked seeing Walmart prices inline — immediately asked about Sam's Club support
+- **Most excited about recipe sharing:** "That would be a game changer" — wants to share collections with friends like Goodreads for recipes
+- Struggled to find URL import in the chat interface: "It doesn't say anything about adding recipes from the Internet"
+- Core pain is decision fatigue, not recipe extraction: "The brain power to decide what to make is the worst part"
+- Would use regularly — sees it as her weekly planning hub
+
 ---
 
 ## Segmentation Finding
 
-Round 4 revealed a clean split in user type:
+Research across all rounds revealed three distinct user types:
 
 | User type | Shopping behavior | What they want from Mise |
 |---|---|---|
-| **Pickup/delivery shoppers** (Thomas) | Weekly Walmart pickup order | Full pipeline: recipe → list → Walmart cart |
+| **Pickup/delivery planners** (Thomas, Maya, Jane) | Weekly Walmart/Sam's pickup or delivery | Full pipeline: recipe → list → Walmart cart. Maya adds batch meal prep; Jane wants multi-store. |
 | **In-store shoppers** (Sherrie) | Shops in-person, picks own produce | Recipe → list exported to Notes/Apple Lists |
+| **Multi-store comparison** (Kierra, Jane) | Shops at multiple stores | Want price comparison across Walmart, Sam's, Smith's, international stores |
 
-Both types value AI extraction. They diverge at the shopping step. The app currently only serves one of these paths. Export-to-Notes is identified as the required next iteration to serve the second segment.
+All types value AI extraction and the recipe library. They diverge at the shopping step. The pickup/delivery segment is the largest (3 of 5 detailed interviewees).
 
 ---
 
@@ -113,9 +130,11 @@ Both types value AI extraction. They diverge at the shopping step. The app curre
 
 | What we assumed | What users actually told us |
 |---|---|
-| Camera scan is the primary use case | URL import preferred 3:1; camera still valued for physical cookbooks |
-| Users want a recipe scanner | Users want a cooking companion — they described voice guidance and nutrition tracking before we showed those features |
-| All users will want Walmart cart | Sherrie represents a distinct in-store shopper segment that wants list export instead |
-| Nutrition tracking is a "nice to have" | 5+ users across rounds asked about calorie tracking unprompted — it's a must-have |
-| One shopping exit path is sufficient | Two exit paths needed: Walmart cart AND export-to-Notes |
-| The camera scan is the demo moment | Thomas's strongest reaction was to the Walmart cart feature — which he described before seeing it |
+| Camera scan is the primary use case | URL import preferred 3:1; camera still valued for physical cookbooks and family recipe cards (Maya scanned her mom's handwritten recipe) |
+| Users want a recipe scanner | Users want a cooking companion — they described voice guidance, nutrition tracking, and meal planning before we showed those features |
+| All users will want Walmart cart | Sherrie wants list export. Maya and Jane want multi-store. Thomas wants Walmart. Three distinct shopping preferences discovered. |
+| Nutrition tracking is a "nice to have" | 7+ users across all rounds asked about calorie tracking — Maya's strongest reaction was passive calorie logging. Confirmed must-have. |
+| One shopping exit path is sufficient | Three paths needed: Walmart cart, export-to-Notes, and multi-store comparison |
+| The camera scan is the demo moment | Thomas's strongest reaction was Walmart cart. Maya's was passive calorie tracking. Jane's was recipe sharing with friends. Different users, different "wow" moments. |
+| The chat interface is intuitive | Jane couldn't find URL import in the chat. The welcome message needs to explicitly mention importing from websites. |
+| Recipe organization is a power-user feature | Jane and Sherrie both independently said recipe organization is essential, not optional. "Pretty annoying to scroll through" phone screenshots. |
