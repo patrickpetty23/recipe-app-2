@@ -120,6 +120,48 @@ The central leverage insight: if a user already cooks from the app, the nutritio
 
 ## How the System Evolved: Midterm → Final
 
+### What the system looked like at midterm
+
+```
+┌──────────────────────────────────────────────────────┐
+│                    USER'S DEVICE                      │
+│                                                      │
+│  ┌────────────┐  ┌────────────┐  ┌────────────┐    │
+│  │  Scan Tab  │  │ Recipes Tab│  │Shopping Tab │    │
+│  │ (4 buttons:│  │            │  │  (list only,│    │
+│  │  camera,   │  │            │  │  no Walmart │    │
+│  │  photo,    │  │            │  │  preview)   │    │
+│  │  URL, file)│  │            │  │             │    │
+│  └─────┬──────┘  └─────┬──────┘  └──────┬──────┘    │
+│        │               │               │            │
+│  ┌─────▼───────────────▼───────────────▼──────┐    │
+│  │          src/services/openai.js              │    │
+│  │  chatRecipe() │ generateRecipeThumbnail()    │    │
+│  └──────────────────────┬──────────────────────┘    │
+│                         │                            │
+│  ┌──────────────────────▼──────┐                    │
+│  │  SQLite Database             │                    │
+│  │  6 tables (recipes,          │                    │
+│  │  ingredients, steps,         │                    │
+│  │  collections, settings,      │                    │
+│  │  recipe_tags)                │                    │
+│  └─────────────────────────────┘                    │
+└──────────────────────────────────────────────────────┘
+                         │
+        ┌────────────────▼───────────────────┐
+        │           CLOUD APIs               │
+        │  ┌──────────────────────────┐      │
+        │  │     OpenAI Platform      │      │
+        │  │  GPT-4o (chat/extract)   │      │
+        │  │  DALL-E 3 (thumbnails)   │      │
+        │  └──────────────────────────┘      │
+        └────────────────────────────────────┘
+```
+
+**What was missing at midterm:** No Tracker tab. No Planner tab. No voice cooking mode. No Walmart API integration. No nutrition estimation. No step illustrations. No cook logging. The shopping tab was a plain checklist with no product search or prices. The Scan tab had 4 equal-weight buttons that caused decision paralysis. The database had 6 tables. The only cloud dependency was GPT-4o for extraction and DALL-E 3 for thumbnails.
+
+### What changed (and why)
+
 Five feedback loops discovered through building changed the architecture significantly between midterm and final delivery.
 
 **Loop 1 — Camera was not the primary input.**
