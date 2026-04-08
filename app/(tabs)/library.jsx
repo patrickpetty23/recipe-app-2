@@ -279,7 +279,6 @@ export default function LibraryScreen() {
   ];
 
   function renderCollectionCard(col) {
-    const isAll = col.id === ALL_KEY;
     const isNew = col.id === '__new__';
     const isActive = col.id === activeCollection;
 
@@ -297,17 +296,29 @@ export default function LibraryScreen() {
         }}
         activeOpacity={0.8}
       >
-        <Text style={[styles.collectionEmoji, isNew && styles.collectionEmojiNew]}>
-          {col.emoji}
-        </Text>
-        <Text style={[styles.collectionName, isActive && styles.collectionNameActive, isNew && styles.collectionNameNew]} numberOfLines={1}>
+        {isNew ? (
+          <View style={styles.collectionNewIconWrap}>
+            <Ionicons name="add" size={24} color={C.textFaint} />
+          </View>
+        ) : (
+          <Text style={styles.collectionEmoji}>{col.emoji}</Text>
+        )}
+        <Text
+          style={[styles.collectionName, isActive && styles.collectionNameActive, isNew && styles.collectionNameNew]}
+          numberOfLines={1}
+        >
           {col.name}
         </Text>
-        {!isNew && (
-          <Text style={[styles.collectionCount, isActive && styles.collectionCountActive]}>
-            {col.recipeCount ?? 0}
-          </Text>
-        )}
+        <Text
+          accessible={false}
+          style={[
+            styles.collectionCount,
+            isActive && styles.collectionCountActive,
+            isNew && styles.collectionCountHidden,
+          ]}
+        >
+          {isNew ? '0' : col.recipeCount ?? 0}
+        </Text>
       </TouchableOpacity>
     );
   }
@@ -400,6 +411,7 @@ export default function LibraryScreen() {
         />
       ) : (
         <FlatList
+          style={styles.recipeList}
           data={displayedRecipes}
           renderItem={renderRecipe}
           keyExtractor={(item) => item.id}
@@ -578,24 +590,26 @@ const styles = StyleSheet.create({
 
   // ── Collections ───────────────────────────────────────────────────────────────
   collectionsScroll: {
+    flexGrow: 0,
+    flexShrink: 0,
     backgroundColor: C.surface,
     borderBottomWidth: 1,
     borderBottomColor: C.border,
-    maxHeight: 100,
   },
   collectionsContent: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 10,
+    alignItems: 'flex-start',
   },
   collectionCard: {
     alignItems: 'center',
     backgroundColor: C.bg,
     borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: 14,
-    minWidth: 72,
+    paddingHorizontal: 10,
+    paddingTop: 12,
+    paddingBottom: 12,
+    width: 108,
     borderWidth: 1.5,
     borderColor: C.border,
     gap: 2,
@@ -607,19 +621,28 @@ const styles = StyleSheet.create({
   collectionCardNew: {
     borderStyle: 'dashed',
     borderColor: C.textFaint,
+    paddingTop: 14,
+    paddingBottom: 10,
   },
   collectionEmoji: {
     fontSize: 22,
+    lineHeight: 28,
+    textAlign: 'center',
+    alignSelf: 'stretch',
   },
-  collectionEmojiNew: {
-    fontSize: 22,
-    color: C.textFaint,
+  collectionNewIconWrap: {
+    height: 28,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   collectionName: {
     fontSize: 11,
     fontWeight: '600',
     color: C.textMed,
-    marginTop: 2,
+    marginTop: 0,
+    textAlign: 'center',
+    alignSelf: 'stretch',
   },
   collectionNameActive: {
     color: C.orange,
@@ -629,11 +652,17 @@ const styles = StyleSheet.create({
   },
   collectionCount: {
     fontSize: 10,
+    lineHeight: 14,
     color: C.textFaint,
-    marginBottom: 2,
+    marginTop: 0,
+    textAlign: 'center',
+    alignSelf: 'stretch',
   },
   collectionCountActive: {
     color: C.orange,
+  },
+  collectionCountHidden: {
+    opacity: 0,
   },
 
   // ── Search ────────────────────────────────────────────────────────────────────
@@ -693,6 +722,9 @@ const styles = StyleSheet.create({
   },
 
   // ── Recipe cards ──────────────────────────────────────────────────────────────
+  recipeList: {
+    flex: 1,
+  },
   listContent: {
     paddingBottom: 40,
     paddingTop: 4,
