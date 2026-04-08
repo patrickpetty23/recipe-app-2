@@ -15,7 +15,7 @@ If we reduce recipe-to-shopping-list creation time by at least 50% for home cook
 1. Users tolerate minor AI mistakes if corrections are fast.
 2. GPT-4o extraction quality is sufficient for a first-pass list on common inputs.
 3. Checklist persistence has higher user value than advanced AI features.
-4. Walmart cart integration creates a differentiated last-mile step no competitor offers.
+4. The any-source capture → Walmart cart pipeline is differentiated — competitors like SideChef and Samsung Food offer Walmart cart integration for their own curated recipe libraries, but not for user-imported recipes from arbitrary sources.
 
 ## Observable Predictions
 

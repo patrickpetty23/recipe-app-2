@@ -110,17 +110,23 @@ All types value AI extraction and the recipe library. They diverge at the shoppi
 
 | Product | Core value | Gap vs. Mise |
 |---|---|---|
-| **Paprika 3** | Recipe manager, URL import, scaling | No AI, no voice cooking, no nutrition |
-| **Yummly** | Recipe discovery + guided cooking | No camera capture, nutrition is manual |
-| **MyFitnessPal** | Calorie + macro tracking | Zero cooking features, 100% manual entry |
-| **Samsung Food** | AI meal planning | URL-only import, no voice, no shopping integration |
-| **AnyList** | Shopping list + recipe box | No AI, no nutrition, no cooking mode |
-| **Skylight** | Smart calendar with recipe scanning + grocery list | No AI parsing, no nutrition, no Walmart cart, no cooking mode. Different form factor (countertop vs. phone). Surfaced by Thomas during testing. |
-| **Mise** | Full cooking lifecycle | All five capabilities in one product |
+| **SideChef** | Guided cooking + Walmart shoppable recipes (10k+ recipes) | Closest competitor. Has step-by-step cooking with images, AI photo-to-recipe, Walmart/Instacart/Amazon cart integration. **But**: only works with SideChef's own curated recipe library — cannot import from any URL, camera, or physical cookbook. No voice TTS narration. No passive nutrition tracking from cooking. No AI-generated illustrations per step. |
+| **Samsung Food (Whisk)** | Shoppable recipe platform with multi-retailer cart | Walmart, Amazon Fresh, Instacart integration. Recipe-to-cart for saved recipes. Has URL import and camera-based recipe capture with AI ingredient scanning. **But**: no voice cooking mode, no nutrition tracking tied to cook logging, no AI-generated illustrations. |
+| **Paprika 3** | Recipe manager, URL import, scaling | No AI extraction, no voice cooking, no nutrition, no grocery cart integration |
+| **MyFitnessPal** | Calorie + macro tracking | Now has AI photo-based meal scanning (MealScan) and acquired Cal AI in March 2026. But tracking is still active per-meal — users must photograph and log each meal individually. Zero cooking features. Mise's passive tracking (cook → it's logged) is structurally different. |
+| **AnyList** | Shopping list + recipe box | No AI, no nutrition, no cooking mode, no store integration |
+| **Skylight** | Smart calendar with recipe scanning + grocery list | No AI parsing, no nutrition, no cooking mode. Different form factor (countertop vs. phone). Surfaced by Thomas during testing. |
+| **Yummly** | *(Shut down December 2024)* | Whirlpool laid off the entire Yummly team in April 2024. The app and website are permanently offline. One fewer competitor in the space. |
+| **Tasty (BuzzFeed)** | Shoppable recipe videos with Walmart cart | 4,000 video recipes with one-click Walmart cart via Northfork. **But**: video-only content library, no user recipe import, no AI, no cooking guidance, no nutrition tracking. |
+| **Mise** | Full cooking lifecycle from any source | The only product that combines any-source AI capture (URL, camera, chat, file) + voice-guided cooking + passive nutrition tracking + Walmart cart in a single app. |
+
+**How Mise differentiates from SideChef (closest competitor):**
+SideChef has Walmart integration, but only for recipes in its own curated library. Mise lets users import any recipe from any source — a URL, a photo of a physical cookbook, a handwritten recipe card, a PDF, or a natural language description — and then sends those ingredients to Walmart. The capture layer is the differentiator, not the cart integration itself. Additionally, Mise offers voice TTS narration (hands-free cooking), AI-generated step illustrations (DALL-E), and passive calorie tracking as a side effect of cooking — none of which SideChef provides.
 
 **Why Walmart specifically (not Instacart/Amazon):**
 - Walmart has a documented Affiliate API with a working cart URL format
 - Walmart is the #1 grocery retailer in the US by revenue — broadest demographic reach
+- Several competitors (SideChef, Samsung Food, Tasty) already have Walmart integration — validating that the Walmart pipeline is what users expect
 - Instacart's integration requires a merchant partnership, not a developer API
 - Amazon's recipe-to-cart flow is undocumented and requires Prime membership
 
