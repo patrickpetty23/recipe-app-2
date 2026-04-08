@@ -716,7 +716,50 @@
   </div>
 
   <!-- =====================================================
-       SLIDE 2 — THE PROBLEM
+       SLIDE 2 — SYSTEM EVOLUTION (since midterm)
+  ====================================================== -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Since Midterm</div>
+      <h2>Midterm → Final: <span>what actually changed</span></h2>
+      <div style="margin-top:16px; overflow:hidden; border-radius:14px;">
+        <table class="compare-table" style="width:100%; font-size:12px;">
+          <thead>
+            <tr>
+              <th style="width:24%; padding:10px 14px;">We assumed</th>
+              <th style="width:36%; padding:10px 14px;">What actually happened</th>
+              <th style="width:40%; padding:10px 14px;">How we responded</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:10px 14px;"><strong>Camera is the main input</strong></td>
+              <td style="padding:10px 14px; color:var(--dark);">Users chose chat + URL 3:1 over camera</td>
+              <td style="padding:10px 14px; color:var(--dark);">Built conversational AI chat as primary interface</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 14px;"><strong>The product is a scanner</strong></td>
+              <td style="padding:10px 14px; color:var(--dark);">Users wanted nutrition, cooking help, meal planning</td>
+              <td style="padding:10px 14px; color:var(--dark);">Expanded to full cooking lifecycle — 5 tabs</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 14px;"><strong>AI parsing is our edge</strong></td>
+              <td style="padding:10px 14px; color:var(--dark);">Thomas described Walmart cart before seeing it</td>
+              <td style="padding:10px 14px; color:var(--dark);">Walmart cart is the core pitch — no competitor has it</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 14px;"><strong>Users check AI output</strong></td>
+              <td style="padding:10px 14px; color:var(--dark);">0 of 3 caught planted errors in midterm test</td>
+              <td style="padding:10px 14px; color:var(--dark);">Built per-field editor that makes mistakes visible</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       SLIDE 3 — THE PROBLEM
   ====================================================== -->
   <div class="slide">
     <div class="slide-inner">
@@ -907,60 +950,7 @@
   </div>
 
   <!-- =====================================================
-       SLIDE 6 — SYSTEM EVOLUTION
-  ====================================================== -->
-  <div class="slide">
-    <div class="slide-inner">
-      <div class="eyebrow">System Evolution</div>
-      <h2>Midterm → Final: <span>what actually changed</span></h2>
-      <div style="margin-top:16px; overflow:hidden; border-radius:14px;">
-        <table class="compare-table" style="width:100%; font-size:12px;">
-          <thead>
-            <tr>
-              <th style="width:24%; padding:10px 14px;">We assumed</th>
-              <th style="width:36%; padding:10px 14px;">What actually happened</th>
-              <th style="width:40%; padding:10px 14px;">How we responded</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style="padding:10px 14px;"><strong>Camera is the main input</strong></td>
-              <td style="padding:10px 14px; color:var(--dark);">Users chose chat + URL 3:1 over camera</td>
-              <td style="padding:10px 14px; color:var(--dark);">Built conversational AI chat as primary interface</td>
-            </tr>
-            <tr>
-              <td style="padding:10px 14px;"><strong>The product is a scanner</strong></td>
-              <td style="padding:10px 14px; color:var(--dark);">Users wanted nutrition, cooking help, meal planning</td>
-              <td style="padding:10px 14px; color:var(--dark);">Expanded to full cooking lifecycle — 5 tabs</td>
-            </tr>
-            <tr>
-              <td style="padding:10px 14px;"><strong>AI parsing is our edge</strong></td>
-              <td style="padding:10px 14px; color:var(--dark);">Thomas described Walmart cart before seeing it</td>
-              <td style="padding:10px 14px; color:var(--dark);">Walmart cart is the core pitch — no competitor has it</td>
-            </tr>
-            <tr>
-              <td style="padding:10px 14px;"><strong>Users check AI output</strong></td>
-              <td style="padding:10px 14px; color:var(--dark);">0 of 3 caught planted errors in midterm test</td>
-              <td style="padding:10px 14px; color:var(--dark);">Built per-field editor that makes mistakes visible</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div style="margin-top:12px; display:flex; gap:12px;">
-        <div style="background:var(--white); border:1.5px solid var(--border); border-radius:10px; padding:10px 14px; flex:1;">
-          <div style="font-size:10px; font-weight:700; color:var(--orange);">User segmentation discovered</div>
-          <p style="font-size:11px; color:var(--med); margin:3px 0 0;">Sherrie (in-store) wants list export. Thomas (pickup) wants Walmart cart. Both valid — app needs two exit paths.</p>
-        </div>
-        <div style="background:var(--white); border:1.5px solid var(--border); border-radius:10px; padding:10px 14px; flex:1;">
-          <div style="font-size:10px; font-weight:700; color:var(--orange);">Technical surprise</div>
-          <p style="font-size:11px; color:var(--med); margin:3px 0 0;">Walmart API required RSA signing + undocumented cart URL. Two debug cycles — now a technical moat.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- =====================================================
-       SLIDE 7 — CUSTOMER VALIDATION
+       SLIDE 6 — CUSTOMER VALIDATION
   ====================================================== -->
   <div class="slide">
     <div class="slide-inner">
@@ -992,9 +982,6 @@
                 <span style="color:var(--med);"><strong style="color:var(--dark);">Thomas:</strong> Walmart cart unprompted <span style="color:var(--orange); font-weight:600;">&rarr; already built</span></span>
               </div>
             </div>
-          </div>
-          <div style="background:white; border:1.5px solid var(--border); border-radius:14px; padding:10px 18px;">
-            <p style="font-size:11px; color:var(--faint); margin:0;">All 7 final participants are outside the team's friend circle — weekly Walmart users, in-store shoppers, calorie-conscious cooks, international cuisine shoppers.</p>
           </div>
         </div>
         <div style="display:flex; flex-direction:column; gap:10px;">
@@ -1087,67 +1074,7 @@
   </div>
 
   <!-- =====================================================
-       SLIDE 9 — UX DECISIONS
-  ====================================================== -->
-  <div class="slide">
-    <div class="slide-inner">
-      <div class="eyebrow">Design Decisions</div>
-      <h2>Why the app looks <span>the way it does</span></h2>
-      <div class="three-col" style="margin-top:18px;">
-        <div class="feature-card" style="padding:16px;">
-          <div class="feature-icon">💬</div>
-          <h3 style="font-size:15px;">Chat &gt; Buttons</h3>
-          <p style="font-size:12px; line-height:1.5;">4 import buttons confused testers. Single chat interface handles photos, URLs, text, and questions naturally.</p>
-        </div>
-        <div class="feature-card" style="padding:16px;">
-          <div class="feature-icon">🌙</div>
-          <h3 style="font-size:15px;">Dark cooking mode</h3>
-          <p style="font-size:12px; line-height:1.5;">Full-screen dark UI keeps the kitchen comfortable. TTS means hands stay clean. Screen stays awake.</p>
-        </div>
-        <div class="feature-card" style="padding:16px;">
-          <div class="feature-icon">📝</div>
-          <h3 style="font-size:15px;">Per-field editor</h3>
-          <p style="font-size:12px; line-height:1.5;">Midterm test: 0/3 caught errors in plain text. Structured fields (name, qty, unit) make mistakes visible.</p>
-        </div>
-      </div>
-      <div style="margin-top:14px; background:white; border-radius:14px; padding:10px 18px; border:1.5px solid var(--border);">
-        <p style="font-size:11px; color:var(--faint); margin:0;">Every design decision above was validated by user testing — see <code style="background:var(--cream); padding:1px 5px; border-radius:4px; font-size:10px;">aiDocs/customer-interaction.md</code> for the full feedback loops.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- =====================================================
-       SLIDE 10 — DEVELOPMENT PROCESS
-  ====================================================== -->
-  <div class="slide">
-    <div class="slide-inner">
-      <div class="eyebrow">Development Process</div>
-      <h2>Document-driven, <span>AI-assisted</span> iteration</h2>
-      <div class="three-col" style="margin-top:18px;">
-        <div class="feature-card" style="padding:16px;">
-          <div class="feature-icon">&#x1F4CB;</div>
-          <h3 style="font-size:15px;">PRD &rarr; MVP &rarr; Roadmap</h3>
-          <p style="font-size:12px; line-height:1.5;">Every feature started as a doc. PRD defines vision, mvp.md scopes the deliverable, roadmap tracks phases with checkboxes.</p>
-        </div>
-        <div class="feature-card" style="padding:16px;">
-          <div class="feature-icon">&#x1F916;</div>
-          <h3 style="font-size:15px;">AI-augmented workflow</h3>
-          <p style="font-size:12px; line-height:1.5;">CLAUDE.md guides AI sessions. Context.md orients each new session. Multi-session plan/implement/review cycles.</p>
-        </div>
-        <div class="feature-card" style="padding:16px;">
-          <div class="feature-icon">&#x1F4CA;</div>
-          <h3 style="font-size:15px;">Structured logging</h3>
-          <p style="font-size:12px; line-height:1.5;">JSON logger in every service file. CLI test scripts with exit codes. Test-log-fix loops documented in git history.</p>
-        </div>
-      </div>
-      <div style="margin-top:14px; background:var(--orange-light); border-radius:14px; padding:10px 18px; border:1.5px solid var(--border);">
-        <p style="font-size:11px; color:var(--med); margin:0;">8 phases completed incrementally. 10 database tables. 7 AI service functions. All aiDocs committed and visible to graders.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- =====================================================
-       SLIDE 11 — COMPETITIVE ANALYSIS
+       SLIDE 8 — COMPETITIVE ANALYSIS
   ====================================================== -->
   <div class="slide">
     <div class="slide-inner">
@@ -1324,7 +1251,7 @@
 <!-- ── Navigation controls ── -->
 <div class="nav">
   <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">&#8592;</button>
-  <span class="nav-counter" id="counter">1 / 14</span>
+  <span class="nav-counter" id="counter">1 / 12</span>
   <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">&#8594;</button>
 </div>
 

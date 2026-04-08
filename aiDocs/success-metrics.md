@@ -79,6 +79,22 @@ The clearest signal: Thomas said "I'm sold" and showed the app to his wife on th
 
 ---
 
+## Failure Thresholds — When to Pivot
+
+These are the numerical red lines that would trigger a change in direction:
+
+| Indicator | Threshold | Pivot action |
+|-----------|-----------|-------------|
+| Full-flow completion rate | < 50% of users complete scan-to-save without help | Simplify the flow — too many steps or too much friction |
+| Edit count per recipe | > 5 edits on average | AI extraction quality is insufficient — fall back to manual-first input |
+| Walmart cart trust | < 40% of users tap "Send to Walmart" after seeing matches | Product matching quality is too low — remove or redesign the cart step |
+| 7-day return rate (if deployed) | < 25% | Core loop doesn't retain — cooking mode and tracker aren't enough to bring users back |
+| User-reported speed advantage | < 50% say app is faster than their current method | The fundamental value proposition is broken — re-scope the product |
+
+**Current status against failure thresholds:** None of these failure conditions are triggered. Full-flow completion was demonstrated by Thomas without assistance. Edit counts are 0-1 for URL imports. 6/7 users expressed intent to use Walmart cart. All tested users reported the app as faster than manual entry.
+
+---
+
 ## Continuation and Pivot Plans
 
 ### If Walmart integration finds traction (pickup/delivery users):
