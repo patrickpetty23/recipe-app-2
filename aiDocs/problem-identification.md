@@ -1,6 +1,6 @@
 # Problem Identification (Rubric 9F)
 
-*Covers problem statement evolution, falsification tests, divergent alternatives considered, and why this is the right problem.*
+_Covers problem statement evolution, falsification tests, divergent alternatives considered, and why this is the right problem._
 
 ---
 
@@ -13,6 +13,7 @@
 **v1.2 (Day 7):** The above, plus: "There is no in-kitchen guidance — apps show you the recipe, but none of them cook with you."
 
 **v1.3 (Day 8 — after building and user testing):** The problem is three-layer:
+
 1. **Recipe fragmentation** across apps, bookmarks, and physical books — no single place to manage what you cook
 2. **Nutrition blindness** while cooking — tracking is either obsessive (manual calorie apps) or nonexistent
 3. **No in-kitchen guidance** — every cooking app shows you a recipe; none actually cook with you
@@ -23,12 +24,12 @@ The v1.3 statement was not planned. It emerged from user feedback and building. 
 
 ## What We Assumed vs. What We Found
 
-| Assumption | What we found |
-|---|---|
-| Camera scan would be the primary input | URL import was used 3× more often (61% URL vs. 28% camera in 20 sessions) |
-| Users want a recipe scanner | Users want a cooking companion — the scanner is the front door, not the product |
-| Nutrition tracking belongs in a separate app | Users expected it to emerge from cooking automatically; two testers asked unprompted |
-| One shopping exit path (Walmart cart) is sufficient | Users split: pickup shoppers want Walmart, in-store shoppers want export-to-Notes |
+| Assumption                                          | What we found                                                                        |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Camera scan would be the primary input              | URL import was used 3× more often (61% URL vs. 28% camera in 20 sessions)            |
+| Users want a recipe scanner                         | Users want a cooking companion — the scanner is the front door, not the product      |
+| Nutrition tracking belongs in a separate app        | Users expected it to emerge from cooking automatically; two testers asked unprompted |
+| One shopping exit path (Walmart cart) is sufficient | Users split: pickup shoppers want Walmart, in-store shoppers want export-to-Notes    |
 
 ---
 
@@ -36,12 +37,12 @@ The v1.3 statement was not planned. It emerged from user feedback and building. 
 
 Four hypotheses were tested with real methods and documented results:
 
-| Hypothesis | How we tested | Result |
-|---|---|---|
-| Users scan physical cookbooks most | Tracked import method across 20 test sessions | Camera: 28%, URL: 61%, Chat: 11% — URL is primary, not camera |
-| 10-second capture goal is achievable | Timed 10 end-to-end captures | Camera: avg 14s ⚠️, URL: avg 8s ✅, Chat: avg 12s |
-| 90% ingredient extraction accuracy | Tested with 5 diverse recipes (Italian, Asian, baking, handwritten, blog) | Avg 94% ✅; worst case: handwritten 87% |
-| Users will log meals voluntarily | Observed 3 users after cooking demo | 2/3 tapped "Log Meal" unprompted ✅ |
+| Hypothesis                           | How we tested                                                             | Result                                                        |
+| ------------------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Users scan physical cookbooks most   | Tracked import method across 20 test sessions                             | Camera: 28%, URL: 61%, Chat: 11% — URL is primary, not camera |
+| 10-second capture goal is achievable | Timed 10 end-to-end captures                                              | Camera: avg 14s ⚠️, URL: avg 8s ✅, Chat: avg 12s             |
+| 90% ingredient extraction accuracy   | Tested with 5 diverse recipes (Italian, Asian, baking, handwritten, blog) | Avg 94% ✅; worst case: handwritten 87%                       |
+| Users will log meals voluntarily     | Observed 3 users after cooking demo                                       | 2/3 tapped "Log Meal" unprompted ✅                           |
 
 **Key falsification finding:** Our original hypothesis — that camera scanning would be the primary use case — was wrong. URL import is 3× more common because most recipes users actually want already exist digitally. Camera still matters for physical cookbooks, but it is not the modal case. This changed the home screen design and our positioning.
 
@@ -55,7 +56,7 @@ Before committing to the full cooking lifecycle, we considered three simpler alt
 Paprika 3 solves this already. Without AI extraction and in-kitchen guidance, we have no differentiation. Ruled out.
 
 **Alternative 2: Just a shopping list app.**
-AnyList and dozens of others solve this. The shopping list is a commodity. The value is getting to the list from *any* recipe source in under 10 seconds — which requires AI. But stopping at the list abandons the opportunity the cooking and tracking layers create.
+AnyList and dozens of others solve this. The shopping list is a commodity. The value is getting to the list from _any_ recipe source in under 10 seconds — which requires AI. But stopping at the list abandons the opportunity the cooking and tracking layers create.
 
 **Alternative 3: Just a calorie tracker.**
 MyFitnessPal owns this space and requires fully manual entry. The insight that made the Tracker valuable is that if users already cook from the app, logging is a one-tap side effect. Without the cooking behavior, the tracker is just another manual entry app competing with MyFitnessPal on worse terms.
