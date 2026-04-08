@@ -21,6 +21,7 @@ import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
 
 import { getRecipeById } from '../../src/db/queries';
+import { processChat } from '../../src/services/openai';
 import { logger } from '../../src/utils/logger';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -108,6 +109,11 @@ export default function CookingScreen() {
   const [timerModalVisible, setTimerModalVisible] = useState(false);
   const [timerInput, setTimerInput] = useState('');
   const [activeTimer, setActiveTimer] = useState(null); // seconds
+  // Cooking help chat
+  const [helpVisible, setHelpVisible] = useState(false);
+  const [helpInput, setHelpInput] = useState('');
+  const [helpBusy, setHelpBusy] = useState(false);
+  const [helpAnswer, setHelpAnswer] = useState('');
 
   // Slide transition animation
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -256,6 +262,30 @@ export default function CookingScreen() {
     if (ttsEnabled) Speech.speak("Timer's done! Check your dish.", { rate: 0.9 });
   }
 
+  async function handleAskHelp() {
+    const q = helpInput.trim();
+    if (!q || helpBusy) return;
+    setHelpBusy(true);
+    setHelpAnswer('');
+    try {
+      const step = steps[currentIndex];
+      const context = {
+        currentRecipe: recipe?.title,
+        recipeCount: 0,
+      };
+      const result = await processChat(
+        [{ role: 'user', content: `I'm cooking step ${step?.stepNumber ?? currentIndex + 1} of "${recipe?.title}": "${step?.instruction ?? ''}". Question: ${q}` }],
+        null,
+        context
+      );
+      setHelpAnswer(result.message || "I couldn't answer that.");
+    } catch {
+      setHelpAnswer('Sorry, something went wrong. Please try again.');
+    } finally {
+      setHelpBusy(false);
+    }
+  }
+
   // ── Swipe gesture ─────────────────────────────────────────────────────────────
 
   // Keep refs current on every render so PanResponder always calls the latest version
@@ -328,7 +358,7 @@ export default function CookingScreen() {
           <Text style={styles.recipeTitle} numberOfLines={1}>{recipe.title}</Text>
         </View>
 
-        {/* TTS + Timer controls */}
+        {/* TTS + Timer + Help controls */}
         <View style={styles.topControls}>
           <TouchableOpacity style={styles.controlBtn} onPress={toggleTts}>
             <Ionicons
@@ -339,6 +369,9 @@ export default function CookingScreen() {
           </TouchableOpacity>
           <TouchableOpacity style={styles.controlBtn} onPress={() => setTimerModalVisible(true)}>
             <Ionicons name="timer-outline" size={18} color="rgba(255,255,255,0.8)" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.controlBtn} onPress={() => { setHelpInput(''); setHelpAnswer(''); setHelpVisible(true); }}>
+            <Ionicons name="help-circle-outline" size={18} color="rgba(255,255,255,0.8)" />
           </TouchableOpacity>
         </View>
       </View>
@@ -406,6 +439,54 @@ export default function CookingScreen() {
           />
         </TouchableOpacity>
       </View>
+
+      {/* Cooking help modal */}
+      <Modal
+        visible={helpVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setHelpVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Ask for Help</Text>
+            <Text style={styles.modalSub}>
+              {`Step ${(steps[currentIndex]?.stepNumber ?? currentIndex + 1)}: ${steps[currentIndex]?.instruction ?? ''}`}
+            </Text>
+            <TextInput
+              style={styles.helpInput}
+              value={helpInput}
+              onChangeText={setHelpInput}
+              placeholder="e.g. Can I substitute butter here?"
+              placeholderTextColor="rgba(255,255,255,0.3)"
+              multiline
+              autoFocus
+              editable={!helpBusy}
+            />
+            {helpAnswer !== '' && (
+              <View style={styles.helpAnswerBox}>
+                <Text style={styles.helpAnswerText}>{helpAnswer}</Text>
+              </View>
+            )}
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setHelpVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Close</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalStartBtn, (!helpInput.trim() || helpBusy) && styles.modalStartBtnDisabled]}
+                onPress={handleAskHelp}
+                disabled={!helpInput.trim() || helpBusy}
+              >
+                <Text style={styles.modalStartText}>{helpBusy ? 'Thinking…' : 'Ask'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Timer input modal */}
       <Modal
@@ -664,4 +745,29 @@ const styles = StyleSheet.create({
   },
   modalStartBtnDisabled: { opacity: 0.35 },
   modalStartText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  // Help modal
+  helpInput: {
+    backgroundColor: '#3A3A3C',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: '#fff',
+    minHeight: 72,
+    textAlignVertical: 'top',
+    marginBottom: 12,
+  },
+  helpAnswerBox: {
+    backgroundColor: 'rgba(255,149,0,0.1)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,149,0,0.25)',
+    padding: 14,
+    marginBottom: 16,
+  },
+  helpAnswerText: {
+    fontSize: 14,
+    color: '#F2F2F7',
+    lineHeight: 20,
+  },
 });

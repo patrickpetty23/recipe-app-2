@@ -29,7 +29,8 @@ import {
   getShoppingListIngredients,
   getCookLogForDate,
   getSetting,
-  addRecipeToList,
+  addManualShoppingItem,
+  getMealPlanForWeek,
 } from '../../src/db/queries';
 import { scrapeRecipeUrl } from '../../src/services/scraper';
 import { parsePdf, parseDocx } from '../../src/services/fileParser';
@@ -103,13 +104,14 @@ function TypingIndicator() {
 
 function ActionCard({ item, onAction }) {
   const ACTION_META = {
-    open_planner:    { icon: 'calendar',      label: 'Open Meal Planner',  color: '#9C27B0' },
-    open_planner_ai: { icon: 'sparkles',      label: 'Ask AI to Plan',     color: '#FF6B35' },
-    open_tab_list:   { icon: 'cart',          label: 'View Shopping List', color: '#0071DC' },
-    open_tab_tracker:{ icon: 'bar-chart',     label: 'View Nutrition',     color: '#34C759' },
-    open_tab_recipes:{ icon: 'book',          label: 'Browse Recipes',     color: '#FF6B35' },
-    search_library:  { icon: 'search',        label: 'Search Library',     color: '#FF6B35' },
+    open_planner:    { icon: 'calendar',      label: 'Open Meal Planner',    color: '#9C27B0' },
+    open_planner_ai: { icon: 'sparkles',      label: 'Ask AI to Plan',       color: '#FF6B35' },
+    open_tab_list:   { icon: 'cart',          label: 'View Shopping List',   color: '#0071DC' },
+    open_tab_tracker:{ icon: 'bar-chart',     label: 'View Nutrition',       color: '#34C759' },
+    open_tab_recipes:{ icon: 'book',          label: 'Browse Recipes',       color: '#FF6B35' },
+    search_library:  { icon: 'search',        label: 'Search Library',       color: '#FF6B35' },
     add_shopping:    { icon: 'add-circle',    label: 'Add to Shopping List', color: '#0071DC' },
+    start_timer:     { icon: 'timer-outline', label: 'Start Timer',          color: '#FF9500' },
   };
   const key = item.action === 'open_tab' ? `open_tab_${item.tab}` : item.action;
   const meta = ACTION_META[key] ?? { icon: 'arrow-forward-circle', label: 'Take Action', color: '#FF6B35' };
@@ -215,6 +217,34 @@ function RecipeCard({ item, onSave }) {
   );
 }
 
+// ── In-chat countdown timer banner ────────────────────────────────────────────
+
+function ChatTimerBanner({ seconds: initialSeconds, onDone, onCancel }) {
+  const [remaining, setRemaining] = useState(initialSeconds);
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setRemaining((prev) => {
+        if (prev <= 1) { clearInterval(iv); onDone(); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(iv);
+  }, []);
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  return (
+    <View style={styles.timerBanner}>
+      <Ionicons name="timer-outline" size={18} color="#FF9500" />
+      <Text style={styles.timerBannerText}>
+        {mins > 0 ? `${mins}:${String(secs).padStart(2, '0')}` : `${secs}s`} remaining
+      </Text>
+      <TouchableOpacity onPress={onCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <Ionicons name="close" size={16} color="#8E8E93" />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 // ── Build live app context for the AI agent ───────────────────────────────────
 
 function buildAppContext() {
@@ -229,13 +259,32 @@ function buildAppContext() {
     const todayCalories = todayLog.reduce((s, e) => s + (e.calories ?? 0), 0);
     const todayProtein = todayLog.reduce((s, e) => s + (e.protein ?? 0), 0);
 
+    // Build compact recipe list for AI context (max 20 titles)
+    const recipeList = recipes.length > 0
+      ? recipes.slice(0, 20).map((r) => `"${r.title}"`).join(', ')
+      : null;
+
+    // Build meal plan summary for current week
+    const monday = new Date(today);
+    monday.setDate(monday.getDate() - monday.getDay() + 1);
+    const weekStart = monday.toISOString().slice(0, 10);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const weekEnd = sunday.toISOString().slice(0, 10);
+    const plan = getMealPlanForWeek(weekStart, weekEnd);
+    const planSummary = plan.length > 0
+      ? plan.map((p) => `${p.plannedDate} ${p.mealType}: ${p.recipeTitle}`).join('; ')
+      : null;
+
     return {
       recipeCount: recipes.length,
+      recipeList,
       shoppingCount: shoppingItems.filter((i) => !i.checked).length,
       todayCalories: Math.round(todayCalories),
       todayProtein,
       calorieGoal,
       today,
+      planSummary,
     };
   } catch {
     return null;
@@ -259,6 +308,7 @@ export default function ChatScreen() {
   const [showAttachSheet, setShowAttachSheet] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [pendingUrl, setPendingUrl] = useState('');
+  const [activeTimerSeconds, setActiveTimerSeconds] = useState(null); // non-null = timer running
   const pendingAction = useRef(null);
 
   // Android fallback: Modal.onDismiss only fires on iOS, so use effect + delay
@@ -433,6 +483,7 @@ export default function ChatScreen() {
           tab: result.tab ?? null,
           query: result.query ?? null,
           items: result.items ?? null,
+          seconds: result.seconds ?? null,
           recipeData: null,
           imageUri: null,
         });
@@ -673,29 +724,34 @@ export default function ChatScreen() {
         router.push(`/(tabs)/${item.tab ?? 'index'}`);
         break;
       case 'search_library':
-        router.push({ pathname: '/(tabs)/recipes', params: { q: item.query ?? '' } });
+        router.push({ pathname: '/(tabs)/library', params: { q: item.query ?? '' } });
         break;
       case 'add_shopping': {
         const items = Array.isArray(item.items) ? item.items : [];
         if (items.length === 0) break;
         Alert.alert(
-          `Add ${items.length} item${items.length !== 1 ? 's' : ''} to shopping list?`,
-          items.slice(0, 5).join(', ') + (items.length > 5 ? `… +${items.length - 5} more` : ''),
+          `Add ${items.length} item${items.length !== 1 ? 's' : ''} to list?`,
+          items.slice(0, 5).join(', ') + (items.length > 5 ? ` +${items.length - 5} more` : ''),
           [
             { text: 'Cancel', style: 'cancel' },
             {
               text: 'Add',
               onPress: () => {
-                // These are free-text items; add as standalone list entries
-                const { addStandaloneShoppingItem } = require('../../src/db/queries');
                 for (const name of items) {
-                  try { addStandaloneShoppingItem?.(name); } catch { /* ignore */ }
+                  try { addManualShoppingItem(name); } catch { /* ignore */ }
                 }
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 router.push('/(tabs)/list');
               },
             },
           ]
         );
+        break;
+      }
+      case 'start_timer': {
+        const secs = typeof item.seconds === 'number' ? item.seconds : 0;
+        if (secs <= 0) break;
+        setActiveTimerSeconds(secs);
         break;
       }
       default:
@@ -803,6 +859,47 @@ export default function ChatScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       />
+
+      {/* Active timer banner */}
+      {activeTimerSeconds != null && (
+        <ChatTimerBanner
+          seconds={activeTimerSeconds}
+          onDone={() => {
+            setActiveTimerSeconds(null);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            addMessage({
+              id: Crypto.randomUUID(),
+              role: 'assistant',
+              type: 'text',
+              content: "⏱️ Timer's done!",
+              imageUri: null,
+              recipeData: null,
+            });
+          }}
+          onCancel={() => setActiveTimerSeconds(null)}
+        />
+      )}
+
+      {/* Suggestion chips */}
+      {messages.length <= 2 && !busy && (
+        <View style={styles.chipsRow}>
+          {[
+            { label: '🍽️  What can I cook tonight?', text: 'What can I cook tonight?' },
+            { label: '📅  Plan my week', text: 'Can you help me plan my meals for this week?' },
+            { label: '🛒  Add to list', text: 'Add ' },
+            { label: '🔄  Substitute an ingredient', text: 'I need to substitute ' },
+          ].map((chip) => (
+            <TouchableOpacity
+              key={chip.label}
+              style={styles.chip}
+              onPress={() => setInputText(chip.text)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.chipText}>{chip.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       {/* Input area */}
       <View style={[styles.inputArea, { paddingBottom: insets.bottom || 8 }]}>
@@ -1348,5 +1445,41 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#2D1B00',
     marginBottom: 16,
+  },
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 12,
+    paddingBottom: 6,
+    gap: 6,
+  },
+  chip: {
+    backgroundColor: '#FFF0E8',
+    borderWidth: 1,
+    borderColor: '#F0D0B8',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  chipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FF6B35',
+  },
+  timerBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FFF5E0',
+    borderTopWidth: 1,
+    borderColor: '#FFE0A0',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  timerBannerText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FF9500',
   },
 });

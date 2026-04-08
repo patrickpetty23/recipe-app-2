@@ -288,11 +288,12 @@ export function getShoppingListIngredients() {
     const db = getDatabase();
     const rows = db.getAllSync(
       `SELECT i.id, i.recipe_id, i.name, i.quantity, i.unit, i.notes,
-              i.checked, i.in_list, i.sort_order, r.title AS recipe_title
+              i.checked, i.in_list, i.sort_order,
+              COALESCE(r.title, 'Manual') AS recipe_title
        FROM ingredients i
-       JOIN recipes r ON r.id = i.recipe_id
+       LEFT JOIN recipes r ON r.id = i.recipe_id
        WHERE i.in_list = 1
-       ORDER BY r.title, i.sort_order`
+       ORDER BY CASE WHEN i.recipe_id IS NULL THEN 1 ELSE 0 END, r.title, i.sort_order`
     );
     const items = rows.map((row) => ({ ...mapIngredientRow(row), recipeTitle: row.recipe_title }));
     logger.info('queries.getShoppingListIngredients.success', { count: items.length });
@@ -337,6 +338,32 @@ export function addIngredientsToList(ingredientIds) {
     logger.info('queries.addIngredientsToList.success', { count: ingredientIds.length });
   } catch (err) {
     logger.error('queries.addIngredientsToList.error', { error: err.message });
+    throw err;
+  }
+}
+
+/**
+ * Add a freeform item directly to the shopping list without a parent recipe.
+ * Creates a standalone ingredient row attached to a virtual "Manual" recipe bucket.
+ */
+export function addManualShoppingItem(name, quantity = null, unit = null) {
+  logger.info('queries.addManualShoppingItem', { name });
+  try {
+    const db = getDatabase();
+    const id = ExpoCrypto.randomUUID();
+    // recipe_id = null marks it as a manual item; the list UI groups these under "Manual"
+    db.runSync(
+      `INSERT INTO ingredients (id, recipe_id, name, quantity, unit, notes, checked, in_list, sort_order)
+       VALUES (?, NULL, ?, ?, ?, NULL, 0, 1, 0)`,
+      id,
+      name.trim(),
+      quantity ?? null,
+      unit ?? null
+    );
+    logger.info('queries.addManualShoppingItem.success', { id, name });
+    return id;
+  } catch (err) {
+    logger.error('queries.addManualShoppingItem.error', { error: err.message });
     throw err;
   }
 }
