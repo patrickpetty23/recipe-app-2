@@ -14,6 +14,8 @@ import {
   Platform,
   SafeAreaView,
   Image,
+  TextInput,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +31,7 @@ import {
   clearCheckedItems,
   clearShoppingList,
   addIngredientsToList,
+  addManualShoppingItem,
   getAllRecipes,
   getRecipeById,
 } from '../../src/db/queries';
@@ -57,10 +60,14 @@ export default function ShoppingListScreen() {
   const [bulkSearching, setBulkSearching] = useState(false);
 
   const [addModalVisible, setAddModalVisible] = useState(false);
+  const [addTab, setAddTab] = useState('recipes'); // 'recipes' | 'manual'
   const [addStep, setAddStep] = useState('recipes');
   const [allRecipes, setAllRecipes] = useState([]);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [selectedIngredientIds, setSelectedIngredientIds] = useState({});
+  const [manualItemName, setManualItemName] = useState('');
+  const [manualItemQty, setManualItemQty] = useState('');
+  const [manualItemUnit, setManualItemUnit] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -329,12 +336,35 @@ export default function ShoppingListScreen() {
     try {
       const recipes = getAllRecipes();
       setAllRecipes(recipes);
+      setAddTab('recipes');
       setAddStep('recipes');
       setSelectedRecipe(null);
       setSelectedIngredientIds({});
+      setManualItemName('');
+      setManualItemQty('');
+      setManualItemUnit('');
       setAddModalVisible(true);
     } catch (err) {
       logger.error('shoppingList.openAddModal.error', { error: err.message });
+      Alert.alert('Error', 'Could not open the add dialog. Please try again.');
+    }
+  }
+
+  function handleAddManualItem() {
+    const name = manualItemName.trim();
+    if (!name) {
+      Alert.alert('Item Name Required', 'Please enter an item name.');
+      return;
+    }
+    try {
+      addManualShoppingItem(name, manualItemQty.trim() || null, manualItemUnit.trim() || null);
+      loadList();
+      setAddModalVisible(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      logger.info('shoppingList.addManualItem', { name });
+    } catch (err) {
+      logger.error('shoppingList.addManualItem.error', { error: err.message });
+      Alert.alert('Error', 'Could not add the item. Please try again.');
     }
   }
 
@@ -580,14 +610,85 @@ export default function ShoppingListScreen() {
               <View style={styles.modalNavPlaceholder} />
             )}
             <Text style={styles.modalTitle} numberOfLines={1}>
-              {addStep === 'recipes' ? 'Add to List' : selectedRecipe?.title}
+              {addStep === 'ingredients' ? selectedRecipe?.title : 'Add to List'}
             </Text>
             <TouchableOpacity style={styles.modalNavPlaceholder} onPress={() => setAddModalVisible(false)}>
               <Ionicons name="close" size={22} color="#B38B6D" />
             </TouchableOpacity>
           </View>
 
-          {addStep === 'recipes' ? (
+          {/* Tab switcher — only show on top-level step */}
+          {addStep === 'recipes' && (
+            <View style={styles.modalTabs}>
+              <TouchableOpacity
+                style={[styles.modalTab, addTab === 'recipes' && styles.modalTabActive]}
+                onPress={() => setAddTab('recipes')}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.modalTabText, addTab === 'recipes' && styles.modalTabTextActive]}>From Recipe</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalTab, addTab === 'manual' && styles.modalTabActive]}
+                onPress={() => setAddTab('manual')}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.modalTabText, addTab === 'manual' && styles.modalTabTextActive]}>Manual Item</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {addTab === 'manual' && addStep === 'recipes' ? (
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+              <View style={styles.manualForm}>
+                <Text style={styles.manualLabel}>Item name *</Text>
+                <TextInput
+                  style={styles.manualInput}
+                  placeholder="e.g. Chicken breast"
+                  placeholderTextColor="#B38B6D"
+                  value={manualItemName}
+                  onChangeText={setManualItemName}
+                  autoFocus
+                  returnKeyType="next"
+                />
+                <View style={styles.manualRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.manualLabel}>Quantity</Text>
+                    <TextInput
+                      style={styles.manualInput}
+                      placeholder="e.g. 2"
+                      placeholderTextColor="#B38B6D"
+                      value={manualItemQty}
+                      onChangeText={setManualItemQty}
+                      keyboardType="decimal-pad"
+                      returnKeyType="next"
+                    />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 10 }}>
+                    <Text style={styles.manualLabel}>Unit</Text>
+                    <TextInput
+                      style={styles.manualInput}
+                      placeholder="e.g. lbs"
+                      placeholderTextColor="#B38B6D"
+                      value={manualItemUnit}
+                      onChangeText={setManualItemUnit}
+                      returnKeyType="done"
+                      onSubmitEditing={handleAddManualItem}
+                    />
+                  </View>
+                </View>
+              </View>
+              <View style={styles.modalFooter}>
+                <TouchableOpacity
+                  style={[styles.modalConfirmButton, !manualItemName.trim() && styles.modalConfirmButtonDisabled]}
+                  onPress={handleAddManualItem}
+                  disabled={!manualItemName.trim()}
+                >
+                  <Ionicons name="add-circle" size={18} color="#fff" />
+                  <Text style={styles.modalConfirmText}>Add to List</Text>
+                </TouchableOpacity>
+              </View>
+            </KeyboardAvoidingView>
+          ) : addStep === 'recipes' ? (
             <FlatList
               data={allRecipes}
               keyExtractor={(r) => r.id}
@@ -1137,6 +1238,58 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  modalTabs: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: '#F0E0D0',
+    borderRadius: 10,
+    padding: 3,
+  },
+  modalTab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  modalTabActive: {
+    backgroundColor: '#fff',
+  },
+  modalTabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#B38B6D',
+  },
+  modalTabTextActive: {
+    color: '#FF6B35',
+  },
+  manualForm: {
+    flex: 1,
+    padding: 16,
+    gap: 12,
+  },
+  manualLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#B38B6D',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  manualInput: {
+    backgroundColor: '#fff',
+    borderWidth: 1.5,
+    borderColor: '#F0E0D0',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: '#2D1B00',
+  },
+  manualRow: {
+    flexDirection: 'row',
+    gap: 10,
   },
   walmartCartButton: {
     backgroundColor: '#0071DC',
