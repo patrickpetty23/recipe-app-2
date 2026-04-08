@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { getSetting, seedDemoData, updateRecipeImageUri } from '../src/db/queries';
 import { generateRecipeThumbnail } from '../src/services/openai';
+import { setupNotificationChannel } from '../src/utils/notifications';
 import { logger } from '../src/utils/logger';
 
 export default function RootLayout() {
@@ -14,6 +15,9 @@ export default function RootLayout() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    // Set up Android notification channel (no-op on iOS)
+    setupNotificationChannel();
+
     try {
       // Seed demo data on first install, then fire thumbnail generation (non-blocking)
       try {

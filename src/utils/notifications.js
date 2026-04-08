@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 import { logger } from './logger';
 
 // Configure how notifications appear when the app is foregrounded
@@ -16,6 +17,21 @@ const MEAL_TIMES = {
   dinner:    { hour: 18, minute: 0  },
   snack:     { hour: 15, minute: 0  },
 };
+
+// Android requires a notification channel before any notification can be scheduled.
+// Safe to call multiple times — expo-notifications is idempotent.
+export async function setupNotificationChannel() {
+  if (Platform.OS !== 'android') return;
+  try {
+    await Notifications.setNotificationChannelAsync('meal-reminders', {
+      name: 'Meal Reminders',
+      importance: Notifications.AndroidImportance.DEFAULT,
+      sound: null,
+    });
+  } catch (err) {
+    logger.error('notifications.setupChannel.error', { error: err.message });
+  }
+}
 
 export async function requestNotificationPermission() {
   try {
@@ -53,7 +69,12 @@ export async function scheduleMealReminder({ recipeTitle, plannedDate, mealType 
         sound: false,
         data: { plannedDate, mealType },
       },
-      trigger: { date: triggerDate },
+      // Expo SDK 54: trigger requires explicit 'type' field. Android also needs channelId.
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: triggerDate,
+        ...(Platform.OS === 'android' ? { channelId: 'meal-reminders' } : {}),
+      },
     });
 
     logger.info('notifications.scheduleMealReminder', { id, mealType, plannedDate });
