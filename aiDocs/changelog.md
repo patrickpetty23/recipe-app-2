@@ -7,6 +7,53 @@
 
 ---
 
+## Day 10 — Meal Planner, iOS Polish, Bug Fixes (2026-04-06)
+
+### Meal Planner Tab
+- Added `meal_plan` table to SQLite schema (11 tables total) with recipe linkage, per-meal macros, date/type columns, and index on `planned_date`
+- Implemented 4 new meal plan queries: `getMealPlanForWeek`, `addMealPlan`, `removeMealPlan`, `clearMealPlanForWeek`
+- Added `chatMealPlanner` in openai.js — GPT-4o-powered conversational meal planning that knows the user's recipe library, dietary preferences, and current week's plan
+- Built Planner tab (`app/(tabs)/planner.jsx`) — weekly calendar view, per-day meal slots (breakfast/lunch/dinner/snack), AI chat to auto-fill the week, manual add from recipe library, calorie/macro summaries per day
+- Tab bar now has 5 tabs: Chat, Recipes, Shopping, Planner, Tracker
+
+### Fraction Support
+- Changed ingredient `quantity` column from `REAL` to `TEXT` in schema to store fractions natively (e.g. "3/4", "1 1/2")
+- Added `parseFraction()` and `toFractionString()` to `src/utils/scaler.js` — handles mixed numbers, simple fractions, and decimals; displays user-friendly fractions (½, ¾, etc.)
+- `mapIngredientRow` in queries.js now uses `parseFraction` for consistent numeric handling
+
+### Shopping List Enhancements
+- Added individual ingredient add-to-list — users can now add specific ingredients from a recipe, not just entire recipes
+- New queries: `addIngredientsToList`, `removeIngredientFromList`
+- Shopping list UI expanded with add modal (pick recipe → pick ingredients), swipe-to-delete individual items
+
+### Recipe Detail & Editor Fixes
+- Added `addIngredient` and `addRecipeStep` query functions — users can add new ingredients and steps directly from the recipe detail screen
+- Removed "Start Cooking" button from ingredients tab (moved to steps tab only)
+- UI fixes on recipe detail page layout and styling
+
+### iOS Cross-Platform Polish
+- Replaced all hardcoded `paddingTop` values with `useSafeAreaInsets()` across every screen
+- Fixed iOS tab bar invisible bug — added `SafeAreaProvider` at root `_layout.jsx`
+- Consistent cross-platform tab bar and header sizing with platform-specific height calculations
+- Fixed memory leak in component cleanup
+
+### Walmart Signing Fix Loop
+- Attempted WebCrypto (`crypto.subtle`) for RSA signing → failed: unavailable in Expo Go runtime
+- Attempted dotenv quoted multiline PEM with robust `\n` handling → partial fix
+- Reverted to `node-forge` as the sole RSA signing implementation — confirmed working in Expo Go on both iOS and Android
+
+### Image Generation Fix Loop
+- Attempted fal.ai FLUX for step illustrations → reverted (external dependency)
+- Attempted Gemini 2.0 Flash (free tier) → model name issues
+- Attempted HuggingFace FLUX.1-schnell (free tier) → reverted
+- Settled back on DALL-E 3 for all image generation (thumbnails 1792×1024, step illustrations 1024×1024)
+
+### Collections & UI
+- Cleaned up collections creation modal UI
+- Fixed collection filter UX and refresh counts
+
+---
+
 ## Day 9 — Final Rubric Compliance + Docs (Phase 9 continued)
 - Updated all aiDocs to reflect current project state (context.md, architecture.md, prd.md)
 - Added version history to PRD with three tracked revisions and updated success metrics from measured results

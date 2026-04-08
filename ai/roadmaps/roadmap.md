@@ -231,6 +231,47 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 
 ---
 
+---
+
+## Post-Phase 9 — Continued Development (Day 10, 2026-04-06)
+
+**Goal:** Add new features (Meal Planner), fix iOS cross-platform issues, improve data handling (fractions), and resolve accumulated bugs.
+
+### Meal Planner
+- ✅ Added `meal_plan` table to schema (11 tables total)
+- ✅ Implemented meal plan queries: `getMealPlanForWeek`, `addMealPlan`, `removeMealPlan`, `clearMealPlanForWeek`
+- ✅ Added `chatMealPlanner` GPT-4o function with library-aware context
+- ✅ Built Planner tab with weekly calendar, per-day meal slots, AI chat, manual recipe add
+- ✅ Registered as 5th tab (Chat, Recipes, Shopping, Planner, Tracker)
+
+### Fraction Support
+- ✅ Changed ingredient quantity column from REAL to TEXT
+- ✅ Added `parseFraction()` and `toFractionString()` to scaler.js
+- ✅ Updated row mappers and display components
+
+### Shopping List Enhancements
+- ✅ Individual ingredient add-to-list from recipes
+- ✅ New queries: `addIngredientsToList`, `removeIngredientFromList`
+- ✅ Add modal with recipe picker → ingredient picker flow
+
+### Recipe Detail & Editor
+- ✅ Added `addIngredient` and `addRecipeStep` queries
+- ✅ Moved "Start Cooking" to steps tab only
+- ✅ UI layout fixes
+
+### iOS Cross-Platform
+- ✅ Replaced hardcoded paddingTop with `useSafeAreaInsets()` on all screens
+- ✅ Fixed invisible iOS tab bar — added SafeAreaProvider at root
+- ✅ Cross-platform tab bar height calculations
+- ✅ Memory leak fixes
+
+### Bug Fix Loops
+- ✅ Walmart RSA signing: WebCrypto → dotenv PEM → reverted to node-forge (Expo Go constraint)
+- ✅ Image generation: fal.ai FLUX → Gemini → HuggingFace → reverted to DALL-E 3
+- ✅ Collection filter UX, refresh counts, safe area in cooking mode
+
+---
+
 ## Progress Tracking
 
 
@@ -245,3 +286,4 @@ Sprint to a working iOS demo + rubric-ready submission. Each phase has a clear d
 | 7 — Walmart           | ✅ Done (2026-04-02) | Phase 7: Walmart product search and cart integration           |
 | 8 — Polish            | ✅ Done (2026-04-02) | UI changes and getting the walmart add to cart feature working |
 | 9 — Rubric Compliance | ✅ Done (2026-04-06) | presentation/, product-research.md, aiDocs updated            |
+| Post-9 — Features     | ✅ Done (2026-04-06) | Meal Planner, fractions, iOS polish, bug fixes                |

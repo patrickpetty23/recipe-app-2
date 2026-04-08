@@ -5,7 +5,7 @@ A working iOS app that demonstrates the full core loop: **scan or import a recip
 
 The MVP exists to prove the concept works and deliver a compelling demo within 6 days.
 
-> **Note (v1.3):** The delivered app significantly exceeds this MVP scope. The `feature/android-polish` branch added: iMessage-style chat tab, AI recipe thumbnails (DALL-E 3), step illustrations (DALL-E 2), cooking mode with TTS and timers, nutrition tracking (GPT-4o macros + cook log), Tracker tab, Collections, onboarding screen, and Android support. The MVP definition below reflects the original scoped deliverable; `aiDocs/prd.md` documents the full current product.
+> **Note (v1.4):** The delivered app significantly exceeds this MVP scope. Beyond-MVP features include: iMessage-style chat tab, AI recipe thumbnails (DALL-E 3), step illustrations (DALL-E 3), cooking mode with TTS and timers, nutrition tracking (GPT-4o macros + cook log), Tracker tab, AI-powered Meal Planner tab (weekly calendar + GPT-4o meal suggestions), Collections, fraction-based quantities, individual ingredient shopping list management, onboarding screen, and cross-platform iOS/Android support. The MVP definition below reflects the original scoped deliverable; `aiDocs/prd.md` documents the full current product.
 
 ## What IS in the MVP
 
