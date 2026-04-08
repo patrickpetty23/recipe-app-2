@@ -29,7 +29,6 @@ import {
   getShoppingListIngredients,
   getCookLogForDate,
   getSetting,
-  addRecipeToList,
   addManualShoppingItem,
   getMealPlanForWeek,
 } from '../../src/db/queries';
@@ -484,6 +483,7 @@ export default function ChatScreen() {
           tab: result.tab ?? null,
           query: result.query ?? null,
           items: result.items ?? null,
+          seconds: result.seconds ?? null,
           recipeData: null,
           imageUri: null,
         });
